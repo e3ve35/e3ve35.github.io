@@ -8,6 +8,7 @@ class Footer extends TXT {
     this.h = fs;
     this.fs = fs;
     this.active = active;
+    this.noiseLocation = 0;
   }
 
   thinking() {}
@@ -17,13 +18,13 @@ class Footer extends TXT {
     textAlign(CENTER);
     textSize(this.fs);
     if (this.active) {
-      noiseR = map(noise(noiseLocation), 0, 1, 220, 255);
+      noiseR = map(noise(this.noiseLocation), 0, 1, 220, 255);
       this.x = width * 0.15;
     } else {
-      noiseR = map(noise(noiseLocation), 0, 1, 120, 200);
+      noiseR = map(noise(this.noiseLocation), 0, 1, 120, 200);
     }
     fill(noiseR);
-    noiseLocation += 0.1;
+    this.noiseLocation += 0.1;
 
     if (!this.doneDisplayText) {
       if (this.txtFrame % 1 == 0) {

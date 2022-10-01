@@ -19,20 +19,12 @@ class Link extends TXT {
     textSize(this.fs);
     if (this.active) {
       noiseR = map(noise(noiseLocation), 0, 1, 220, 255);
-      this.x = width * 0.15;
     } else {
       noiseR = map(noise(noiseLocation), 0, 1, 120, 200);
-      this.x = width * 0.2;
     }
 
     fill(noiseR);
-    noiseLocation += 0.1;
-
-    if (this.collide() && !this.active) {
-      noiseR = map(noise(noiseLocation), 0, 1, 200, 235);
-      this.x = width * 0.18;
-      fill(noiseR, 200, 200);
-    }
+    //noiseLocation += 0.1;
 
     if (!this.doneDisplayText) {
       if (this.txtFrame % 1 == 0) {
@@ -57,8 +49,10 @@ class Link extends TXT {
       mouseY > this.y - this.h * 2 &&
       mouseY < this.y + this.h
     ) {
+      this.active = true;
       return true;
     }
+    this.active = false;
     return false;
   }
 }

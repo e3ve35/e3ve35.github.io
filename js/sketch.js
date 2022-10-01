@@ -1,8 +1,9 @@
 function draw() {
-  background(0, 10);
   if (startR > 0) {
+    background(0, 10);
     startAnimation();
   } else {
+    background(0, 50);
     displayWorms();
     if (!showContent && !showHome) {
       conv0.display();
@@ -15,37 +16,33 @@ function draw() {
         navs[i].display();
         navs[i].collide();
       }
-
-      if (navs[0].active) {
+      if (navs[0].active || navs[1].active) {
         for (let i = 0; i < projs.length; i++) {
           projs[i].display();
           projs[i].collide();
         }
 
-        if (projs[0].active) {
-          for (let i = 0; i < proj0.length; i++) {
-            proj0[i].display();
-          }
-        } else if (projs[1].active) {
-          for (let i = 0; i < proj1.length; i++) {
-            proj1[i].display();
-          }
-        } else if (projs[2].active) {
-          for (let i = 0; i < proj2.length; i++) {
-            proj2[i].display();
-          }
-        } else if (projs[3].active) {
-          for (let i = 0; i < proj3.length; i++) {
-            proj3[i].display();
-          }
-        } else if (projs[4].active) {
-          for (let i = 0; i < proj4.length; i++) {
-            proj4[i].display();
+        for (let i = 0; i < projs.length; i++) {
+          if (projs[i].active) {
+            for (let j = 0; j < projDesc[i].length; j++) {
+              projDesc[i][j].display();
+            }
+            enableLink(i);
+            lastHovered = i;
+          } else {
+            disableLink(i);
           }
         }
-      } else if (navs[1].active) {
-        passcode.display();
+
+        projs[lastHovered].active = true;
+        enableLink(lastHovered);
+
+        for (let i = 0; i < projDesc[lastHovered].length; i++) {
+          projDesc[lastHovered][i].display();
+        }
       } else if (navs[2].active) {
+        disableLinks();
+
         for (let i = 0; i < contacts.length; i++) {
           contacts[i].display();
         }

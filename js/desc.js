@@ -6,33 +6,70 @@ class Desc extends TXT {
     this.fs = fs;
     this.w = textWidth(txt);
     this.h = fs;
+    this.doneDisplayText = true;
+    let words = split(this.txt, " ");
+    this.s = [];
+    this.lineWidth = width * 0.95 - this.x;
+    let numLines = this.w / this.lineWidth;
+    let i = 0;
+    let j = 0;
+    while (i <= numLines + 1) {
+      let currentW = 0;
+      let line = [];
+      let word = words[j];
+      let wordWidth = textWidth(word + " ");
+      while (currentW + wordWidth < this.lineWidth && j <= words.length) {
+        word = words[j];
+        wordWidth = textWidth(word + " ");
+        append(line, word);
+        j++;
+        currentW += textWidth(word + " ");
+      }
+      let newLine = join(line, " ");
+      append(this.s, newLine);
+      i++;
+    }
+    this.txtArrays = [];
+    this.txtIndexes = [];
+    this.displayedTexts = [];
+    for (let n = 0; n < this.s.length; n++) {
+      append(this.txtArrays, split(this.s[n], ""));
+      append(this.txtIndexes, 0);
+      append(this.displayedTexts, "");
+    }
   }
 
-  thinking() {}
-
   display() {
+    let o = 0;
+    for (let i = 0; i < this.s.length; i++) {
+      this.displayLine(i, this.y + o);
+      o += 35;
+    }
+  }
+
+  displayLine(index, lineY) {
     push();
     textAlign(LEFT);
     textSize(this.fs);
     noiseR = map(noise(noiseLocation), 0, 1, 220, 255);
     fill(noiseR, 150, 150);
-    noiseLocation += 0.1;
+    //noiseLocation += 0.1;
 
     if (!this.doneDisplayText) {
       if (this.txtFrame % 1 == 0) {
-        this.displayedText += this.txtArray[this.txtIndex++];
-        if (this.txtIndex >= this.txtArray.length) this.doneDisplayText = true;
+        this.displayedTexts[index] +=
+          this.txtArrays[index][this.txtIndexes[index]++];
+        if (this.txtIndexes[index] >= this.txtArrays[index].length)
+          this.doneDisplayText = true;
       }
-      text(this.displayedText, this.x, this.y - 30);
+      text(this.displayedTexts[index], this.x, lineY - 30);
       this.txtFrame++;
     } else {
-      text(this.txt, this.x, this.y - 30);
+      text(this.s[index], this.x, lineY - 30);
     }
     stroke(noiseR, 90, 90, 50);
     strokeWeight(3);
-
     pop();
-    this.thinking();
   }
 
   collide() {

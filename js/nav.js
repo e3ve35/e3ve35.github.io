@@ -18,7 +18,7 @@ class Nav extends TXT {
     }
     fill(noiseR);
 
-    noiseLocation += 0.1;
+    // noiseLocation += 0.1;
 
     if (!this.doneDisplayText) {
       if (this.txtFrame % 1 == 0) {

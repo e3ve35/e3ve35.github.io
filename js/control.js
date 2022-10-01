@@ -1,4 +1,7 @@
 function keyPressed() {
+  if (showHome == false) {
+    showHome = true;
+  }
   console.log(keyCode);
   if (showContent) {
     if (keyIsDown(13)) {
@@ -12,9 +15,9 @@ function mousePressed() {
   if (showHome == false) {
     showHome = true;
   }
-  for (let i = 0; i < navs.length; i++) {
+  for (let i = 0; i < navs.length; i += 2) {
     if (navs[i].collide()) {
-      for (let j = 0; j < navs.length; j++) {
+      for (let j = 0; j < navs.length; j += 2) {
         navs[j].active = false;
       }
       navs[i].active = true;

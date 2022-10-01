@@ -37,7 +37,7 @@ class TXT {
     textSize(this.fs);
     noiseR = map(noise(noiseLocation), 0, 1, 150, 255);
     fill(noiseR);
-    noiseLocation += 0.1;
+    //noiseLocation += 0.1;
 
     if (!this.doneDisplayText) {
       if (this.txtFrame % 1 == 0) {
@@ -65,7 +65,7 @@ class TXT {
 */
 class Passcode extends TXT {
   constructor() {
-    super("Enter a Passcode To Download:", 100, width / 2, height / 2, 25);
+    super("Enter a Passcode To View:", 100, width / 2, height / 2, 25);
     this.input = createInput();
     this.input.id("passcode");
     this.code = "GUEST";
@@ -73,7 +73,6 @@ class Passcode extends TXT {
 
   checkCode(str) {
     if (str === this.code) {
-      this.input.value("");
       showContent = true;
     } else {
       console.log("Your Passcode is " + this.code);
