@@ -48,7 +48,6 @@ class Link extends TXT {
       mouseY > this.y - this.h * 2 &&
       mouseY < this.y + this.h
     ) {
-      cursor(HAND);
       this.active = true;
       return true;
     }
