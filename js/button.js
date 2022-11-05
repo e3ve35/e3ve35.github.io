@@ -43,6 +43,5 @@ class Button {
     this.a.position(this.lx, this.ly);
     text(this.txt, this.x, this.y + 8);
     pop();
-    //this.a.position(this.x + 7, this.y - 42); // link
   }
 }

@@ -4,29 +4,34 @@ function setup() {
   textAlign(CENTER);
   frameRate(60);
 
-  let myCanvas = createCanvas(windowWidth, windowHeight);
+  let myCanvas = createCanvas(windowWidth - 10, windowHeight - 40);
   myCanvas.id("my-canvas");
 
   background(0);
 
-  for (let i = 0; i < 1500; i++) {
+  for (let i = 0; i < 1000; i++) {
     allWorms.push(new Worm(random(width), random(height)));
   }
 
+  // Welcome message
   conv0 = new Conversation([new Passcode()]);
   conv1 = new Conversation([
     new TXT("Hello", 50),
     new TXT("I'm Evelyn", 50),
     new TXT("I'm a programmer and a game developer", 120),
   ]);
+
+  // Nav menu
+  navY = height * 0.13;
   navs = [
-    new Nav("MY PROJECTS", width * 0.3, height * 0.1, true),
-    new Nav("CV", width * 0.5, height * 0.1),
-    new Nav("CONTACT ME", width * 0.7, height * 0.1),
+    new Nav("MY PROJECTS", width * 0.3, navY, true),
+    new Nav("CV", width * 0.5, navY),
+    new Nav("CONTACT ME", width * 0.7, navY),
   ];
 
-  projsX = width * 0.2;
-  projsY = 0.24;
+  // Create projects
+  projsX = width * 0.17;
+  projsY = 0.27;
   projsOff = 0.12;
   projs = [
     new Link(
@@ -69,9 +74,11 @@ function setup() {
     ),
   ];
 
+  // Create project descriptions
   projX = width * 0.53;
+  projY = height * 0.27;
   proj0 = [
-    new Desc("Overview", projX, height * 0.25, 25),
+    new Desc("Overview", projX, projY, 25),
     new Desc(
       "Random Island Generator is a Procedural Content Generation algorithm that outputs natural-looking game environments. The algorithm is designed to generate flexible and customizable maps.",
       projX,
@@ -84,7 +91,7 @@ function setup() {
   ];
 
   proj1 = [
-    new Desc("Overview", projX, height * 0.25, 25),
+    new Desc("Overview", projX, projY, 25),
     new Desc(
       "This is an open-world game inspired by Terraria. In the game, you can collect materials, craft furnitures, and interact with different items. A complete walkthrough of the game can be found below.",
       projX,
@@ -97,7 +104,7 @@ function setup() {
   ];
 
   proj2 = [
-    new Desc("Overview", projX, height * 0.25, 25),
+    new Desc("Overview", projX, projY, 25),
     new Desc(
       "This is an augmented reality garden simulation. The program allows users to plant a miniature garden through their webcam and view other essential parts of wildlife. The simulation makes use of speech recognition and AR trackers as user interaction. ",
       projX,
@@ -110,7 +117,7 @@ function setup() {
   ];
 
   proj3 = [
-    new Desc("Overview", projX, height * 0.25, 25),
+    new Desc("Overview", projX, projY, 25),
     new Desc(
       "This is a random maze generator & maze solver that is implemented using various maze generation algorithms including Sidewinder, Wilson's, Random Walk, Aldous-Broder, etc.",
       projX,
@@ -123,7 +130,7 @@ function setup() {
   ];
 
   proj4 = [
-    new Desc("Overview", projX, height * 0.25, 25),
+    new Desc("Overview", projX, projY, 25),
     new Desc(
       "This is a story-telling visualization system of the history of worldwide video games. It includes up to three views and supports linked highlighting and filters.",
       projX,
@@ -136,7 +143,7 @@ function setup() {
   ];
 
   proj5 = [
-    new Desc("Overview", projX, height * 0.25, 25),
+    new Desc("Overview", projX, projY, 25),
     new Desc(
       "Pixel Art Workshop is a website for users to create pixel arts. It supports login, saving, and cross-device saving features.",
       projX,
@@ -152,30 +159,14 @@ function setup() {
   lastHovered = 0;
 
   passcode = new Passcode();
-  // viewCV = createA("files/CV_evelyn.pdf", "CV", "_blank");
-  viewCV = createA(
-    "https://docs.google.com/document/d/1BcptW6lur3Te2B3zGoOZHS2SZ0z15W2j8YuBsHUR5bM/edit?usp=sharing",
-    "CV",
-    "_blank"
-  );
-  viewCV.position(width * 0.5 - 5, height * 0.1 - 42);
-  viewCV.style("z-index: 100");
-  // new Button(
-  //   "Click to Download",
-  //   "files/CV_evelyn.pdf",
-  //   width / 2,
-  //   height / 2,
-  //   width / 2 - 105,
-  //   height / 2 - 10
-  // );
 
   contacts = [new TXT("Email: zhixuanw@andrew.cmu.edu")];
 
   footer = new Footer(
-    "Evelyn Wu 2021",
+    "Evelyn Wu 2022",
     100,
     width / 2,
-    height * 0.93,
+    height * 0.99,
     false,
     20
   );

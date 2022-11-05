@@ -1,15 +1,10 @@
-let startFrame = 0;
-let startR = 100;
-let startO = 30;
-let fade = false;
-
 function startAnimation() {
   for (let i = 0; i < allWorms.length; i++) {
     allWorms[i].lightUp(width / 2, height / 2, startR);
   }
   startFrame++;
   startR += startO;
-  if (startR > width / 2 && fade == false) {
+  if (startR > width / 5 && fade == false) {
     startO *= -1;
     fade = true;
   }

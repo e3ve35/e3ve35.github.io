@@ -18,8 +18,6 @@ class Nav extends TXT {
     }
     fill(noiseR);
 
-    // noiseLocation += 0.1;
-
     if (!this.doneDisplayText) {
       if (this.txtFrame % 1 == 0) {
         this.displayedText += this.txtArray[this.txtIndex++];
@@ -48,6 +46,7 @@ class Nav extends TXT {
       mouseY > this.y - this.h * 2 &&
       mouseY < this.y + this.h
     ) {
+      cursor(HAND);
       return true;
     }
     return false;

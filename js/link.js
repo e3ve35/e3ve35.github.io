@@ -24,7 +24,6 @@ class Link extends TXT {
     }
 
     fill(noiseR);
-    //noiseLocation += 0.1;
 
     if (!this.doneDisplayText) {
       if (this.txtFrame % 1 == 0) {
@@ -49,6 +48,7 @@ class Link extends TXT {
       mouseY > this.y - this.h * 2 &&
       mouseY < this.y + this.h
     ) {
+      cursor(HAND);
       this.active = true;
       return true;
     }

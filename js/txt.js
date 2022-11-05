@@ -36,7 +36,7 @@ class TXT {
     push();
     textSize(this.fs);
     noiseR = map(noise(noiseLocation), 0, 1, 150, 255);
-    fill(noiseR);
+    fill(255);
     //noiseLocation += 0.1;
 
     if (!this.doneDisplayText) {

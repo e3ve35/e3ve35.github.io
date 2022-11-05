@@ -3,6 +3,16 @@ function draw() {
     background(0, 10);
     startAnimation();
   } else {
+    if (!linkCreated) {
+      viewCV = createA(
+        "https://docs.google.com/document/d/1BcptW6lur3Te2B3zGoOZHS2SZ0z15W2j8YuBsHUR5bM/edit?usp=sharing",
+        "CV",
+        "_blank"
+      );
+      viewCV.position(width * 0.5 - 5, height * 0.1 - 42);
+      viewCV.style("z-index: 100");
+      linkCreated = true;
+    }
     background(0, 50);
     displayWorms();
     if (!showContent && !showHome) {
@@ -11,6 +21,7 @@ function draw() {
     if (showContent && !showHome) {
       conv1.display();
     }
+    cursor(ARROW);
     if (showHome) {
       for (let i = 0; i < navs.length; i++) {
         navs[i].display();

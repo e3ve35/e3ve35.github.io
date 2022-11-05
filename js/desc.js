@@ -51,9 +51,7 @@ class Desc extends TXT {
     push();
     textAlign(LEFT);
     textSize(this.fs);
-    noiseR = map(noise(noiseLocation), 0, 1, 220, 255);
-    fill(noiseR, 150, 150);
-    //noiseLocation += 0.1;
+    fill(255);
 
     if (!this.doneDisplayText) {
       if (this.txtFrame % 1 == 0) {

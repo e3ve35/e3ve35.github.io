@@ -18,13 +18,13 @@ class Footer extends TXT {
     textAlign(CENTER);
     textSize(this.fs);
     if (this.active) {
-      noiseR = map(noise(this.noiseLocation), 0, 1, 220, 255);
+      noiseR = map(noise(this.noiseLocation), 0, 1, 200, 255);
       this.x = width * 0.15;
     } else {
       noiseR = map(noise(this.noiseLocation), 0, 1, 120, 200);
     }
     fill(noiseR);
-    this.noiseLocation += 0.1;
+    this.noiseLocation += 0.05;
 
     if (!this.doneDisplayText) {
       if (this.txtFrame % 1 == 0) {
