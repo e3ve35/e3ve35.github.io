@@ -77,12 +77,13 @@ function setup() {
   // Create project descriptions
   projX = width * 0.53;
   projY = height * 0.27;
+  descY = height * 0.33;
   proj0 = [
     new Desc("Overview", projX, projY, 25),
     new Desc(
       "Random Island Generator is a Procedural Content Generation algorithm that outputs natural-looking game environments. The algorithm is designed to generate flexible and customizable maps.",
       projX,
-      height * 0.3
+      descY
     ),
     new Button(
       "Random Island Generator",
@@ -95,7 +96,7 @@ function setup() {
     new Desc(
       "This is an open-world game inspired by Terraria. In the game, you can collect materials, craft furnitures, and interact with different items. A complete walkthrough of the game can be found below.",
       projX,
-      height * 0.3
+      descY
     ),
     new Button(
       "Terraria Inspired Game",
@@ -108,7 +109,7 @@ function setup() {
     new Desc(
       "This is an augmented reality garden simulation. The program allows users to plant a miniature garden through their webcam and view other essential parts of wildlife. The simulation makes use of speech recognition and AR trackers as user interaction. ",
       projX,
-      height * 0.3
+      descY
     ),
     new Button(
       "Garden on the Desk",
@@ -121,7 +122,7 @@ function setup() {
     new Desc(
       "This is a random maze generator & maze solver that is implemented using various maze generation algorithms including Sidewinder, Wilson's, Random Walk, Aldous-Broder, etc.",
       projX,
-      height * 0.3
+      descY
     ),
     new Button(
       "Maze Generator & Solver",
@@ -134,7 +135,7 @@ function setup() {
     new Desc(
       "This is a story-telling visualization system of the history of worldwide video games. It includes up to three views and supports linked highlighting and filters.",
       projX,
-      height * 0.3
+      descY
     ),
     new Button(
       "Evolution of Video Games",
@@ -147,7 +148,7 @@ function setup() {
     new Desc(
       "Pixel Art Workshop is a website for users to create pixel arts. It supports login, saving, and cross-device saving features.",
       projX,
-      height * 0.3
+      descY
     ),
     new Button(
       "Pixel Art Workshop 2020",

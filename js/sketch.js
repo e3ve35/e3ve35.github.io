@@ -3,13 +3,14 @@ function draw() {
     background(0, 10);
     startAnimation();
   } else {
+    // Create CV link for resume
     if (!linkCreated) {
       viewCV = createA(
         "https://docs.google.com/document/d/1BcptW6lur3Te2B3zGoOZHS2SZ0z15W2j8YuBsHUR5bM/edit?usp=sharing",
         "CV",
         "_blank"
       );
-      viewCV.position(width * 0.5 - 5, height * 0.1 - 42);
+      viewCV.position(width * 0.5 - 5, height * 0.1 - 20);
       viewCV.style("z-index: 100");
       linkCreated = true;
     }

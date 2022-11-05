@@ -2,8 +2,8 @@ class Button {
   constructor(
     txt,
     link,
-    x = width * 0.68,
-    y = height * 0.65,
+    x = width * 0.7,
+    y = height * 0.7,
     lx = width * 0.68 - 150,
     ly = height * 0.65 - 10,
     fs = 20

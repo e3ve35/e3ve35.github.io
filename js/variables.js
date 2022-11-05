@@ -10,7 +10,7 @@ let navs;
 let footer;
 
 // nav0
-let navY;
+let navY, descY;
 let projs;
 let proj0, proj1, proj2, proj3, proj4;
 let lastHovered;
