@@ -3,6 +3,15 @@ function draw() {
     background(0, 10);
     startAnimation();
   } else {
+    // Reponsive design
+    if (
+      innerWidth != currentScreenWidth ||
+      innerHeight != currentScreenHeight
+    ) {
+      console.log(innerWidth, innerHeight);
+      updateCurrentWH();
+      renderPage();
+    }
     // Create CV link for resume
     if (!linkCreated) {
       viewCV = createA(

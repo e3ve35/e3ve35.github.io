@@ -7,10 +7,14 @@ let conv0, conv1;
 // navbar
 let navs;
 
+// footer
 let footer;
 
+// current screen width, height
+let currentScreenWidth, currentScreenHeight;
+
 // nav0
-let navY, descY;
+let navY, descY, btnX, btnY;
 let projs;
 let proj0, proj1, proj2, proj3, proj4;
 let lastHovered;
@@ -34,3 +38,6 @@ let fade = false;
 
 // toggle link create
 let linkCreated = false;
+
+// Assets
+let myFont;
