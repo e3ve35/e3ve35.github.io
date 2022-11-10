@@ -2,7 +2,8 @@
 let noiseLocation = 0;
 
 // conversation
-let conv0, conv1;
+let conv0;
+let conv1;
 
 // navbar
 let navs;
@@ -10,8 +11,9 @@ let navs;
 // footer
 let footer;
 
-// current screen width, height
-let currentScreenWidth, currentScreenHeight;
+// current screen canvasW, height
+let currentScreenWidth;
+let currentScreenHeight;
 
 // nav0
 let navY, descY, btnX, btnY;
@@ -41,3 +43,9 @@ let linkCreated = false;
 
 // Assets
 let myFont;
+
+// Const
+const minWidth = 915;
+const minHeight = 720;
+let canvasW;
+let canvasH;

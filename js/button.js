@@ -1,15 +1,20 @@
 class Button {
   constructor(txt, link, x, y, fs = 20) {
-    this.txt = txt;
+    this.txt = "View Project";
     this.link = link;
     this.x = x;
     this.y = y;
-    this.w = textWidth(txt) + 90;
+    this.w = textWidth(this.txt) + 90;
     this.h = fs + 40;
     this.textX = x - this.w / 2 + 55;
     this.textY = y;
     this.a = createA(this.link, this.txt, "_blank");
     this.active = false;
+  }
+
+  updatePosition(x, y) {
+    this.x = x;
+    this.y = y;
   }
 
   setAvailability() {

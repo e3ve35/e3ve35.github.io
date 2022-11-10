@@ -9,11 +9,13 @@ class Desc extends TXT {
     this.doneDisplayText = true;
     let words = split(this.txt, " ");
     this.s = [];
-    this.lineWidth = width * 0.95 - this.x;
-    let numLines = this.w / this.lineWidth;
+    this.lineWidth = canvasW * 0.95 - this.x;
+    this.numLines = this.w / this.lineWidth;
     let i = 0;
     let j = 0;
-    while (i <= numLines + 1) {
+
+    // Adjust width dynamicly
+    while (i <= this.numLines + 1) {
       let currentW = 0;
       let line = [];
       let word = words[j];
@@ -29,6 +31,8 @@ class Desc extends TXT {
       append(this.s, newLine);
       i++;
     }
+
+    // Store lines in array
     this.txtArrays = [];
     this.txtIndexes = [];
     this.displayedTexts = [];
@@ -37,6 +41,12 @@ class Desc extends TXT {
       append(this.txtIndexes, 0);
       append(this.displayedTexts, "");
     }
+  }
+
+  updatePosition(x, y) {
+    this.x = x;
+    this.y = y;
+    this.lineWidth = canvasW * 0.95 - this.x;
   }
 
   display() {

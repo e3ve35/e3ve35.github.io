@@ -4,7 +4,13 @@ let loadingIndex = 0;
 let noiseR;
 
 class TXT {
-  constructor(txt, displayTime = 100, x = width / 2, y = height / 2, fs = 25) {
+  constructor(
+    txt,
+    displayTime = 100,
+    x = canvasW / 2,
+    y = height / 2,
+    fs = 25
+  ) {
     this.txt = txt;
     this.x = x;
     this.y = y;
@@ -65,7 +71,7 @@ class TXT {
 */
 class Passcode extends TXT {
   constructor() {
-    super("Enter a Passcode To View:", 100, width / 2, height / 2, 25);
+    super("Enter a Passcode To View:", 100, canvasW / 2, height / 2, 25);
     this.input = createInput();
     this.input.id("passcode");
     this.code = "GUEST";
@@ -89,7 +95,7 @@ class Passcode extends TXT {
       let l = loading[loadingIndex];
       push();
       fill(noiseR, 90, 90, 50);
-      text(l, width / 2, height / 2 + 170);
+      text(l, canvasW / 2, height / 2 + 170);
       pop();
       if (loadingFrame % 10 == 0) {
         loadingIndex++;
@@ -103,7 +109,7 @@ class Passcode extends TXT {
     let w = textWidth(this.txt);
     let d = 40;
     let m = 20;
-    let x = width / 2 - w / 2 + m;
+    let x = canvasW / 2 - w / 2 + m;
     let y = height / 2 + 30;
     let inputX = x + 5;
     let rectW = (w - d * (n - 1) - m * 2) / n;

@@ -9,6 +9,7 @@ function draw() {
       innerHeight != currentScreenHeight
     ) {
       console.log(innerWidth, innerHeight);
+      console.log("canvas: ", canvasW, canvasH);
       updateCurrentWH();
       renderPage();
     }
@@ -19,7 +20,7 @@ function draw() {
         "CV",
         "_blank"
       );
-      viewCV.position(width * 0.5 - 5, height * 0.1 - 20);
+      viewCV.position(canvasW * 0.5 - 5, canvasH * 0.1 - 20);
       viewCV.style("z-index: 100");
       linkCreated = true;
     }

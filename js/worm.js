@@ -30,11 +30,11 @@ class Worm {
     this.y += this.ySpeed;
 
     // wrap around
-    if (this.x > width) {
+    if (this.x > canvasW) {
       this.x = 0;
     }
     if (this.x < 0) {
-      this.x = width;
+      this.x = canvasW;
     }
     if (this.y > height) {
       this.y = 0;
@@ -63,11 +63,11 @@ class Worm {
     this.y += this.ySpeed;
 
     // wrap around
-    if (this.x > width) {
+    if (this.x > canvasW) {
       this.x = 0;
     }
     if (this.x < 0) {
-      this.x = width;
+      this.x = canvasW;
     }
     if (this.y > height) {
       this.y = 0;

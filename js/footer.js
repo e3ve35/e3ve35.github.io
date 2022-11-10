@@ -19,7 +19,7 @@ class Footer extends TXT {
     textSize(this.fs);
     if (this.active) {
       noiseR = map(noise(this.noiseLocation), 0, 1, 200, 255);
-      this.x = width * 0.15;
+      this.x = canvasW * 0.15;
     } else {
       noiseR = map(noise(this.noiseLocation), 0, 1, 120, 200);
     }
