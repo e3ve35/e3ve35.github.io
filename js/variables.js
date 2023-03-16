@@ -49,3 +49,5 @@ const minWidth = 915;
 const minHeight = 720;
 let canvasW;
 let canvasH;
+
+let theme = "#8C8CDC";

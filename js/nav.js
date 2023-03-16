@@ -33,7 +33,7 @@ class Nav extends TXT {
     } else {
       text(this.txt, this.x, this.y - 30);
     }
-    stroke(noiseR, 90, 90, 50);
+    stroke(theme);
     strokeWeight(3);
     if (this.active) {
       let sWidth = textWidth(this.displayedText);

@@ -28,7 +28,7 @@ class TXT {
   thinking() {
     let l = loading[loadingIndex];
     push();
-    fill(noiseR, 90, 90, 50);
+    fill(90, 90, noiseR, 150);
     text(l, this.x, this.y + 50);
     pop();
     if (loadingFrame % 10 == 0) {
@@ -43,8 +43,6 @@ class TXT {
     textSize(this.fs);
     noiseR = map(noise(noiseLocation), 0, 1, 150, 255);
     fill(255);
-    //noiseLocation += 0.1;
-
     if (!this.doneDisplayText) {
       if (this.txtFrame % 1 == 0) {
         this.displayedText += this.txtArray[this.txtIndex++];
@@ -55,7 +53,7 @@ class TXT {
     } else {
       text(this.txt, this.x, this.y - 30);
     }
-    stroke(noiseR, 90, 90, 50);
+    stroke(90, 90, noiseR, 150);
     strokeWeight(3);
     let sWidth = textWidth(this.displayedText);
     let lineX = this.x - sWidth / 2;

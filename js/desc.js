@@ -61,6 +61,7 @@ class Desc extends TXT {
     push();
     textAlign(LEFT);
     textSize(this.fs);
+
     fill(255);
 
     if (!this.doneDisplayText) {

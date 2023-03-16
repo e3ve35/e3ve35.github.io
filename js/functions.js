@@ -7,7 +7,7 @@ function startAnimation() {
   }
   startFrame++;
   startR += startO;
-  if (startR > canvasW / 5 && fade == false) {
+  if (startR > canvasW / 3 && fade == false) {
     startO *= -1;
     fade = true;
   }
@@ -174,7 +174,7 @@ function createProjects() {
     ),
   ];
 
-  projDesc = [proj0, proj1, proj2, proj3, proj4, proj5];
+  projDesc = [proj0, proj2, proj3, proj4, proj5];
 }
 
 /**
@@ -184,7 +184,7 @@ function renderProjects() {
   // Create projects
   projsX = canvasW * 0.17;
   projsY = 0.27;
-  projsOff = 0.12;
+  projsOff = 0.14;
   projs = [
     new Link(
       "Random Island Generator",
@@ -194,35 +194,29 @@ function renderProjects() {
       true
     ),
     new Link(
-      "Terraria Inspired Game",
-      "http://random",
-      projsX,
-      canvasH * (projsY + projsOff * 1)
-    ),
-    new Link(
       "Garden on the Desk",
       "http://random",
       projsX,
-      canvasH * (projsY + projsOff * 2),
+      canvasH * (projsY + projsOff * 1),
       true
     ),
     new Link(
       "Maze Generator & Solver",
       "http://random",
       projsX,
-      canvasH * (projsY + projsOff * 3)
+      canvasH * (projsY + projsOff * 2)
     ),
     new Link(
       "Evolution of Video Games",
       "http://random",
       projsX,
-      canvasH * (projsY + projsOff * 4)
+      canvasH * (projsY + projsOff * 3)
     ),
     new Link(
       "Pixel Art Workshop 2020",
       "http://random",
       projsX,
-      canvasH * (projsY + projsOff * 5)
+      canvasH * (projsY + projsOff * 4)
     ),
   ];
 }
@@ -311,7 +305,7 @@ function renderPage() {
 
   createProjects();
 
-  projDesc = [proj0, proj1, proj2, proj3, proj4, proj5];
+  projDesc = [proj0, proj2, proj3, proj4, proj5];
 
   passcode = new Passcode();
 

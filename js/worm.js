@@ -6,7 +6,7 @@ class Worm {
     this.x = x;
     this.y = y;
     this.size = 3;
-    this.color = random(10, 5);
+    this.color = random(10, 40);
     this.pickNewSpeed();
     this.timeToMoveInThisDirection = int(random(20, 60));
     this.timeMoving = 0;
@@ -17,7 +17,7 @@ class Worm {
 
     // light up effect
     if (d < r) {
-      fill(200);
+      fill(random(0, 100), random(0, 100), random(0, 255));
     } else {
       fill(this.color);
     }
@@ -53,6 +53,7 @@ class Worm {
 
   moveAndDisplay() {
     // light up effect
+    this.lightUp(mouseX, mouseY, 100);
     fill(this.color);
 
     noStroke();

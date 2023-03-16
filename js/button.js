@@ -30,11 +30,11 @@ class Button {
     rectMode(CENTER);
     textAlign(CENTER);
     textSize(this.fs);
-    stroke(220, 150, 150);
+    stroke(theme);
     strokeWeight(2.5);
     noFill();
     rect(this.x, this.y, this.w, this.h, 5);
-    fill(220, 150, 150);
+    fill(255);
     noStroke();
     this.a.position(this.textX, this.textY);
     text(this.txt, this.x, this.y + 8);
