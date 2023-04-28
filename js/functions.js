@@ -87,13 +87,13 @@ function createProjects() {
   proj0 = [
     new Desc("Overview", projX, projY, 25),
     new Desc(
-      "Random Island Generator is a Procedural Content Generation algorithm that outputs natural-looking game environments. The algorithm is designed to generate flexible and customizable maps.",
+      "This is a website for users to create music compositions through visual interactions. My motivation for starting this project was to enhance the user experience of computer music composition and make it more accessible for everyone.",
       projX,
       descY
     ),
     new Button(
-      "Random Island Generator",
-      "https://github.com/zhixuanevelynwu/random_island_generator",
+      "GOMI",
+      "https://github.com/zhixuanevelynwu/GOMI#readme",
       btnX,
       btnY
     ),
@@ -102,13 +102,13 @@ function createProjects() {
   proj1 = [
     new Desc("Overview", projX, projY, 25),
     new Desc(
-      "This is an open-world game inspired by Terraria. In the game, you can collect materials, craft furnitures, and interact with different items. A complete walkthrough of the game can be found below.",
+      "This is a Procedural Content Generation algorithm that outputs natural-looking game environments. The algorithm is designed to generate flexible and customizable maps.",
       projX,
       descY
     ),
     new Button(
-      "Terraria Inspired Game",
-      "https://drive.google.com/file/d/14A3ED_Bb8Y9gSPYR-Q-LoUoXUU_xSChf/view?usp=sharing",
+      "Random Island Generator",
+      "https://github.com/zhixuanevelynwu/random_island_generator",
       btnX,
       btnY
     ),
@@ -162,7 +162,7 @@ function createProjects() {
   proj5 = [
     new Desc("Overview", projX, projY, 25),
     new Desc(
-      "Pixel Art Workshop is a website for users to create pixel arts. It supports login, saving, and cross-device saving features.",
+      "This is a website for users to create pixel arts. It supports login, saving, and cross-device saving features.",
       projX,
       descY
     ),
@@ -174,7 +174,7 @@ function createProjects() {
     ),
   ];
 
-  projDesc = [proj0, proj2, proj3, proj4, proj5];
+  projDesc = [proj0, proj1, proj2, proj3, proj4, proj5];
 }
 
 /**
@@ -184,39 +184,46 @@ function renderProjects() {
   // Create projects
   projsX = canvasW * 0.17;
   projsY = 0.27;
-  projsOff = 0.14;
+  projsOff = 0.12;
   projs = [
     new Link(
-      "Random Island Generator",
-      "http://random",
+      "Graphical Online Music Interface",
+      "https://33v335.com/music/",
       projsX,
       canvasH * (projsY + projsOff * 0),
       true
     ),
     new Link(
-      "Garden on the Desk",
+      "Random Island Generator",
       "http://random",
       projsX,
       canvasH * (projsY + projsOff * 1),
       true
     ),
     new Link(
-      "Maze Generator & Solver",
+      "Garden on the Desk",
       "http://random",
       projsX,
-      canvasH * (projsY + projsOff * 2)
+      canvasH * (projsY + projsOff * 2),
+      true
     ),
     new Link(
-      "Evolution of Video Games",
+      "Maze Generator & Solver",
       "http://random",
       projsX,
       canvasH * (projsY + projsOff * 3)
     ),
     new Link(
-      "Pixel Art Workshop 2020",
+      "Evolution of Video Games",
       "http://random",
       projsX,
       canvasH * (projsY + projsOff * 4)
+    ),
+    new Link(
+      "Pixel Art Workshop 2020",
+      "http://random",
+      projsX,
+      canvasH * (projsY + projsOff * 5)
     ),
   ];
 }
@@ -256,10 +263,10 @@ function createPage() {
 
   passcode = new Passcode();
 
-  contacts = [new TXT("Email: zhixuanw@andrew.cmu.edu")];
+  contacts = [new TXT("Email: zhixuanw@cs.cmu.edu")];
 
   footer = new Footer(
-    "Evelyn Wu 2022",
+    "Evelyn Wu 2023",
     100,
     canvasW / 2,
     canvasH * 0.95,
@@ -305,14 +312,14 @@ function renderPage() {
 
   createProjects();
 
-  projDesc = [proj0, proj2, proj3, proj4, proj5];
+  projDesc = [proj0, proj2, proj3, proj4, proj5, proj6];
 
   passcode = new Passcode();
 
   contacts = [new TXT("Email: zhixuanw@andrew.cmu.edu")];
 
   footer = new Footer(
-    "Evelyn Wu 2022",
+    "Evelyn Wu 2023",
     100,
     canvasW / 2,
     canvasH * 0.95,
