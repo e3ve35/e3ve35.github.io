@@ -83,7 +83,7 @@ function createProjects() {
   projY = canvasH * 0.27;
   descY = canvasH * 0.33;
   btnX = canvasW * 0.7;
-  btnY = canvasH * 0.7;
+  btnY = canvasH * 0.75;
   proj0 = [
     new Desc("Overview", projX, projY, 25),
     new Desc(
@@ -187,7 +187,7 @@ function renderProjects() {
   projsOff = 0.12;
   projs = [
     new Link(
-      "Graphical Online Music Interface",
+      "Graphical Music Interface",
       "https://33v335.com/music/",
       projsX,
       canvasH * (projsY + projsOff * 0),
@@ -312,7 +312,7 @@ function renderPage() {
 
   createProjects();
 
-  projDesc = [proj0, proj2, proj3, proj4, proj5, proj6];
+  projDesc = [proj0, proj1, proj2, proj3, proj4, proj5];
 
   passcode = new Passcode();
 
