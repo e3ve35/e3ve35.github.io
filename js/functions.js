@@ -87,7 +87,7 @@ function createProjects() {
   proj0 = [
     new Desc("Overview", projX, projY, 25),
     new Desc(
-      "This is a website for users to create music compositions through visual interactions. My motivation for starting this project was to enhance the user experience of computer music composition and make it more accessible for everyone.",
+      "This is a website for users to create music compositions through visual interactions. My motivation for this project was to enhance the experience of computer music composition and make it more accessible for everyone.",
       projX,
       descY
     ),
