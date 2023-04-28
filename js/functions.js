@@ -316,7 +316,7 @@ function renderPage() {
 
   passcode = new Passcode();
 
-  contacts = [new TXT("Email: zhixuanw@andrew.cmu.edu")];
+  contacts = [new TXT("Email: zhixuanw@cs.cmu.edu")];
 
   footer = new Footer(
     "Evelyn Wu 2023",
