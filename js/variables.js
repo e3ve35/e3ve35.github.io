@@ -45,7 +45,7 @@ let linkCreated = false;
 let myFont;
 
 // Const
-const minWidth = 950;
+const minWidth = 1000;
 const minHeight = 720;
 let canvasW;
 let canvasH;
