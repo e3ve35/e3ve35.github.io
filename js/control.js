@@ -2,7 +2,6 @@ function keyPressed() {
   if (showHome == false) {
     showHome = true;
   }
-  console.log(keyCode);
   if (showContent) {
     if (keyIsDown(13)) {
       startAnimation();

@@ -38,6 +38,11 @@ class TXT {
     loadingFrame++;
   }
 
+  updatePosition(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+
   display() {
     push();
     textSize(this.fs);
@@ -60,89 +65,5 @@ class TXT {
     line(lineX, this.y, lineX + sWidth, this.y);
     pop();
     this.thinking();
-  }
-}
-
-/*
-  THIS ISN'T AN ACTUAL PASSCODE SYSTEM!!!!!!
-  JUST HERE FOR FUN :))
-*/
-class Passcode extends TXT {
-  constructor() {
-    super("Enter a Passcode To View:", 100, canvasW / 2, height / 2, 25);
-    this.input = createInput();
-    this.input.id("passcode");
-    this.code = "GUEST";
-  }
-
-  checkCode(str) {
-    if (str === this.code) {
-      showContent = true;
-    } else {
-      console.log("Your Passcode is " + this.code);
-    }
-  }
-
-  display() {
-    super.display();
-    if (this.doneDisplayText) this.passcodeBox(5);
-  }
-
-  thinking() {
-    if (this.doneDisplayText) {
-      let l = loading[loadingIndex];
-      push();
-      fill(noiseR, 90, 90, 50);
-      text(l, canvasW / 2, height / 2 + 170);
-      pop();
-      if (loadingFrame % 10 == 0) {
-        loadingIndex++;
-        loadingIndex = loadingIndex % loading.length;
-      }
-      loadingFrame++;
-    }
-  }
-
-  passcodeBox(n) {
-    let w = textWidth(this.txt);
-    let d = 40;
-    let m = 20;
-    let x = canvasW / 2 - w / 2 + m;
-    let y = height / 2 + 30;
-    let inputX = x + 5;
-    let rectW = (w - d * (n - 1) - m * 2) / n;
-    let rectH = (rectW / 4) * 5;
-    let rectO = rectW + d;
-    let txtX = x + rectW / 2;
-    let txtY = y + rectH / 2 + 8;
-    let txtO = rectW + d;
-
-    push();
-
-    this.input.position(inputX, y + 5);
-    this.input.size(w - m * 2, rectH);
-    let inputVal = trim(this.input.value());
-    let userInput = split(inputVal, "");
-    if (userInput.length > n) {
-      this.input.value(userInput[userInput.length - 1]);
-    }
-    if (userInput.length == n) {
-      this.checkCode(inputVal);
-    }
-    fill(noiseR, 90, 90, 50);
-    noStroke();
-    for (let i = 0; i < Math.min(userInput.length, n); i++) {
-      text(userInput[i], txtX, txtY);
-      txtX += txtO;
-    }
-    noFill();
-    stroke(noiseR, 90, 90, 50);
-    strokeWeight(3);
-    for (let i = 0; i < n; i++) {
-      rect(x, y, rectW, rectH);
-      x += rectO;
-    }
-
-    pop();
   }
 }

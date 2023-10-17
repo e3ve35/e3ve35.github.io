@@ -8,11 +8,6 @@ class Nav extends TXT {
     this.active = active;
   }
 
-  updatePosition(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-
   display() {
     push();
     textSize(25);

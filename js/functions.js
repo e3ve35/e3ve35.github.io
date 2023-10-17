@@ -27,7 +27,7 @@ function displayWorms() {
  * @param {*} i
  */
 function disableLink(i) {
-  let p = this.projDesc[i][this.projDesc[i].length - 1];
+  let p = projDesc[i][projDesc[i].length - 1];
   p.active = false;
   p.setAvailability();
 }
@@ -36,8 +36,8 @@ function disableLink(i) {
  * Unactivate link
  */
 function disableLinks() {
-  for (let i = 0; i < this.projDesc.length; i++) {
-    let p = this.projDesc[i][this.projDesc[i].length - 1];
+  for (let i = 0; i < projDesc.length; i++) {
+    let p = projDesc[i][projDesc[i].length - 1];
     p.active = false;
     p.setAvailability();
   }
@@ -48,7 +48,7 @@ function disableLinks() {
  * @param {*} i
  */
 function enableLink(i) {
-  let p = this.projDesc[i][this.projDesc[i].length - 1];
+  let p = projDesc[i][projDesc[i].length - 1];
   p.active = true;
   p.setAvailability();
 }
@@ -57,22 +57,11 @@ function enableLink(i) {
  * Make all links clickable
  */
 function enableLinks() {
-  for (let i = 0; i < this.projDesc.length; i++) {
-    let p = this.projDesc[i][this.projDesc[i].length - 1];
+  for (let i = 0; i < projDesc.length; i++) {
+    let p = projDesc[i][projDesc[i].length - 1];
     p.active = true;
     p.setAvailability();
   }
-}
-
-/**
- * Updates current scale to inner scale
- */
-function updateCurrentWH() {
-  canvasW = Math.max(innerWidth - 10, minWidth);
-  canvasH = Math.max(innerHeight - 40, minHeight);
-  resizeCanvas(canvasW, canvasH);
-  currentScreenWidth = innerWidth;
-  currentScreenHeight = innerHeight;
 }
 
 /**
@@ -181,7 +170,6 @@ function createProjects() {
  * Render all projects overview
  */
 function renderProjects() {
-  // Create projects
   projsX = canvasW * 0.17;
   projsY = 0.27;
   projsOff = 0.12;
@@ -240,7 +228,6 @@ function createPage() {
   background(0);
 
   // Welcome message
-  conv0 = new Conversation([new Passcode()]);
   conv1 = new Conversation([
     new TXT("Hello", 50),
     new TXT("I'm Evelyn", 50),
@@ -261,9 +248,7 @@ function createPage() {
 
   lastHovered = 0;
 
-  passcode = new Passcode();
-
-  contacts = [new TXT("Email: zhixuanw@cs.cmu.edu")];
+  contacts = new TXT("Email: zhixuanw@cs.cmu.edu");
 
   footer = new Footer(
     "Evelyn Wu 2023",
@@ -284,16 +269,7 @@ function renderPage() {
   textSize(25);
   textAlign(CENTER);
   frameRate(60);
-
   background(0);
-
-  // Welcome message
-  conv0 = new Conversation([new Passcode()]);
-  conv1 = new Conversation([
-    new TXT("Hello", 50),
-    new TXT("I'm Evelyn", 50),
-    new TXT("I'm a programmer and a game developer", 120),
-  ]);
 
   // Reposition Nav menu
   navY = canvasH * 0.13;
@@ -301,30 +277,28 @@ function renderPage() {
   navs[1].updatePosition(canvasW * 0.5, navY);
   navs[2].updatePosition(canvasW * 0.7, navY);
 
-  renderProjects(canvasW, canvasH);
+  // Reposition proj links
+  let linkX = canvasW * 0.17;
+  let linkY = 0.27;
+  let linkOff = 0.12;
+  projs.map((link, i) => {
+    link.updatePosition(linkX, canvasH * (linkY + linkOff * i));
+  });
 
   // Reposition project descriptions
-  projX = canvasW * 0.53;
-  projY = canvasH * 0.27;
+  let projX = canvasW * 0.53;
+  let projY = canvasH * 0.27;
   descY = canvasH * 0.33;
   btnX = canvasW * 0.7;
-  btnY = canvasH * 0.7;
+  btnY = canvasH * 0.75;
 
-  createProjects();
+  projDesc.map((desc) => {
+    desc[0].updatePosition(projX, projY);
+    desc[1].updatePosition(projX, descY);
+    desc[2].updatePosition(btnX, btnY);
+  });
 
-  projDesc = [proj0, proj1, proj2, proj3, proj4, proj5];
-
-  passcode = new Passcode();
-
-  contacts = [new TXT("Email: zhixuanw@cs.cmu.edu")];
-
-  footer = new Footer(
-    "Evelyn Wu 2023",
-    100,
-    canvasW / 2,
-    canvasH * 0.95,
-    false,
-    20
-  );
+  contacts.updatePosition(canvasW / 2, canvasH / 2);
+  footer.updatePosition(canvasW / 2, canvasH * 0.95);
   if (linkCreated) viewCV.position(canvasW * 0.5 - 5, canvasH * 0.1 - 20);
 }

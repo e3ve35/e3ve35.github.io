@@ -19,14 +19,14 @@ let currentScreenHeight;
 let navY, descY, btnX, btnY;
 let projs;
 let proj0, proj1, proj2, proj3, proj4;
+let projDesc;
 let lastHovered;
 
 // nav1
-let passcode;
 let viewCV;
 
 // nav2
-let contactsp;
+let contacts;
 
 // control
 let showContent = true,
@@ -45,7 +45,7 @@ let linkCreated = false;
 let myFont;
 
 // Const
-const minWidth = 915;
+const minWidth = 950;
 const minHeight = 720;
 let canvasW;
 let canvasH;

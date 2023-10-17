@@ -1,18 +1,66 @@
+/**
+ * Load assets
+ */
+function preload() {
+  myFont = loadFont("Share_Tech_Mono/ShareTechMono-Regular.ttf");
+}
+
+/**
+ * Don't want to update canvas WH continuously while user resizes the window.
+ * So we use debounce to optimize this.
+ */
+function debounce(func, wait) {
+  let timeout;
+  return function () {
+    const context = this,
+      args = arguments;
+    clearTimeout(timeout);
+    timeout = setTimeout(function () {
+      func.apply(context, args);
+    }, wait);
+  };
+}
+
+/**
+ * Updates current scale to inner scale
+ */
+function updateCurrentWH() {
+  canvasW = Math.max(innerWidth - 10, minWidth);
+  canvasH = Math.max(innerHeight - 40, minHeight);
+  resizeCanvas(canvasW, canvasH);
+  currentScreenWidth = innerWidth;
+  currentScreenHeight = innerHeight;
+  renderPage();
+}
+
+/**
+ * Initialize the page
+ */
+function setup() {
+  let myCanvas = createCanvas(innerWidth - 10, innerHeight - 40);
+
+  canvasW = Math.max(innerWidth - 10, minWidth);
+  canvasH = Math.max(innerHeight - 40, minHeight);
+  resizeCanvas(canvasW, canvasH);
+  currentScreenWidth = innerWidth;
+  currentScreenHeight = innerHeight;
+
+  myCanvas.id("my-canvas");
+  currentScreenWidth = innerWidth;
+  currentScreenHeight = innerHeight;
+  for (let i = 0; i < 1000; i++) {
+    allWorms.push(new Worm(random(innerWidth), random(innerHeight)));
+  }
+  createPage();
+  let debouncedUpdate = debounce(updateCurrentWH, 150);
+  window.addEventListener("resize", debouncedUpdate);
+}
+
 function draw() {
   if (startR > 0) {
     background(0, 10);
     startAnimation();
   } else {
-    // Reponsive design
-    if (
-      innerWidth != currentScreenWidth ||
-      innerHeight != currentScreenHeight
-    ) {
-      console.log(innerWidth, innerHeight);
-      console.log("canvas: ", canvasW, canvasH);
-      updateCurrentWH();
-      renderPage();
-    }
     // Create CV link for resume
     if (!linkCreated) {
       viewCV = createA(
@@ -64,10 +112,7 @@ function draw() {
         }
       } else if (navs[2].active) {
         disableLinks();
-
-        for (let i = 0; i < contacts.length; i++) {
-          contacts[i].display();
-        }
+        contacts.display();
       }
     }
     footer.display();
