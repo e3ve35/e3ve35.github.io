@@ -21,6 +21,14 @@ function debounce(func, wait) {
   };
 }
 
+// Only debounce on non-mobile devices
+function isMobileDevice() {
+  return (
+    typeof window.orientation !== "undefined" ||
+    navigator.userAgent.indexOf("IEMobile") !== -1
+  );
+}
+
 /**
  * Updates current scale to inner scale
  */
@@ -52,8 +60,10 @@ function setup() {
     allWorms.push(new Worm(random(innerWidth), random(innerHeight)));
   }
   createPage();
-  let debouncedUpdate = debounce(updateCurrentWH, 150);
-  window.addEventListener("resize", debouncedUpdate);
+  if (!isMobileDevice()) {
+    let debouncedUpdate = debounce(updateCurrentWH, 150);
+    window.addEventListener("resize", debouncedUpdate);
+  }
 }
 
 function draw() {

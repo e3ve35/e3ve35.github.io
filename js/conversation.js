@@ -4,6 +4,12 @@ class Conversation {
     this.convIndex = 0;
   }
 
+  updatePosition(x, y) {
+    this.conv.map((c) => {
+      c.updatePosition(x, y);
+    });
+  }
+
   display() {
     let c = this.conv[this.convIndex];
     c.display();

@@ -271,6 +271,9 @@ function renderPage() {
   frameRate(60);
   background(0);
 
+  // Reposition welcome message
+  conv1.updatePosition(canvasW / 2, canvasH / 2);
+
   // Reposition Nav menu
   navY = canvasH * 0.13;
   navs[0].updatePosition(canvasW * 0.3, navY);
