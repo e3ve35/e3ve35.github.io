@@ -74,8 +74,9 @@ function draw() {
     // Create CV link for resume
     if (!linkCreated) {
       viewCV = createA(
-        "https://docs.google.com/document/d/1BcptW6lur3Te2B3zGoOZHS2SZ0z15W2j8YuBsHUR5bM/edit?usp=sharing",
-        "CV",
+        // "https://docs.google.com/document/d/1BcptW6lur3Te2B3zGoOZHS2SZ0z15W2j8YuBsHUR5bM/edit?usp=sharing",
+        "./resume.pdf",
+        "RESUME",
         "_blank"
       );
       viewCV.position(canvasW * 0.5 - 5, canvasH * 0.1 - 20);

@@ -238,7 +238,7 @@ function createPage() {
   navY = canvasH * 0.13;
   navs = [
     new Nav("MY PROJECTS", canvasW * 0.3, navY, true),
-    new Nav("CV", canvasW * 0.5, navY),
+    new Nav("RESUME", canvasW * 0.5, navY),
     new Nav("CONTACT ME", canvasW * 0.7, navY),
   ];
 
@@ -248,7 +248,7 @@ function createPage() {
 
   lastHovered = 0;
 
-  contacts = new TXT("Email: zhixuanw@cs.cmu.edu");
+  contacts = new TXT("Email: zhixuanevelynwu@gmail.com");
 
   footer = new Footer(
     "Evelyn Wu 2023",
