@@ -82,7 +82,7 @@ function createProjects() {
     ),
     new Button(
       "GOMI",
-      "https://github.com/zhixuanevelynwu/GOMI#readme",
+      "https://github.com/e3ve35/GOMI#readme",
       btnX,
       btnY
     ),
@@ -97,7 +97,7 @@ function createProjects() {
     ),
     new Button(
       "Random Island Generator",
-      "https://github.com/zhixuanevelynwu/random_island_generator",
+      "https://github.com/e3ve35/random_island_generator",
       btnX,
       btnY
     ),
@@ -127,7 +127,7 @@ function createProjects() {
     ),
     new Button(
       "Maze Generator & Solver",
-      "https://github.com/zhixuanevelynwu/maze_generator",
+      "https://github.com/e3ve35/maze_generator",
       btnX,
       btnY
     ),
@@ -142,7 +142,7 @@ function createProjects() {
     ),
     new Button(
       "Evolution of Video Games",
-      "https://github.com/zhixuanevelynwu/game-evolution-datavis",
+      "https://github.com/e3ve35/game-evolution-datavis",
       btnX,
       btnY
     ),
@@ -157,7 +157,7 @@ function createProjects() {
     ),
     new Button(
       "Pixel Art Workshop 2020",
-      "https://github.com/zhixuanevelynwu/pixel_workshop",
+      "https://github.com/e3ve35/pixel_workshop",
       btnX,
       btnY
     ),
@@ -176,7 +176,7 @@ function renderProjects() {
   projs = [
     new Link(
       "Graphical Music Interface",
-      "https://33v335.com/music/",
+      "https://e3ve35.github.io/GOMI/",
       projsX,
       canvasH * (projsY + projsOff * 0),
       true
