@@ -82,7 +82,7 @@ function createProjects() {
     ),
     new Button(
       "GOMI",
-      "https://github.com/e3ve35/GOMI#readme",
+      "https://drive.google.com/file/d/187dM0Xr1PB2zVEv9FvdQaDkEEt5CKbMA/view?usp=sharing",
       btnX,
       btnY
     ),
