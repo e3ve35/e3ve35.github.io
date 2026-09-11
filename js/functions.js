@@ -248,7 +248,7 @@ function createPage() {
 
   lastHovered = 0;
 
-  contacts = new TXT("Email: zhixuanevelynwu@gmail.com");
+  contacts = new TXT("Email: e3ve35@gmail.com");
 
   footer = new Footer(
     "Evelyn Wu 2023",
