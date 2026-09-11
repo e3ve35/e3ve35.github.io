@@ -251,7 +251,7 @@ function createPage() {
   contacts = new TXT("Email: e3ve35@gmail.com");
 
   footer = new Footer(
-    "Evelyn Wu 2023",
+    `Evelyn Wu ${new Date().getFullYear()}`,
     100,
     canvasW / 2,
     canvasH * 0.95,
