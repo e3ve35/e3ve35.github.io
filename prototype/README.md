@@ -1,6 +1,6 @@
 # Unlikely Garden · study 001
 
-A local aesthetic prototype for Evelyn Wu: 18 procedural chrome lilies, colored studio reflections, FM bells, and localized visual glitches. The existing portfolio at the repository root is unchanged.
+A garden and portfolio for Evelyn Wu: 18 procedural chrome lilies, colored studio reflections, FM bells, and localized visual glitches. Garden, Work, About, and Contact views share the same scene. The existing portfolio at the repository root is unchanged while this version is developed at `/prototype/`.
 
 ## Preview
 
@@ -20,6 +20,7 @@ Open http://127.0.0.1:4173/prototype/. No package installation or build is neede
 - **Replant** changes the flowers' proportions, tilt, and placement while preserving their musical identities.
 - **Pause motion** disables wind, parallax, animated deformation, and glitch bursts. The operating system's reduced-motion preference is respected initially and when it changes.
 - Audio is muted and active voices are released while the tab is hidden.
+- The navigation links switch views without reloading the garden. Hash URLs support direct links and browser back/forward. Opening a portfolio view rests the audio and rendering until you return to the garden.
 
 ## Implementation
 
@@ -27,9 +28,10 @@ Open http://127.0.0.1:4173/prototype/. No package installation or build is neede
 - `audio.js`: four shared stereo voice pools, eight simultaneous voices maximum, per-flower cooldown, D minor pentatonic notes, delay, reverb, conservative gain, and a limiter. Synthesis runs locally; there are no recorded samples or network audio requests.
 - `main.js`: seeded planting, synthetic environment lighting, scene setup, interactions, and one lightweight postprocessing pass. This is an aesthetic study, not a complete portfolio migration.
 - `style.css`: responsive HTML overlay, independent of the WebGL canvas.
+- `site.js` and `portfolio.css`: accessible portfolio navigation, a six-project accordion, an introduction, the existing résumé link, and contact details. All project descriptions and primary project links were migrated from the original `js/functions.js`; the résumé URL comes from `js/sketch.js`.
 
-The scene requires WebGL 2. Initialization failure presents a readable fallback. No tracking, microphone access, backend, or deployment is involved.
+The scene requires WebGL 2. Initialization failure presents a readable fallback; the HTML portfolio remains usable. No tracking, microphone access, or backend is involved.
 
 ## Next design decisions
 
-Judge the flower silhouette, chrome reflections, field composition, glitch intensity, and sound character before expanding the scene or migrating portfolio content. Monthly species presets can follow once those are settled.
+Judge the portfolio presentation alongside the flower silhouette, chrome reflections, field composition, glitch intensity, and sound character before expanding the scene. Monthly species presets can follow once those are settled.

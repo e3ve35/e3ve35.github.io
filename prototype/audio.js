@@ -64,7 +64,7 @@ export class GardenAudio {
   }
 
   play(id, screenPosition = 0.5, velocity = 0.55) {
-    if (!this.enabled || !this.ready || document.hidden) return false;
+    if (!this.enabled || !this.ready || document.hidden || document.body.dataset.page !== 'garden') return false;
     const now = performance.now();
     if (now - this.lastPlayed < 100 || now - (this.lastByFlower.get(id) ?? -Infinity) < 550) return false;
     if (this.voices.reduce((count, synth) => count + synth.activeVoices, 0) >= 8) return false;

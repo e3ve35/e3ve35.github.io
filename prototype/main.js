@@ -1,3 +1,4 @@
+import './site.js';
 import * as THREE from './vendor/three.module.min.js';
 import { createLily, makeFlowerAssets, seededRandom } from './flowers.js';
 import { GardenAudio, flowerNote } from './audio.js';
@@ -40,7 +41,8 @@ async function toggleSound() {
       soundLabel.textContent = 'Tuning…';
       await audio.enable();
       status.textContent = 'Wander over a flower';
-      if (app) app.playFlower(app.selectedId, true);
+      if (app && document.body.dataset.page === 'garden') app.playFlower(app.selectedId, true);
+      audio.setVisibility(document.body.dataset.page === 'garden');
     }
   } catch (error) {
     console.error(error);
@@ -67,7 +69,7 @@ reducedMotion.addEventListener('change', (event) => {
   syncMotion();
 });
 document.addEventListener('visibilitychange', () => {
-  audio.setVisibility(!document.hidden);
+  audio.setVisibility(!document.hidden && document.body.dataset.page === 'garden');
 });
 
 function environmentTexture(renderer) {
@@ -189,6 +191,8 @@ class Garden {
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2(3, 3);
     this.pointerInside = false;
+    this.contentOpen = document.body.dataset.page !== 'garden';
+    this.contentNeedsRender = true;
     this.needsPicking = false;
     this.elapsed = 0;
     this.lastTime = 0;
@@ -310,6 +314,7 @@ class Garden {
   }
 
   resize() {
+    this.contentNeedsRender = true;
     this.width = window.innerWidth;
     this.height = window.innerHeight;
     this.mobile = this.width < 601;
@@ -329,6 +334,15 @@ class Garden {
   }
 
   bind() {
+    window.addEventListener('garden:pagechange', (event) => {
+      this.contentOpen = event.detail.page !== 'garden';
+      this.contentNeedsRender = true;
+      this.pointerInside = false;
+      this.hoveredId = -1;
+      cursor.classList.remove('visible');
+      garden.style.cursor = 'default';
+      audio.setVisibility(!this.contentOpen && !document.hidden);
+    });
     window.addEventListener('resize', () => this.resize());
     garden.addEventListener('pointermove', (event) => {
       if (event.pointerType === 'touch') return;
@@ -420,6 +434,8 @@ class Garden {
   render(timestamp) {
     requestAnimationFrame(this.render);
     if (document.hidden) { this.lastTime = timestamp; return; }
+    if (this.contentOpen && !this.contentNeedsRender) { this.lastTime = timestamp; return; }
+    this.contentNeedsRender = false;
     const delta = Math.min((timestamp - (this.lastTime || timestamp)) / 1000, 0.05);
     this.lastTime = timestamp;
     if (!paused) this.elapsed += delta;
