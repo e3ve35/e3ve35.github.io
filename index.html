@@ -1,46 +1,165 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
   <head>
-    <title>evelyn wu</title>
-
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"
-      integrity="sha512-N4kV7GkNv7QR7RX9YF/olywyIgIwNvfEe2nZtfyj73HdjCUkAfOBDbcuJ/cTaN04JKRnw1YG1wnUyNKMsNgg3g=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    ></script>
-    <script src="js/variables.js"></script>
-    <script src="js/worm.js"></script>
-    <script src="js/txt.js"></script>
-    <script src="js/nav.js"></script>
-    <script src="js/desc.js"></script>
-    <script src="js/link.js"></script>
-    <script src="js/conversation.js"></script>
-    <script src="js/functions.js"></script>
-    <script src="js/button.js"></script>
-    <script src="js/footer.js"></script>
-    <script src="js/control.js"></script>
-    <script src="js/sketch.js"></script>
-
-    <style>
-      @font-face {
-        font-family: roboto;
-        src: url(Share_Tech_Mono/ShareTechMono-Regular.ttf);
-      }
-      * {
-        font-family: roboto;
-      }
-      body {
-        background-color: black;
-      }
-      a {
-        font-size: 25px;
-        color: rgba(255, 255, 255, 0);
-        position: absolute;
-        top: 50px;
-        z-index: -100;
-      }
-    </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#09070d" />
+    <meta name="description" content="Evelyn Wu — programmer and game developer exploring computer graphics, computer music, and playful interfaces. Projects, experiments, and a garden you can play." />
+    <title>Unlikely Garden — Evelyn Wu</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%2309070d'/%3E%3Ctext x='32' y='49' text-anchor='middle' font-size='53' fill='%23d4ff76'%3E✳%3C/text%3E%3C/svg%3E" />
+    <link rel="canonical" href="https://e3ve35.github.io/" />
+    <link rel="stylesheet" href="./prototype/style.css" />
+    <link rel="stylesheet" href="./prototype/portfolio.css" />
+    <script src="./prototype/vendor/Tone.js" defer></script>
+    <script type="module" src="./prototype/main.js"></script>
   </head>
-  <body></body>
+  <body data-page="garden">
+    <a class="skip-link" href="#page-content">Skip to content</a>
+    <div id="garden" role="region" aria-label="Interactive chrome lily garden" tabindex="0" aria-describedby="play-instructions">
+      <canvas id="scene" aria-hidden="true"></canvas>
+      <div class="vignette" aria-hidden="true"></div>
+      <div class="grain" aria-hidden="true"></div>
+      <div id="loading" class="loading"><span class="loading-flower">✳</span><span>Growing something unlikely…</span></div>
+      <div id="fallback" class="fallback" hidden>
+        <span class="fallback-flower" aria-hidden="true">✳</span>
+        <p>This garden needs WebGL 2 to bloom.</p>
+        <p>Try a browser with hardware acceleration enabled.</p>
+      </div>
+    </div>
+    <div class="content-shade" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="identity" href="#garden" aria-label="Evelyn Wu, home">
+        <span class="name">EVELYN WU<span class="identity-star" aria-hidden="true">✳</span></span>
+        <span class="discipline">things I make, things I wonder about</span>
+      </a>
+      <nav class="page-nav" aria-label="Main navigation">
+        <a href="#garden" data-page-link="garden" aria-current="page">Garden</a>
+        <a href="#work" data-page-link="work">Work</a>
+        <a href="#about" data-page-link="about">About</a>
+        <a href="#contact" data-page-link="contact">Contact</a>
+      </nav>
+      <div class="header-right">
+        <span class="edition"><span class="live-dot"></span> GARDEN STUDY / 001</span>
+        <button id="sound-toggle" class="sound-toggle" type="button" aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path class="sound-waves" d="M15 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14"/><path class="sound-slash" d="m16 9 6 6m0-6-6 6"/></svg>
+          <span id="sound-label">Enable sound</span>
+        </button>
+      </div>
+    </header>
+
+    <main id="page-content" tabindex="-1">
+    <section class="intro" data-page-view="garden" aria-labelledby="garden-title">
+      <p class="eyebrow"><span class="tiny-cross">+</span> A LIVING, LISTENING EXPERIMENT</p>
+      <h1 id="garden-title">Unlikely<br /><em>garden.</em><span class="title-star" aria-hidden="true">✳</span></h1>
+      <p class="intro-copy">Nothing here grows quietly.</p>
+      <p id="play-instructions" class="instructions">Enable sound. <span class="pointer-instruction">Wander over the lilies.</span><span class="touch-instruction">Tap the lilies.</span><br />Let a little music happen.</p>
+      <div class="keyboard-hint">Keyboard: focus the garden, ← → to wander, space to play.</div>
+    </section>
+
+    <section id="work" class="portfolio-view work-view" data-page-view="work" aria-labelledby="work-title" hidden>
+      <div class="view-grid">
+        <div class="view-heading">
+          <p class="eyebrow"><span class="tiny-cross">+</span> 02 / SELECTED PROJECTS</p>
+          <h2 id="work-title" tabindex="-1">Ways to<br /><em>play.</em></h2>
+          <p class="view-intro">Experiments in sound, procedural worlds, and visual interaction.</p>
+          <p class="view-footnote">SIX PROJECTS / MANY POSSIBILITIES</p>
+        </div>
+        <div class="project-list">
+          <details class="project" open>
+            <summary><span class="project-index">01</span><span class="project-heading"><span class="project-title">Graphical Music Interface</span><span class="project-kind">COMPUTER MUSIC / INTERACTION</span></span><span class="project-mark" aria-hidden="true">+</span></summary>
+            <div class="project-description">
+              <p>A website for creating music compositions through visual interactions. Built to make computer music composition more accessible and enjoyable.</p>
+              <div class="project-links"><a href="https://drive.google.com/file/d/187dM0Xr1PB2zVEv9FvdQaDkEEt5CKbMA/view?usp=sharing" target="_blank" rel="noopener noreferrer">View GOMI <span aria-hidden="true">↗</span></a></div>
+            </div>
+          </details>
+          <details class="project">
+            <summary><span class="project-index">02</span><span class="project-heading"><span class="project-title">Random Island Generator</span><span class="project-kind">PROCEDURAL GENERATION / WORLDS</span></span><span class="project-mark" aria-hidden="true">+</span></summary>
+            <div class="project-description">
+              <p>A procedural content generation algorithm that creates natural-looking game environments, with flexible and customizable maps.</p>
+              <div class="project-links"><a href="https://github.com/e3ve35/random_island_generator" target="_blank" rel="noopener noreferrer">Explore the code <span aria-hidden="true">↗</span></a></div>
+            </div>
+          </details>
+          <details class="project">
+            <summary><span class="project-index">03</span><span class="project-heading"><span class="project-title">Garden on the Desk</span><span class="project-kind">AUGMENTED REALITY / PLAY</span></span><span class="project-mark" aria-hidden="true">+</span></summary>
+            <div class="project-description">
+              <p>An augmented reality garden simulation. Speech recognition and feature tracking let you plant a miniature garden through your webcam.</p>
+              <div class="project-links"><a href="https://drive.google.com/file/d/1CcCR003ayRCFdHPvCzm7G4QfyzgTci4k/view?usp=sharing" target="_blank" rel="noopener noreferrer">View the project <span aria-hidden="true">↗</span></a></div>
+            </div>
+          </details>
+          <details class="project">
+            <summary><span class="project-index">04</span><span class="project-heading"><span class="project-title">Maze Generator &amp; Solver</span><span class="project-kind">ALGORITHMS / EXPLORATION</span></span><span class="project-mark" aria-hidden="true">+</span></summary>
+            <div class="project-description">
+              <p>A random maze generator and solver, implemented with algorithms including Sidewinder, Wilson’s, Random Walk, and Aldous–Broder.</p>
+              <div class="project-links"><a href="https://github.com/e3ve35/maze_generator" target="_blank" rel="noopener noreferrer">Explore the code <span aria-hidden="true">↗</span></a></div>
+            </div>
+          </details>
+          <details class="project">
+            <summary><span class="project-index">05</span><span class="project-heading"><span class="project-title">Evolution of Video Games</span><span class="project-kind">DATA VISUALIZATION / STORIES</span></span><span class="project-mark" aria-hidden="true">+</span></summary>
+            <div class="project-description">
+              <p>A storytelling visualization of the history of video games worldwide. Three views connect through linked highlighting and filters.</p>
+              <div class="project-links"><a href="https://github.com/e3ve35/game-evolution-datavis" target="_blank" rel="noopener noreferrer">Explore the code <span aria-hidden="true">↗</span></a></div>
+            </div>
+          </details>
+          <details class="project">
+            <summary><span class="project-index">06</span><span class="project-heading"><span class="project-title">Pixel Art Workshop 2020</span><span class="project-kind">CREATIVE TOOLS / PIXELS</span></span><span class="project-mark" aria-hidden="true">+</span></summary>
+            <div class="project-description">
+              <p>A website for making pixel art, with login, saved artwork, and saving across devices.</p>
+              <div class="project-links"><a href="https://github.com/e3ve35/pixel_workshop" target="_blank" rel="noopener noreferrer">Explore the code <span aria-hidden="true">↗</span></a></div>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="portfolio-view about-view" data-page-view="about" aria-labelledby="about-title" hidden>
+      <div class="view-grid">
+        <div class="view-heading">
+          <p class="eyebrow"><span class="tiny-cross">+</span> 03 / THE PERSON BEHIND THE GARDEN</p>
+          <h2 id="about-title" tabindex="-1">Hello,<br /><em>I’m Evelyn.</em></h2>
+          <p class="view-intro">Programmer. Game developer.<br />Curious about what code can become.</p>
+        </div>
+        <div class="about-copy">
+          <p class="large-copy">I explore the space between <em>computer graphics</em>, <em>computer music</em>, and the joy of making things interactive.</p>
+          <p>My projects range from visual music composition and procedural game worlds to augmented reality gardens, data visualization, and creative tools.</p>
+          <p>This little garden brings a few of those interests together: botanical forms, synthetic sound, and something to discover by playing.</p>
+          <div class="about-interests"><span>GRAPHICS</span><span>MUSIC</span><span>GAMES</span><span>INTERACTION</span></div>
+          <a class="resume-link" href="https://docs.google.com/document/d/1klBwffp1zl149jt6uduXRdGl6dP8hgR-xbq6mOyV9ok/edit?usp=sharing" target="_blank" rel="noopener noreferrer"><span>View my résumé</span><span aria-hidden="true">↗</span></a>
+          <a class="quiet-link" href="#contact">Say hello <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="portfolio-view contact-view" data-page-view="contact" aria-labelledby="contact-title" hidden>
+      <p class="eyebrow"><span class="tiny-cross">+</span> 04 / A CONVERSATION STARTS SOMEWHERE</p>
+      <h2 id="contact-title" tabindex="-1">Say <em>hello.</em><span class="contact-star" aria-hidden="true">✳</span></h2>
+      <p class="contact-intro">A question, an idea, or something you’d like to make.</p>
+      <a class="email-link" href="mailto:e3ve35@gmail.com">e3ve35@gmail.com <span aria-hidden="true">↗</span></a>
+      <div class="contact-links"><a href="https://github.com/e3ve35" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a><a href="https://docs.google.com/document/d/1klBwffp1zl149jt6uduXRdGl6dP8hgR-xbq6mOyV9ok/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Résumé <span aria-hidden="true">↗</span></a></div>
+    </section>
+    </main>
+
+    <aside class="specimen-card" aria-label="Current flower">
+      <div class="specimen-heading"><span class="tiny-cross">+</span><span>SPECIMEN / <span id="specimen-id">001</span></span><span class="specimen-symbol" aria-hidden="true">↗</span></div>
+      <div class="specimen-name">Lilium <em>synthetica</em></div>
+      <div class="specimen-meta"><span>CHROME PETALS</span><span id="note-name">D PENTATONIC</span></div>
+      <div class="signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="specimen-footer"><span id="interaction-status" role="status" aria-live="polite">Awaiting a little curiosity</span><span id="note-count">00</span></div>
+    </aside>
+
+    <div id="flower-cursor" class="flower-cursor" aria-hidden="true"><span class="cursor-ring"></span><span id="cursor-label">LILIUM / 001</span></div>
+
+    <footer class="garden-footer">
+      <div class="footer-caption"><span class="live-dot"></span><span>BOTANICAL FORM. SYNTHETIC SOUL.</span></div>
+      <div class="controls">
+        <label class="distortion-control" for="distortion"><span>Distortion</span><input id="distortion" type="range" min="0" max="100" value="55" /><output id="distortion-value" for="distortion">55%</output></label>
+        <span class="control-divider" aria-hidden="true"></span>
+        <button id="reseed" class="text-button" type="button"><span aria-hidden="true">↻</span> Replant</button>
+        <button id="motion-toggle" class="text-button motion-toggle" type="button" aria-pressed="false">Pause motion</button>
+      </div>
+      <a class="return-to-garden" href="#garden">Return to the garden <span aria-hidden="true">↗</span></a>
+      <span class="footer-index">01 — LILIES</span>
+    </footer>
+    <noscript><div class="noscript">Enable JavaScript to explore the musical garden. <a href="./archive/">Visit Evelyn’s previous portfolio</a>.</div></noscript>
+  </body>
 </html>

@@ -21,5 +21,5 @@ const server = createServer(async (req, res) => {
     res.end('Not found');
   }
 });
-server.listen(port, '127.0.0.1', () => console.log(`Local: http://127.0.0.1:${port}/prototype/`));
+server.listen(port, '127.0.0.1', () => console.log(`Local: http://127.0.0.1:${port}/`));
 for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => server.close(() => process.exit(0)));

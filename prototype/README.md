@@ -1,6 +1,6 @@
 # Unlikely Garden · study 001
 
-A garden and portfolio for Evelyn Wu: 18 procedural chrome lilies, colored studio reflections, FM bells, and localized visual glitches. Garden, Work, About, and Contact views share the same scene. The existing portfolio at the repository root is unchanged while this version is developed at `/prototype/`.
+A garden and portfolio for Evelyn Wu: 18 procedural chrome lilies, colored studio reflections, FM bells, and localized visual glitches. Garden, Work, About, and Contact views share the same scene. The production homepage is the root `index.html`; this folder holds its assets. The previous portfolio is preserved at `/archive/`, and old `/prototype/` links redirect to the homepage with their fragment intact.
 
 ## Preview
 
@@ -10,7 +10,7 @@ From the repository root, run:
 node prototype/serve.mjs
 ```
 
-Open http://127.0.0.1:4173/prototype/. No package installation or build is needed. Pinned browser libraries are vendored locally: Three.js 0.180.0 and Tone.js 15.1.22. The font is reused from the existing portfolio.
+Open http://127.0.0.1:4173/. No package installation or build is needed. Pinned browser libraries are vendored locally: Three.js 0.180.0 and Tone.js 15.1.22. The font is reused from the existing portfolio.
 
 ## Interact
 
