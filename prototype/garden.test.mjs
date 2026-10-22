@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js';
 import { createLily, makeFlowerAssets, seededRandom, updateLilyMotion } from './flowers.js';
+import { AsciiPollen, PollenPool } from './pollen.js';
+import * as THREE from './vendor/three.module.min.js';
 
 test('gesture strength is bounded and consistent across screen sizes', () => {
   assert.equal(gestureStrength(0, 16, 720), 0);
@@ -90,4 +92,51 @@ test('stem bending preserves its anchored base and remains attached to the head'
   updateLilyMotion(flower, 1, 0, 0, 0, true);
   assert.equal(flower.head.position.x, flower.bend);
   assert.equal(flower.head.position.z, 0);
+});
+
+test('pollen storage stays bounded, expires after leaving, and clears immediately', () => {
+  const pool = new PollenPool(96, seededRandom(12));
+  const origin = { x: 1, y: 3, z: 2 };
+  for (let i = 0; i < 100; i++) pool.emit(origin, i / 30, 25, 0.8);
+  assert.equal(pool.count(3.3), 96);
+  assert.equal(pool.positions.length, 96 * 3);
+  for (const glyph of pool.glyphs) assert.ok(glyph >= 0 && glyph < 32);
+  assert.equal(pool.count(8), 0);
+  pool.emit(origin, 9, 20);
+  pool.clear();
+  assert.equal(pool.count(9), 0);
+  assert.equal(pool.source, -1);
+  assert.equal(pool.carry, 0);
+});
+
+test('a stationary hover keeps emitting at a consistent rate and leaving stops it', () => {
+  const simulate = (hz) => {
+    const pool = new PollenPool(384, seededRandom(12));
+    const origin = { x: 1, y: 3, z: 2 };
+    for (let i = 1; i <= hz * 2; i++) pool.stream(origin, i / hz, 1 / hz, 4, 0.5);
+    const emitted = pool.cursor;
+    for (let i = 1; i <= hz; i++) pool.stream(null, 2 + i / hz, 1 / hz, -1, 0.5);
+    assert.equal(pool.cursor, emitted);
+    assert.ok(pool.count(2) > 45);
+    return emitted;
+  };
+  assert.ok(Math.abs(simulate(20) - simulate(144)) <= 1);
+});
+
+test('pollen is released from the moving stamens in world space', () => {
+  const flower = createLily(0, makeFlowerAssets(), seededRandom(821));
+  flower.root.position.set(2, 0, -1);
+  flower.root.scale.setScalar(1.2);
+  const origin = () => AsciiPollen.prototype.flowerOrigin.call({ origin: new THREE.Vector3() }, flower);
+  updateLilyMotion(flower, 0, 0, 0, 0);
+  const before = origin();
+  updateLilyMotion(flower, 2, 0.3, -0.2, 0.5);
+  const after = origin();
+  assert.ok(before.distanceTo(after) > 0.1);
+  const pool = new PollenPool(96, seededRandom(12));
+  pool.emit(after, 1, 20);
+  for (let i = 0; i < 20; i++) {
+    const point = new THREE.Vector3().fromArray(pool.positions, i * 3);
+    assert.ok(point.distanceTo(after) < 0.25);
+  }
 });

@@ -1,5 +1,6 @@
 import './site.js';
 import * as THREE from './vendor/three.module.min.js';
+import { AsciiPollen } from './pollen.js?v=ascii-pollen-1';
 import { createLily, makeFlowerAssets, seededRandom, updateLilyMotion } from './flowers.js?v=lily-expression-1';
 import { GardenAudio, flowerNote } from './audio.js?v=lily-expression-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=lily-expression-1';
@@ -188,6 +189,7 @@ class Garden {
     this.scene.add(lime);
 
     this.assets = makeFlowerAssets();
+    this.pollen = new AsciiPollen(this.scene);
     this.flowers = [];
     this.selectedId = 0;
     this.hoveredId = -1;
@@ -214,7 +216,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'expressive-lilies';
+    document.body.dataset.gardenRevision = 'ascii-pollen';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }
@@ -336,6 +338,7 @@ class Garden {
     this.camera.aspect = this.width / this.height;
     this.camera.fov = this.mobile ? 49 : 40;
     this.camera.updateProjectionMatrix();
+    this.pollen.resize(this.height, this.camera.fov, this.pixelRatio);
     this.baseCamera = this.mobile ? new THREE.Vector3(1.0, 6.8, 13.6) : new THREE.Vector3(0, 5.65, 13.9);
     this.lookAt = this.mobile ? new THREE.Vector3(1, 2.0, 0) : new THREE.Vector3(0, 2.5, 0);
     this.camera.position.copy(this.baseCamera);
@@ -430,6 +433,8 @@ class Garden {
   }
 
   clearResponses() {
+    this.pollen.clear();
+    document.body.dataset.pollenCount = '0';
     this.ripples.length = 0;
     this.visualGesture = null;
     this.burst = 0;
@@ -455,6 +460,11 @@ class Garden {
     const pan = this.projected.x * 0.5 + 0.5;
     const note = audio.play(id, pan, strength);
     const now = performance.now() / 1000;
+    // Visual pollen is available with sound off and when all audio voices are busy.
+    if (!paused && now - (flower.lastPollen || -Infinity) > 0.18) {
+      flower.lastPollen = now;
+      this.pollen.burst(flower, this.elapsed, strength);
+    }
     if (note || (!audio.enabled && now - flower.lastGesture > 0.25)) {
       flower.lastGesture = now;
       const gesture = note || { ...bloomProfile(id, strength), startedAt: now };
@@ -521,6 +531,9 @@ class Garden {
     // Raycast only after pointer movement. Animated flowers passing a still cursor
     // should not repeatedly retrigger music.
     if (this.pointerInside && this.needsPicking) { this.pick(); this.needsPicking = false; }
+    const pollenFlower = !paused && !this.contentOpen && this.pointerInside && this.hoveredId >= 0 ? this.flowers[this.hoveredId] : null;
+    const pollenCount = this.pollen.update(this.elapsed, paused ? 0 : delta, pollenFlower, this.gestureStrength, intensity);
+    if (document.body.dataset.pollenCount !== String(pollenCount)) document.body.dataset.pollenCount = String(pollenCount);
     this.post.uniforms.time.value = this.elapsed;
     this.post.uniforms.burst.value = this.burst;
     this.post.uniforms.distortion.value = intensity;
