@@ -22,3 +22,5 @@ Open http://127.0.0.1:4173/. The site is buildless HTML, CSS, and JavaScript. It
 GitHub Pages publishes the repository root from `main` through its existing Pages deployment. `.nojekyll` keeps it a static site. There are no build dependencies, backend services, or runtime environment variables.
 
 See [garden implementation notes](prototype/README.md) for controls and scene details.
+
+Run the geometry, gesture, envelope, and motion checks with `node --test prototype/garden.test.mjs`.

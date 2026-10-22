@@ -1,7 +1,8 @@
 import './site.js';
 import * as THREE from './vendor/three.module.min.js';
-import { createLily, makeFlowerAssets, seededRandom } from './flowers.js';
-import { GardenAudio, flowerNote } from './audio.js';
+import { createLily, makeFlowerAssets, seededRandom, updateLilyMotion } from './flowers.js?v=lily-expression-1';
+import { GardenAudio, flowerNote } from './audio.js?v=lily-expression-1';
+import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=lily-expression-1';
 
 const $ = (selector) => document.querySelector(selector);
 const garden = $('#garden');
@@ -17,7 +18,6 @@ const audio = new GardenAudio();
 let paused = reducedMotion.matches;
 let intensity = 0.55;
 let notesPlayed = 0;
-let cardTimer;
 let app;
 
 for (const [i, bar] of [...document.querySelectorAll('.signal i')].entries()) {
@@ -41,7 +41,7 @@ async function toggleSound() {
       soundLabel.textContent = 'Tuning…';
       await audio.enable();
       status.textContent = 'Wander over a flower';
-      if (app && document.body.dataset.page === 'garden') app.playFlower(app.selectedId, true);
+      if (app && document.body.dataset.page === 'garden') app.playFlower(app.selectedId, 0.35);
       audio.setVisibility(document.body.dataset.page === 'garden');
     }
   } catch (error) {
@@ -62,14 +62,17 @@ $('#distortion').addEventListener('input', (event) => {
 });
 motionButton.addEventListener('click', () => {
   paused = !paused;
+  app?.clearResponses();
   syncMotion();
 });
 reducedMotion.addEventListener('change', (event) => {
   paused = event.matches;
+  app?.clearResponses();
   syncMotion();
 });
 document.addEventListener('visibilitychange', () => {
   audio.setVisibility(!document.hidden && document.body.dataset.page === 'garden');
+  if (document.hidden) app?.clearResponses();
 });
 
 function environmentTexture(renderer) {
@@ -166,15 +169,15 @@ class Garden {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
     this.renderer.setClearColor('#09070d');
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.12;
+    this.renderer.toneMappingExposure = 1.08;
     this.scene = new THREE.Scene();
     this.scene.fog = new THREE.FogExp2('#130b1d', 0.042);
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 150);
     this.environment = environmentTexture(this.renderer);
     this.scene.environment = this.environment.texture;
     setupBackground(this.scene);
-    this.scene.add(new THREE.HemisphereLight('#e4cee7', '#2d243b', 1.6));
-    const white = new THREE.DirectionalLight('#f0eaf4', 3.2);
+    this.scene.add(new THREE.HemisphereLight('#e4cee7', '#2d243b', 1.2));
+    const white = new THREE.DirectionalLight('#f0eaf4', 2.7);
     white.position.set(-3, 9, 5);
     this.scene.add(white);
     const pink = new THREE.DirectionalLight('#f061c9', 2.4);
@@ -191,6 +194,10 @@ class Garden {
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2(3, 3);
     this.pointerInside = false;
+    this.gestureStrength = 0.35;
+    this.lastPointerSample = null;
+    this.ripples = [];
+    this.visualGesture = null;
     this.contentOpen = document.body.dataset.page !== 'garden';
     this.contentNeedsRender = true;
     this.needsPicking = false;
@@ -207,6 +214,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
+    document.body.dataset.gardenRevision = 'expressive-lilies';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }
@@ -249,9 +257,10 @@ class Garden {
             float a=float(i)*.785398;
             vec2 offset=vec2(cos(a),sin(a))*pixel*5.;
             vec3 sampleColor=texture2D(image,uv+offset).rgb;
-            glow+=max(sampleColor-.73,0.);
+            vec3 hot=max(sampleColor-1.35,0.);
+            glow+=hot/(1.+hot);
           }
-          col+=glow*.085;
+          col+=glow*.06;
           float scan=sin(vUv.y*resolution.y*1.4)*.007*distortion;
           col-=scan;
           col+=vec3(.13,.01,.1)*tear*energy*region*.15;
@@ -266,6 +275,7 @@ class Garden {
   replant() {
     for (const flower of this.flowers) {
       this.scene.remove(flower.root);
+      flower.anthers.dispose();
       flower.privateGeometries.forEach((geometry) => geometry.dispose());
     }
     const random = seededRandom(this.seed);
@@ -291,7 +301,7 @@ class Garden {
     this.selectedId = 0;
     this.hoveredId = -1;
     this.needsPicking = true;
-    this.burst = paused ? 0 : 0.3;
+    this.clearResponses();
     cursor.classList.remove('visible');
     $('#specimen-id').textContent = '001';
     $('#note-name').textContent = 'D PENTATONIC';
@@ -339,6 +349,7 @@ class Garden {
       this.contentNeedsRender = true;
       this.pointerInside = false;
       this.hoveredId = -1;
+      this.clearResponses();
       cursor.classList.remove('visible');
       garden.style.cursor = 'default';
       audio.setVisibility(!this.contentOpen && !document.hidden);
@@ -346,6 +357,13 @@ class Garden {
     window.addEventListener('resize', () => this.resize());
     garden.addEventListener('pointermove', (event) => {
       if (event.pointerType === 'touch') return;
+      const time = performance.now();
+      if (this.lastPointerSample) {
+        const distance = Math.hypot(event.clientX - this.lastPointerSample.x, event.clientY - this.lastPointerSample.y);
+        const strength = gestureStrength(distance, Math.min(64, time - this.lastPointerSample.time), Math.min(this.width, this.height));
+        this.gestureStrength = this.gestureStrength * 0.55 + strength * 0.45;
+      }
+      this.lastPointerSample = { x: event.clientX, y: event.clientY, time };
       this.pointer.set((event.clientX / this.width) * 2 - 1, -(event.clientY / this.height) * 2 + 1);
       this.pointerInside = true;
       this.needsPicking = true;
@@ -354,9 +372,12 @@ class Garden {
     garden.addEventListener('pointerleave', () => {
       this.pointerInside = false;
       this.hoveredId = -1;
+      this.lastPointerSample = null;
+      this.gestureStrength = 0.35;
       cursor.classList.remove('visible');
     });
     garden.addEventListener('pointerdown', (event) => {
+      this.gestureStrength = event.pointerType === 'touch' ? 0.5 + Math.min(1, event.pressure || 0) * 0.15 : Math.max(0.45, this.gestureStrength);
       this.pointer.set((event.clientX / this.width) * 2 - 1, -(event.clientY / this.height) * 2 + 1);
       this.pointerInside = true;
       this.pick(true);
@@ -372,11 +393,11 @@ class Garden {
         event.preventDefault();
         const direction = ['ArrowLeft', 'ArrowDown'].includes(event.key) ? -1 : 1;
         this.selectedId = (this.selectedId + direction + this.flowers.length) % this.flowers.length;
-        this.playFlower(this.selectedId, true);
+        this.playFlower(this.selectedId, 0.45);
       } else if (event.code === 'Space' || event.key === 'Enter') {
         event.preventDefault();
         if (event.repeat) return;
-        this.playFlower(this.selectedId, true);
+        this.playFlower(this.selectedId, 0.45);
       }
     });
     $('#reseed').addEventListener('click', () => {
@@ -397,38 +418,62 @@ class Garden {
 
   pick(force = false) {
     this.scene.updateMatrixWorld();
+    this.camera.updateMatrixWorld();
     this.raycaster.setFromCamera(this.pointer, this.camera);
     const hits = this.raycaster.intersectObjects(this.hitTargets, false);
     const id = hits.length ? hits[0].object.userData.flowerId : -1;
-    if (id >= 0 && (id !== this.hoveredId || force)) this.playFlower(id, force);
+    if (id >= 0 && (id !== this.hoveredId || force)) this.playFlower(id, this.gestureStrength);
     this.hoveredId = id;
     cursor.classList.toggle('visible', id >= 0 && !this.mobile);
     garden.style.cursor = id >= 0 && !this.mobile ? 'none' : 'default';
     if (id >= 0) $('#cursor-label').textContent = `LILIUM / ${String(id + 1).padStart(3, '0')}`;
   }
 
-  playFlower(id, force = false) {
+  clearResponses() {
+    this.ripples.length = 0;
+    this.visualGesture = null;
+    this.burst = 0;
+    this.lastPointerSample = null;
+    if (this.baseCamera) {
+      this.camera.position.copy(this.baseCamera);
+      this.camera.lookAt(this.lookAt);
+    }
+    for (const flower of this.flowers) {
+      flower.gesture = null;
+      flower.response.value = 0;
+      flower.response.velocity = 0;
+    }
+    card.classList.remove('playing');
+  }
+
+  playFlower(id, strength = 0.45) {
     const flower = this.flowers[id];
     if (!flower) return;
     this.selectedId = id;
     flower.head.getWorldPosition(this.projected);
     this.projected.project(this.camera);
     const pan = this.projected.x * 0.5 + 0.5;
-    const played = audio.play(id, pan, 0.46 + (id % 4) * 0.045);
-    flower.impulse = 1;
-    this.burst = 1;
-    this.post.uniforms.focus.value.set(pan, this.projected.y * 0.5 + 0.5);
+    const note = audio.play(id, pan, strength);
+    const now = performance.now() / 1000;
+    if (note || (!audio.enabled && now - flower.lastGesture > 0.25)) {
+      flower.lastGesture = now;
+      const gesture = note || { ...bloomProfile(id, strength), startedAt: now };
+      if (!paused) {
+        flower.gesture = gesture;
+        this.visualGesture = gesture;
+        this.ripples.push({ ...gesture, id, x: flower.root.position.x, z: flower.root.position.z });
+        this.ripples = this.ripples.slice(-6);
+      }
+      this.post.uniforms.focus.value.set(pan, this.projected.y * 0.5 + 0.5);
+    }
     $('#specimen-id').textContent = String(id + 1).padStart(3, '0');
-    $('#note-name').textContent = `${flowerNote(id).name} / FM BELL`;
-    status.textContent = played ? 'A small, synthetic bloom' : audio.enabled ? 'Listening to the last bloom' : 'Enable sound to hear this bloom';
+    $('#note-name').textContent = `${flowerNote(id).name} / ${flowerCharacter(id).name.toUpperCase()}`;
+    status.textContent = note ? strength > 0.65 ? 'A bright, ringing bloom' : 'A gentle, synthetic bloom' : audio.enabled ? 'Listening to the last bloom' : 'Enable sound to hear this bloom';
     document.body.dataset.selectedFlower = String(id);
-    if (played) {
+    if (note) {
       notesPlayed++;
       $('#note-count').textContent = String(notesPlayed).padStart(2, '0');
     }
-    card.classList.add('playing');
-    clearTimeout(cardTimer);
-    cardTimer = setTimeout(() => card.classList.remove('playing'), 950);
   }
 
   render(timestamp) {
@@ -439,20 +484,39 @@ class Garden {
     const delta = Math.min((timestamp - (this.lastTime || timestamp)) / 1000, 0.05);
     this.lastTime = timestamp;
     if (!paused) this.elapsed += delta;
-    this.burst = Math.max(0, this.burst - delta * 1.7);
+    const now = timestamp / 1000;
+    this.ripples = this.ripples.filter((ripple) => now - ripple.startedAt < ripple.gate + ripple.release + 9 / 4.4);
+    this.burst = this.visualGesture ? bloomEnvelope(now - this.visualGesture.startedAt, this.visualGesture) * this.visualGesture.energy : 0;
     const parallaxX = this.pointerInside && !paused ? this.pointer.x * 0.16 : 0;
     const parallaxY = this.pointerInside && !paused ? this.pointer.y * 0.06 : 0;
     this.targetCamera.copy(this.baseCamera).add(new THREE.Vector3(parallaxX, parallaxY, 0));
     this.camera.position.lerp(this.targetCamera, 1 - Math.exp(-delta * 3));
     this.camera.lookAt(this.lookAt);
     for (const flower of this.flowers) {
-      flower.impulse = Math.max(0, flower.impulse - delta * 1.2);
-      const wind = paused ? 0 : Math.sin(this.elapsed * 0.65 + flower.phase) * 0.025;
-      const pulse = paused ? 0 : Math.sin(flower.impulse * Math.PI * 3) * flower.impulse * intensity;
-      flower.root.rotation.z = wind;
-      flower.head.rotation.x = flower.baseRotation.x + pulse * 0.13;
-      flower.head.rotation.z = flower.baseRotation.z + wind * 1.5;
-      for (const petal of flower.petals) petal.pivot.rotation.z = petal.angle + pulse * 0.1;
+      const envelope = flower.gesture ? bloomEnvelope(now - flower.gesture.startedAt, flower.gesture) * flower.gesture.energy : 0;
+      let wave = 0, waveX = 0, waveZ = 0;
+      for (const ripple of this.ripples) {
+        if (ripple.id === flower.id) continue;
+        const dx = flower.root.position.x - ripple.x;
+        const dz = flower.root.position.z - ripple.z;
+        const distance = Math.hypot(dx, dz);
+        const amount = rippleEnvelope(now - ripple.startedAt, distance, ripple);
+        wave += amount;
+        waveX += amount * dx / (distance || 1) * 0.2;
+        waveZ += amount * dz / (distance || 1) * 0.2;
+      }
+      const response = paused ? 0 : stepSpring(flower.response, envelope + Math.min(0.4, wave), delta);
+      const phase = this.elapsed * 0.57 + flower.root.position.x * 0.17 + flower.root.position.z * 0.13;
+      const breezeX = paused ? 0 : Math.sin(phase) * 0.1 + Math.sin(phase * 0.47 + flower.phase) * 0.035 + waveX;
+      const breezeZ = paused ? 0 : Math.cos(phase * 0.72 + flower.phase * 0.35) * 0.05 + waveZ;
+      const yaw = flower.root.rotation.y;
+      const swayX = breezeX * Math.cos(yaw) - breezeZ * Math.sin(yaw) + response * Math.sin(flower.phase) * 0.1;
+      const swayZ = breezeX * Math.sin(yaw) + breezeZ * Math.cos(yaw) + response * Math.cos(flower.phase) * 0.045;
+      updateLilyMotion(flower, this.elapsed, swayX, swayZ, response * intensity, paused);
+      if (flower.id === this.selectedId) {
+        card.classList.toggle('playing', !paused && envelope > 0.006);
+        card.style.setProperty('--signal-strength', String(Math.max(0.12, Math.min(1, envelope))));
+      }
     }
     // Raycast only after pointer movement. Animated flowers passing a still cursor
     // should not repeatedly retrigger music.
