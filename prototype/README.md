@@ -28,7 +28,7 @@ Open http://127.0.0.1:4173/. No package installation or build is needed. Pinned 
 - `audio.js`: four shared stereo voice pools, eight simultaneous voices maximum, per-flower cooldown, D minor pentatonic notes, delay, reverb, conservative gain, and a limiter. Synthesis runs locally; there are no recorded samples or network audio requests.
 - `main.js`: seeded planting, synthetic environment lighting, scene setup, interactions, and one lightweight postprocessing pass. This is an aesthetic study, not a complete portfolio migration.
 - `style.css`: responsive HTML overlay, independent of the WebGL canvas.
-- `site.js` and `portfolio.css`: accessible portfolio navigation, a six-project accordion, an introduction, the existing résumé link, and contact details. All project descriptions and primary project links were migrated from the original `js/functions.js`; the résumé URL comes from `js/sketch.js`.
+- `site.js` and `portfolio.css`: accessible portfolio navigation, a six-project accordion, an introduction, the existing résumé link, and contact details. Project content was originally migrated from `js/functions.js`; the pixel-art entry has since been updated to SharePix using its repository description and link. The résumé URL comes from `js/sketch.js`.
 
 The scene requires WebGL 2. Initialization failure presents a readable fallback; the HTML portfolio remains usable. No tracking, microphone access, or backend is involved.
 
