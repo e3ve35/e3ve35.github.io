@@ -107,7 +107,9 @@ export class AsciiPollen {
           p.x+=(hash(tick+seed*97.)-.5)*step(.91,hash(tick+seed*43.))*distortion*.28;
           vec4 view=modelViewMatrix*vec4(p,1.);
           gl_Position=projectionMatrix*view;
-          gl_PointSize=clamp((.19+seed*.08)*scale/max(1.,-view.z),8.*pixelRatio,27.*pixelRatio);
+          float size=clamp((.19+seed*.08)*scale/max(1.,-view.z),8.*pixelRatio,27.*pixelRatio);
+          float shrink=mix(1.,.22,smoothstep(0.,max(.001,particle.y),age));
+          gl_PointSize=size*shrink;
           if(age>=particle.y||time<particle.x){gl_Position=vec4(2.,2.,2.,1.);gl_PointSize=0.;}
         }`,
       fragmentShader: `
