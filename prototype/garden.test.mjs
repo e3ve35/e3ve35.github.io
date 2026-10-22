@@ -148,10 +148,10 @@ test('poppies have a distinct silhouette with finite geometry and a bounded draw
   const assets = makeFlowerAssets();
   const poppy = createPoppy(0, assets, seededRandom(821));
   assert.equal(poppy.petals.length, 4);
-  assert.equal(poppy.anthers.count, 36);
+  assert.equal(poppy.anthers.count, 56);
   assert.equal(poppy.leaves.length, 3);
   assert.equal(poppy.species, 'poppy');
-  for (const geometry of [...assets.poppyPetals, assets.poppyCenter, ...poppy.privateGeometries]) {
+  for (const geometry of [...assets.poppyPetals, assets.poppyLeaf, assets.poppyCenter, ...poppy.privateGeometries]) {
     for (const value of geometry.attributes.position.array) assert.ok(Number.isFinite(value));
     for (const value of geometry.attributes.normal.array) assert.ok(Number.isFinite(value));
     if (geometry.index) for (const index of geometry.index.array) assert.ok(index < geometry.attributes.position.count);
@@ -233,13 +233,13 @@ test('snowdrops hang below an arched stem with finite geometry and few draws', (
   assets.snowdrop = makeSnowdropAssets(assets);
   const flower = createSnowdrop(0, assets, seededRandom(821));
   assert.equal(flower.petals.length, 6);
-  assert.equal(flower.anthers.count, 3);
+  assert.equal(flower.anthers.count, 6);
   assert.equal(flower.leaves.length, 2);
   assert.ok(flower.stemGeometry.boundingSphere.radius > 0);
   let highest = 0;
   for (let i = 1; i < flower.stemPositions.length; i += 3) highest = Math.max(highest, flower.stemPositions[i]);
   assert.ok(highest > flower.height + 0.5, 'The stem should arch above its hanging bloom');
-  for (const geometry of [assets.snowdrop.outer, assets.snowdrop.inner, ...flower.privateGeometries]) {
+  for (const geometry of [...assets.snowdrop.outers, assets.snowdrop.inner, assets.snowdrop.leaf, ...flower.privateGeometries]) {
     for (const value of geometry.attributes.position.array) assert.ok(Number.isFinite(value));
     for (const value of geometry.attributes.normal.array) assert.ok(Number.isFinite(value));
     if (geometry.index) for (const index of geometry.index.array) assert.ok(index < geometry.attributes.position.count);
