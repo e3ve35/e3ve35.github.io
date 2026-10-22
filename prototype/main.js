@@ -1,6 +1,6 @@
 import './site.js';
 import * as THREE from './vendor/three.module.min.js';
-import { AsciiPollen } from './pollen.js?v=ascii-pollen-1';
+import { AsciiPollen } from './pollen.js?v=white-pollen-1';
 import { createLily, makeFlowerAssets, seededRandom, updateLilyMotion } from './flowers.js?v=lily-expression-1';
 import { GardenAudio, flowerNote } from './audio.js?v=lily-expression-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=lily-expression-1';
@@ -216,7 +216,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'ascii-pollen';
+    document.body.dataset.gardenRevision = 'white-ascii-pollen';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }

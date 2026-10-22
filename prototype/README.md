@@ -16,7 +16,7 @@ Open http://127.0.0.1:4173/. No package installation or build is needed. Pinned 
 
 - Click **Enable sound**, then hover over flower heads. On a phone, tap them.
 - Gentle pointer movements produce softer, darker bells; faster sweeps increase brightness and intensity. Each flower retains a stable pitch and a particular bell character. A gesture also sends a small, delayed ripple through nearby flowers.
-- Hovering releases ASCII pollen from the stamens: an arrival burst followed by a drifting spiral while you linger. Taps and keyboard play also release bursts. The visual works with sound disabled, and lingering never repeats the audio.
+- Hovering releases white ASCII pollen with pink glitch echoes from the stamens: an arrival burst followed by a drifting spiral while you linger. Taps and keyboard play also release bursts. The visual works with sound disabled, and lingering never repeats the audio.
 - Focus the garden with Tab. Arrow keys select and play flowers; Space or Enter replays the selected flower. Sound still requires the explicit Enable sound button.
 - **Distortion** adjusts chromatic separation, the response to a note, and pollen scrambling, pink echoes, and horizontal skips.
 - **Replant** changes the flowers' proportions, tilt, and placement while preserving their musical identities.
@@ -44,7 +44,7 @@ node --test prototype/garden.test.mjs
 
 Ten focused tests cover normalized gestures, stable timbres, envelope timing, frame-rate-independent spring motion, ripple propagation, finite geometry and drawing complexity, anchored stem deformation, bounded pollen lifetimes, consistent hover emission, and world-space pollen origins. Browser checks cover audio startup and its eight-voice limit, keyboard play, pointer expression, a fully static pause, replanting, navigation, and the phone layout.
 
-The pollen release versions its entry point and new module with `ascii-pollen-1`. Existing geometry and audio imports retain `lily-expression-1` so returning visitors load the correct dependencies.
+The pollen release versions its entry point and pollen module with `white-pollen-1`. Existing geometry and audio imports retain `lily-expression-1` so returning visitors load the correct dependencies.
 
 ## Next design decisions
 
