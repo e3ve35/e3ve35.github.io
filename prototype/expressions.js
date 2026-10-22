@@ -9,6 +9,11 @@ export function gestureStrength(distance, milliseconds, shortSide) {
 export function flowerCharacter(id, species = 'lily') {
   const color = (((id + 1) * 2654435761) >>> 0) % 997 / 997;
   const family = (id * 7) % 4;
+  if (species === 'snowdrop') return {
+    name: ['Ice bell', 'Frost glass', 'Silver droplet', 'Winter chime'][family],
+    harmonicity: [2.001, 3.003, 2.5, 1.998][family],
+    modulation: [0.5, 0.7, 0.9, 0.55][family], color,
+  };
   if (species === 'poppy') return {
     name: ['Silk tone', 'Copper hum', 'Rose chime', 'Hollow tone'][family],
     harmonicity: [1.002, 1.5, 2.001, 1][family],
@@ -25,6 +30,17 @@ export function flowerCharacter(id, species = 'lily') {
 export function bloomProfile(id, strength = 0.45, species = 'lily') {
   const character = flowerCharacter(id, species);
   strength = clamp(strength);
+  if (species === 'snowdrop') return {
+    character, strength,
+    attack: 0.012 + (1 - strength) * 0.012,
+    decay: 2.2 + character.color * 0.8,
+    gate: 0.9 + character.color * 0.18,
+    release: 2.6 + character.color * 0.5,
+    velocity: 0.2 + strength * 0.22,
+    brightness: 2100 + strength * 1600 + character.color * 300,
+    modulation: character.modulation + strength * 0.65,
+    energy: 0.3 + strength * 0.4,
+  };
   if (species === 'poppy') return {
     character, strength,
     attack: 0.035 + (1 - strength) * 0.045,

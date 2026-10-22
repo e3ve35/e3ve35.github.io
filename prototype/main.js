@@ -1,10 +1,13 @@
 import './site.js?v=seasonal-study-1';
 import * as THREE from './vendor/three.module.min.js';
-import { AsciiPollen } from './pollen.js?v=shrinking-pollen-1';
-import { createLily, createPoppy, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=seasonal-study-1';
-import { GardenAudio, flowerNote } from './audio.js?v=seasonal-study-1';
-import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=seasonal-study-1';
-import { gardenSelection } from './studies.js?v=calendar-garden-1';
+import { AsciiPollen } from './pollen.js?v=snowdrop-study-1';
+import { createLily, createPoppy, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=snowdrop-study-1';
+import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=snowdrop-study-1';
+import { GardenAudio, flowerNote } from './audio.js?v=snowdrop-study-1';
+import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=snowdrop-study-1';
+import { gardenSelection } from './studies.js?v=snowdrop-study-1';
+
+const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop };
 
 const $ = (selector) => document.querySelector(selector);
 const garden = $('#garden');
@@ -204,6 +207,7 @@ class Garden {
     this.nextCalendarCheck = 0;
 
     this.assets = makeFlowerAssets();
+    this.assets.snowdrop = makeSnowdropAssets(this.assets);
     this.pollen = new AsciiPollen(this.scene);
     this.flowers = [];
     this.selectedId = 0;
@@ -231,7 +235,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'shrinking-pollen';
+    document.body.dataset.gardenRevision = 'snowdrop-study';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }
@@ -306,7 +310,7 @@ class Garden {
       [8.4, -12.0, 1.0], [-9.2, -2.2, 0.94], [0.6, -16, 0.84],
     ];
     placements.forEach(([x, z, scale], id) => {
-      const flower = (this.study.id === 'poppy' ? createPoppy : createLily)(id, this.assets, random);
+      const flower = flowerFactories[this.study.id](id, this.assets, random);
       flower.root.position.set(x + (random() - 0.5) * (id ? 1.1 : 0.2), 0, z + (random() - 0.5) * 0.6);
       flower.root.scale.setScalar(scale * (0.94 + random() * 0.12));
       flower.root.rotation.y = (random() - 0.5) * 0.5;
@@ -540,7 +544,8 @@ class Garden {
     }
     $('#specimen-id').textContent = String(id + 1).padStart(3, '0');
     $('#note-name').textContent = `${flowerNote(id, this.study.id).name} / ${flowerCharacter(id, this.study.id).name.toUpperCase()}`;
-    status.textContent = note ? this.study.id === 'poppy' ? this.study.sound : strength > 0.65 ? 'A bright, ringing bloom' : 'A gentle, synthetic bloom' : audio.enabled ? 'Listening to the last bloom' : 'Enable sound to hear this bloom';
+    const bloomStatus = this.study.id === 'lily' ? strength > 0.65 ? 'A bright, ringing bloom' : 'A gentle, synthetic bloom' : this.study.sound;
+    status.textContent = note ? bloomStatus : audio.enabled ? 'Listening to the last bloom' : 'Enable sound to hear this bloom';
     document.body.dataset.selectedFlower = String(id);
     if (note) {
       notesPlayed++;

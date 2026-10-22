@@ -1,7 +1,7 @@
 /* The portfolio lives in HTML; the garden remains a separate, playable scene. */
 .specimen-card.playing .signal i { transform: scaleY(var(--signal-strength, 1)); transition: height .1s, transform .08s; }
 .season-preview {
-  position: fixed; top: 112px; right: 3.2vw; width: 258px;
+  position: fixed; top: 112px; right: 3.2vw; width: 320px;
   padding-top: 12px; border-top: 1px solid var(--line);
 }
 .study-label {
@@ -10,15 +10,14 @@
 }
 .study-label span { color: #95859f; letter-spacing: .04em; }
 .study-switch {
-  display: flex; border: 1px solid var(--line); background: #100c1855;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); background: #100c1855;
   backdrop-filter: blur(12px);
 }
 .study-switch button {
-  flex: 1; min-width: 0; min-height: 40px; padding: 8px; border: 0;
-  background: transparent; color: #b9adc3; font-size: 11px; text-align: center;
+  min-width: 0; min-height: 40px; padding: 6px; border: 0;
+  background: transparent; color: #b9adc3; font-size: 11px; text-align: center; white-space: nowrap;
 }
 .study-switch button + button { border-left: 1px solid var(--line); }
-.study-switch button span { margin-right: 8px; font-size: 8px; opacity: .55; }
 .study-switch button[aria-pressed="true"] { background: #d2fb8310; color: var(--acid); }
 .study-switch button:hover { color: var(--paper); }
 .study-switch button:focus-visible { outline-offset: 3px; position: relative; }
@@ -146,7 +145,9 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   .season-preview { top: 149px; left: 23px; right: auto; width: calc(100% - 189px); padding-top: 10px; }
   .study-label { font-size: 6px; letter-spacing: .03em; gap: 5px; margin-bottom: 9px; }
   .study-switch button { min-height: 44px; font-size: 9px; padding: 5px; }
-  .study-switch button span { display: none; }
+  .study-switch { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .study-switch button:nth-child(3) { border-left: 0; }
+  .study-switch button:nth-child(n+3) { border-top: 1px solid var(--line); }
   .study-caption { font-size: 8px; }
   .page-nav {
     top: 64px; left: 0; right: 0; transform: none; justify-content: space-between;

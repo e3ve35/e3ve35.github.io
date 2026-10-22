@@ -42,7 +42,7 @@ function poppyPoint(t, u, variant) {
   );
 }
 
-function makeBlade(variant = 0, leaf = false, poppy = false) {
+function makeBlade(variant = 0, leaf = false, poppy = false, pointAt = null) {
   const rows = leaf ? 22 : 38;
   const columns = leaf ? 8 : 20;
   const layers = leaf ? 1 : 2;
@@ -55,7 +55,7 @@ function makeBlade(variant = 0, leaf = false, poppy = false) {
       for (let j = 0; j <= columns; j++) {
         const t = i / rows;
         const u = j / columns * 2 - 1;
-        const point = poppy ? poppyPoint(t, u, variant) : petalPoint(t, u, variant, leaf);
+        const point = pointAt ? pointAt(t, u, variant) : poppy ? poppyPoint(t, u, variant) : petalPoint(t, u, variant, leaf);
         if (!leaf) point.y += (layer ? -1 : 1) * (0.004 + 0.008 * Math.sin(Math.PI * t));
         positions.push(...point.toArray());
         uv.push(j / columns, t);
@@ -108,7 +108,7 @@ function brushedRoughness() {
 }
 
 // Merge the tiny filaments into a single draw, retaining actual surface normals.
-function mergeSurfaces(geometries) {
+export function mergeSurfaces(geometries) {
   const arrays = { position: [], normal: [], uv: [] };
   for (const geometry of geometries) {
     const flat = geometry.index ? geometry.toNonIndexed() : geometry;
@@ -122,6 +122,8 @@ function mergeSurfaces(geometries) {
   }
   return merged;
 }
+
+export function makePetalBlade(pointAt) { return makeBlade(0, false, false, pointAt); }
 
 export function makeFlowerAssets() {
   const petals = [0, 1, 2].map((variant) => makeBlade(variant));
@@ -260,6 +262,7 @@ function createFlower(id, assets, random, species) {
 
 export function updateFlowerMotion(flower, time, swayX, swayZ, response, paused = false) {
   const poppy = flower.species === 'poppy';
+  const snowdrop = flower.species === 'snowdrop';
   const { height, stemGeometry, stemPositions, stemNormals } = flower;
   if (Math.abs(swayX - flower.lastBend[0]) + Math.abs(swayZ - flower.lastBend[1]) > 0.00001) {
     const positions = stemGeometry.attributes.position.array;
@@ -284,8 +287,8 @@ export function updateFlowerMotion(flower, time, swayX, swayZ, response, paused 
     flower.lastBend[1] = swayZ;
   }
   flower.head.position.set(flower.bend + swayX, height, swayZ);
-  flower.head.rotation.x = flower.baseRotation.x + swayZ / height * 1.1 + response * 0.12;
-  flower.head.rotation.z = flower.baseRotation.z - swayX / height * 1.1;
+  flower.head.rotation.x = flower.baseRotation.x + swayZ / height * 1.1 + response * (snowdrop ? 0.045 : 0.12);
+  flower.head.rotation.z = flower.baseRotation.z - swayX / height * 1.1 + (snowdrop && !paused ? Math.sin(time * 0.8 + flower.phase) * 0.014 : 0);
   for (const leaf of flower.leaves) {
     const fraction = leaf.position.y / height;
     leaf.mesh.position.set(leaf.position.x + swayX * fraction ** 2, leaf.position.y, leaf.position.z + swayZ * fraction ** 2);
@@ -293,8 +296,8 @@ export function updateFlowerMotion(flower, time, swayX, swayZ, response, paused 
     leaf.mesh.rotation.z = leaf.rotation.z - swayX / height * fraction + response * Math.sin(leaf.phase) * 0.045;
   }
   for (const petal of flower.petals) {
-    const flutter = paused ? 0 : Math.sin(time * (poppy ? 1.8 : 1.1) + petal.phase) * (poppy ? 0.025 : 0.009);
-    petal.pivot.rotation.z = petal.rotation.z + flutter + response * ((poppy ? 0.075 : 0.12) + Math.sin(petal.phase) * 0.035);
+    const flutter = paused ? 0 : Math.sin(time * (snowdrop ? 0.65 : poppy ? 1.8 : 1.1) + petal.phase) * (snowdrop ? 0.005 : poppy ? 0.025 : 0.009);
+    petal.pivot.rotation.z = petal.rotation.z + flutter + response * ((snowdrop ? 0.035 : poppy ? 0.075 : 0.12) + Math.sin(petal.phase) * (snowdrop ? 0.008 : 0.035));
     petal.pivot.rotation.x = petal.rotation.x + response * Math.sin(petal.phase) * (poppy ? 0.05 : 0.025);
   }
   flower.stamens.rotation.z = -swayX / height * 0.45 + response * 0.028;

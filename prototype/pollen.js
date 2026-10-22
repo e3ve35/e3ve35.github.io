@@ -24,26 +24,27 @@ export class PollenPool {
     this.dirty = true;
   }
 
-  emit(origin, time, count, strength = 0.5) {
+  emit(origin, time, count, strength = 0.5, mode = 0) {
+    const winter = mode === 2;
     for (let i = 0; i < Math.min(this.capacity, count); i++) {
       const slot = this.cursor++ % this.capacity;
       const angle = this.random() * Math.PI * 2;
-      const radius = Math.sqrt(this.random()) * 0.23;
+      const radius = Math.sqrt(this.random()) * (winter ? 0.1 : 0.23);
       this.positions.set([origin.x + Math.cos(angle) * radius, origin.y + (this.random() - 0.5) * 0.16, origin.z + Math.sin(angle) * radius], slot * 3);
-      this.particles.set([time, 2.6 + this.random() * 1.6, this.random(), Math.max(0, Math.min(1, strength))], slot * 4);
+      this.particles.set([time, (winter ? 3.7 : 2.6) + this.random() * 1.6, this.random(), Math.max(0, Math.min(1, strength))], slot * 4);
       this.glyphs[slot] = Math.floor(this.random() * GLYPHS.length);
     }
     this.dirty = true;
   }
 
-  stream(origin, time, delta, source, strength) {
+  stream(origin, time, delta, source, strength, mode = 0) {
     if (source !== this.source) this.carry = 0;
     this.source = source;
     if (source < 0) return;
-    this.carry += Math.min(0.05, Math.max(0, delta)) * (19 + strength * 15);
+    this.carry += Math.min(0.05, Math.max(0, delta)) * (mode === 2 ? 7 + strength * 6 : 19 + strength * 15);
     const count = Math.floor(this.carry);
     this.carry -= count;
-    if (count) this.emit(origin, time, count, strength);
+    if (count) this.emit(origin, time, count, strength, mode);
   }
 
   count(time) {
@@ -97,19 +98,21 @@ export class AsciiPollen {
           vSeed=seed;vGlyph=glyph;
           vFade=smoothstep(0.,.12,age)*(1.-smoothstep(particle.y*.55,particle.y,age));
           vec3 p=position;
-          float angle=seed*62.83+age*mix(.8+seed*.7,.24+seed*.3,seedDrift);
-          float radius=(.04+age*mix(.18,.32,seedDrift))*(0.5+seed);
+          float fan=step(.5,seedDrift)*(1.-step(1.5,seedDrift));
+          float winter=step(1.5,seedDrift);
+          float angle=seed*62.83+age*mix(.8+seed*.7,.24+seed*.3,fan)*(1.-winter*.45);
+          float radius=(.04+age*mix(.18,.32,fan))*(0.5+seed)*(1.-winter*.45)+winter*(1.-exp(-age*2.2))*.55;
           p.x+=cos(angle)*radius+sin(age*.7+seed*20.)*age*.1;
           p.z+=sin(angle)*radius;
-          p.x+=seedDrift*age*(.2+cos(seed*6.283)*.22);
-          p.y+=age*mix(.48+seed*.38+particle.w*.15,.23+seed*.25+particle.w*.1,seedDrift);
+          p.x+=fan*age*(.2+cos(seed*6.283)*.22);
+          p.y+=age*mix(.48+seed*.38+particle.w*.15,.23+seed*.25+particle.w*.1,fan)*(1.-winter*.4);
           float tick=floor(time*12.+seed*30.);
           p.x+=(hash(tick+seed*97.)-.5)*step(.91,hash(tick+seed*43.))*distortion*.28;
           vec4 view=modelViewMatrix*vec4(p,1.);
           gl_Position=projectionMatrix*view;
           float size=clamp((.19+seed*.08)*scale/max(1.,-view.z),8.*pixelRatio,27.*pixelRatio);
           float shrink=mix(1.,.22,smoothstep(0.,max(.001,particle.y),age));
-          gl_PointSize=size*shrink;
+          gl_PointSize=size*shrink*(1.-winter*.28);
           if(age>=particle.y||time<particle.x){gl_Position=vec4(2.,2.,2.,1.);gl_PointSize=0.;}
         }`,
       fragmentShader: `
@@ -148,7 +151,8 @@ export class AsciiPollen {
   }
 
   burst(flower, time, strength) {
-    this.pool.emit(this.flowerOrigin(flower), time, 15 + Math.floor(strength * 12), strength);
+    const winter = flower.pollenMode === 2;
+    this.pool.emit(this.flowerOrigin(flower), time, winter ? 7 + Math.floor(strength * 6) : 15 + Math.floor(strength * 12), strength, winter ? 2 : 0);
   }
 
   clear() { this.pool.clear(); }
@@ -159,7 +163,7 @@ export class AsciiPollen {
   }
 
   update(time, delta, flower, strength, distortion, mode = 0) {
-    this.pool.stream(flower ? this.flowerOrigin(flower) : null, time, delta, flower ? flower.id : -1, strength);
+    this.pool.stream(flower ? this.flowerOrigin(flower) : null, time, delta, flower ? flower.id : -1, strength, mode);
     this.material.uniforms.time.value = time;
     this.material.uniforms.distortion.value = distortion;
     this.material.uniforms.seedDrift.value = mode;

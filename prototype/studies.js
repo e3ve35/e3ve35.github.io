@@ -12,6 +12,12 @@ const studies = {
     sound: 'A soft, floating bloom', pollenMode: 1,
     keyLight: '#ff91b0', fillLight: '#ead0a2',
   },
+  snowdrop: {
+    id: 'snowdrop', index: '03', name: 'Snowdrops', genus: 'Galanthus',
+    noteLabel: 'D GLASS TONES', caption: 'Winter preview · glass tones',
+    sound: 'A quiet, glassy bloom', pollenMode: 2,
+    keyLight: '#b8ccff', fillLight: '#cdf7f1',
+  },
 };
 
 export function gardenStudy(id) { return studies[id] || studies.lily; }
@@ -25,7 +31,7 @@ const seasons = [
 ];
 
 export function gardenSelection(mode = 'calendar', date = new Date()) {
-  mode = ['calendar', 'lily', 'poppy'].includes(mode) ? mode : 'calendar';
+  mode = mode === 'calendar' || Object.hasOwn(studies, mode) ? mode : 'calendar';
   const monthIndex = date.getMonth();
   const season = seasons[Math.floor(((monthIndex + 1) % 12) / 3)];
   const automatic = mode === 'calendar';

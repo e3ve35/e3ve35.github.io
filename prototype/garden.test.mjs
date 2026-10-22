@@ -6,6 +6,7 @@ import { AsciiPollen, PollenPool } from './pollen.js';
 import * as THREE from './vendor/three.module.min.js';
 import { flowerNote } from './audio.js';
 import { gardenStudy, gardenSelection } from './studies.js';
+import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js';
 
 test('gesture strength is bounded and consistent across screen sizes', () => {
   assert.equal(gestureStrength(0, 16, 720), 0);
@@ -225,4 +226,69 @@ test('manual flowers survive calendar changes and Now restores the seasonal choi
   assert.equal(gardenSelection('lily', october).study.id, 'lily');
   assert.equal(gardenSelection('calendar', october).study.id, 'poppy');
   assert.equal(gardenSelection('unknown', october).mode, 'calendar');
+});
+
+test('snowdrops hang below an arched stem with finite geometry and few draws', () => {
+  const assets = makeFlowerAssets();
+  assets.snowdrop = makeSnowdropAssets(assets);
+  const flower = createSnowdrop(0, assets, seededRandom(821));
+  assert.equal(flower.petals.length, 6);
+  assert.equal(flower.anthers.count, 3);
+  assert.equal(flower.leaves.length, 2);
+  assert.ok(flower.stemGeometry.boundingSphere.radius > 0);
+  let highest = 0;
+  for (let i = 1; i < flower.stemPositions.length; i += 3) highest = Math.max(highest, flower.stemPositions[i]);
+  assert.ok(highest > flower.height + 0.5, 'The stem should arch above its hanging bloom');
+  for (const geometry of [assets.snowdrop.outer, assets.snowdrop.inner, ...flower.privateGeometries]) {
+    for (const value of geometry.attributes.position.array) assert.ok(Number.isFinite(value));
+    for (const value of geometry.attributes.normal.array) assert.ok(Number.isFinite(value));
+    if (geometry.index) for (const index of geometry.index.array) assert.ok(index < geometry.attributes.position.count);
+  }
+  assets.snowdrop.outer.computeBoundingBox();
+  assert.ok(assets.snowdrop.outer.boundingBox.min.y < -1.5);
+  let draws = 0;
+  flower.root.traverse((object) => { if (object.isMesh && object.material.visible !== false) draws++; });
+  assert.ok(draws <= 13);
+});
+
+test('snowdrop motion keeps the bell attached and pollen starts beneath its hem', () => {
+  const assets = makeFlowerAssets();
+  assets.snowdrop = makeSnowdropAssets(assets);
+  const flower = createSnowdrop(0, assets, seededRandom(821));
+  updateFlowerMotion(flower, 2, 0.25, -0.15, 0.6);
+  assert.equal(flower.head.position.x, flower.bend + 0.25);
+  assert.equal(flower.head.position.y, flower.height);
+  const origin = AsciiPollen.prototype.flowerOrigin.call({ origin: new THREE.Vector3() }, flower);
+  const local = flower.head.worldToLocal(origin.clone());
+  assert.ok(Math.abs(local.y + 1.65) < 1e-10);
+  updateFlowerMotion(flower, 2, 0, 0, 0, true);
+  assert.equal(flower.head.rotation.z, flower.baseRotation.z);
+  for (const petal of flower.petals) assert.equal(petal.pivot.rotation.z, petal.rotation.z);
+});
+
+test('snowdrop glass tones are higher, quieter, and longer than the lilies', () => {
+  for (let id = 0; id < 18; id++) {
+    const lily = bloomProfile(id, 0.7);
+    const snowdrop = bloomProfile(id, 0.7, 'snowdrop');
+    assert.equal(flowerNote(id, 'snowdrop').frequency, flowerNote(id).frequency * 2);
+    assert.ok(snowdrop.velocity < lily.velocity);
+    assert.ok(snowdrop.decay > lily.decay);
+    assert.ok(snowdrop.release > lily.release);
+    assert.equal(bloomEnvelope(snowdrop.gate + snowdrop.release, snowdrop), 0);
+  }
+});
+
+test('snowdrops emit sparser pollen and remain a manual preview in the calendar', () => {
+  const origin = { x: 0, y: 2, z: 0 };
+  const normal = new PollenPool(384, seededRandom(12));
+  const winter = new PollenPool(384, seededRandom(12));
+  for (let i = 1; i <= 120; i++) {
+    normal.stream(origin, i / 60, 1 / 60, 0, 0.5);
+    winter.stream(origin, i / 60, 1 / 60, 0, 0.5, 2);
+  }
+  assert.ok(winter.cursor < normal.cursor / 2);
+  const winterDate = new Date(2026, 11, 21);
+  assert.equal(gardenSelection('snowdrop', winterDate).study.id, 'snowdrop');
+  assert.equal(gardenSelection('snowdrop', winterDate).automatic, false);
+  assert.equal(gardenSelection('calendar', winterDate).study.id, 'lily');
 });
