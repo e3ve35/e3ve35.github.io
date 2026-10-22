@@ -4,7 +4,7 @@ import { AsciiPollen } from './pollen.js?v=sunset-pollen-1';
 import { createLily, createPoppy, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=seasonal-study-1';
 import { GardenAudio, flowerNote } from './audio.js?v=seasonal-study-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=seasonal-study-1';
-import { gardenStudy } from './studies.js?v=seasonal-study-1';
+import { gardenSelection } from './studies.js?v=calendar-garden-1';
 
 const $ = (selector) => document.querySelector(selector);
 const garden = $('#garden');
@@ -21,6 +21,12 @@ let paused = reducedMotion.matches;
 let intensity = 0.55;
 let notesPlayed = 0;
 let app;
+
+const studyPreferenceKey = 'evelyn-garden-study';
+function savedStudyMode() {
+  try { return sessionStorage.getItem(studyPreferenceKey) || 'calendar'; }
+  catch { return 'calendar'; }
+}
 
 for (const [i, bar] of [...document.querySelectorAll('.signal i')].entries()) {
   bar.style.setProperty('--bar-height', `${3 + Math.abs(Math.sin(i * 1.7) * Math.cos(i * 0.4)) * 20}px`);
@@ -73,6 +79,7 @@ reducedMotion.addEventListener('change', (event) => {
   syncMotion();
 });
 document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) app?.refreshCalendar();
   audio.setVisibility(!document.hidden && document.body.dataset.page === 'garden');
   if (document.hidden) app?.clearResponses();
 });
@@ -190,7 +197,11 @@ class Garden {
     this.scene.add(lime);
     this.keyLight = pink;
     this.fillLight = lime;
-    this.study = gardenStudy('lily');
+    this.selection = gardenSelection(savedStudyMode());
+    this.study = this.selection.study;
+    this.keyLight.color.set(this.selection.keyLight);
+    this.fillLight.color.set(this.selection.fillLight);
+    this.nextCalendarCheck = 0;
 
     this.assets = makeFlowerAssets();
     this.pollen = new AsciiPollen(this.scene);
@@ -220,7 +231,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'sunset-pollen';
+    document.body.dataset.gardenRevision = 'seasonal-calendar';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }
@@ -317,13 +328,16 @@ class Garden {
 
   syncStudyLabels() {
     document.body.dataset.study = this.study.id;
+    document.body.dataset.studyMode = this.selection.mode;
+    document.body.dataset.gardenMonth = this.selection.month;
     document.body.dataset.studyLabel = `${this.study.index} — ${this.study.name.toUpperCase()}`;
     $('#flower-genus').textContent = this.study.genus;
     $('#garden-study-index').textContent = this.study.index.padStart(3, '0');
-    $('#study-caption').textContent = this.study.caption;
+    $('#garden-month').textContent = this.selection.month.toUpperCase();
+    $('#study-caption').textContent = this.selection.caption;
     garden.setAttribute('aria-label', `Interactive chrome ${this.study.name.toLowerCase()} garden`);
-    for (const button of document.querySelectorAll('button[data-study]')) {
-      button.setAttribute('aria-pressed', String(button.dataset.study === this.study.id));
+    for (const button of document.querySelectorAll('button[data-study-mode]')) {
+      button.setAttribute('aria-pressed', String(button.dataset.studyMode === this.selection.mode));
     }
     if (!this.contentOpen) $('.footer-index').textContent = document.body.dataset.studyLabel;
     $('.pointer-instruction').textContent = `Wander over the ${this.study.name.toLowerCase()}.`;
@@ -331,18 +345,27 @@ class Garden {
     $('.touch-instruction:last-child').textContent = 'Each flower has its own voice.';
   }
 
-  changeStudy(id) {
-    const study = gardenStudy(id);
-    if (study === this.study) return;
-    audio.changeStudy();
-    this.study = study;
-    this.keyLight.color.set(study.keyLight);
-    this.fillLight.color.set(study.fillLight);
-    this.pointerInside = false;
-    this.gestureStrength = 0.35;
-    this.replant();
-    status.textContent = `${study.name} planted. ${audio.enabled ? 'Wander to listen.' : 'Enable sound to listen.'}`;
+  changeStudy(mode, remember = true) {
+    const selection = gardenSelection(mode);
+    if (selection.mode === this.selection.mode && selection.monthKey === this.selection.monthKey) return;
+    this.selection = selection;
+    if (remember) {
+      try { sessionStorage.setItem(studyPreferenceKey, selection.mode); } catch { /* Storage can be disabled. */ }
+    }
+    this.keyLight.color.set(selection.keyLight);
+    this.fillLight.color.set(selection.fillLight);
+    this.contentNeedsRender = true;
+    if (selection.study !== this.study) {
+      audio.changeStudy();
+      this.study = selection.study;
+      this.pointerInside = false;
+      this.gestureStrength = 0.35;
+      this.replant();
+    } else this.syncStudyLabels();
+    status.textContent = selection.automatic ? `${selection.month} garden. Following the season.` : `${this.study.name} selected. ${audio.enabled ? 'Wander to listen.' : 'Enable sound to listen.'}`;
   }
+
+  refreshCalendar() { this.changeStudy(this.selection.mode, false); }
 
   createGrass() {
     const random = seededRandom(186);
@@ -383,6 +406,7 @@ class Garden {
   bind() {
     window.addEventListener('garden:pagechange', (event) => {
       this.contentOpen = event.detail.page !== 'garden';
+      this.refreshCalendar();
       this.contentNeedsRender = true;
       this.pointerInside = false;
       this.hoveredId = -1;
@@ -392,6 +416,7 @@ class Garden {
       audio.setVisibility(!this.contentOpen && !document.hidden);
     });
     window.addEventListener('resize', () => this.resize());
+    window.addEventListener('focus', () => this.refreshCalendar());
     garden.addEventListener('pointermove', (event) => {
       if (event.pointerType === 'touch') return;
       const time = performance.now();
@@ -442,8 +467,8 @@ class Garden {
       this.replant();
       status.textContent = 'A new arrangement, same roots';
     });
-    for (const button of document.querySelectorAll('button[data-study]')) {
-      button.addEventListener('click', () => this.changeStudy(button.dataset.study));
+    for (const button of document.querySelectorAll('button[data-study-mode]')) {
+      button.addEventListener('click', () => this.changeStudy(button.dataset.studyMode));
     }
     canvas.addEventListener('webglcontextlost', (event) => {
       event.preventDefault();
@@ -525,6 +550,10 @@ class Garden {
 
   render(timestamp) {
     requestAnimationFrame(this.render);
+    if (timestamp >= this.nextCalendarCheck && !document.hidden) {
+      this.refreshCalendar();
+      this.nextCalendarCheck = timestamp + 60000;
+    }
     if (document.hidden) { this.lastTime = timestamp; return; }
     if (this.contentOpen && !this.contentNeedsRender) { this.lastTime = timestamp; return; }
     this.contentNeedsRender = false;

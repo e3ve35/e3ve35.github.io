@@ -5,7 +5,7 @@ import { createLily, createPoppy, makeFlowerAssets, seededRandom, updateLilyMoti
 import { AsciiPollen, PollenPool } from './pollen.js';
 import * as THREE from './vendor/three.module.min.js';
 import { flowerNote } from './audio.js';
-import { gardenStudy } from './studies.js';
+import { gardenStudy, gardenSelection } from './studies.js';
 
 test('gesture strength is bounded and consistent across screen sizes', () => {
   assert.equal(gestureStrength(0, 16, 720), 0);
@@ -190,4 +190,39 @@ test('garden studies have independent pollen modes and unknown studies use the l
   assert.equal(gardenStudy('unknown'), gardenStudy('lily'));
   assert.notEqual(gardenStudy('poppy').pollenMode, gardenStudy('lily').pollenMode);
   assert.notEqual(gardenStudy('poppy').genus, gardenStudy('lily').genus);
+});
+
+test('the art calendar changes at season boundaries using the local month', () => {
+  const dates = [
+    [2026, 0, 'Winter', 'lily'], [2026, 1, 'Winter', 'lily'],
+    [2026, 2, 'Spring', 'poppy'], [2026, 4, 'Spring', 'poppy'],
+    [2026, 5, 'Summer', 'lily'], [2026, 7, 'Summer', 'lily'],
+    [2026, 8, 'Autumn', 'poppy'], [2026, 10, 'Autumn', 'poppy'],
+    [2026, 11, 'Winter', 'lily'], [2027, 0, 'Winter', 'lily'],
+  ];
+  for (const [year, month, season, species] of dates) {
+    const choice = gardenSelection('calendar', new Date(year, month, 1, 0, 0, 0));
+    assert.equal(choice.study.id, species);
+    assert.equal(choice.season, season);
+    assert.equal(choice.monthKey, `${year}-${month}`);
+    assert.equal(choice.automatic, true);
+  }
+  assert.equal(gardenSelection('calendar', new Date(2026, 1, 28, 23, 59, 59)).season, 'Winter');
+  assert.equal(gardenSelection('calendar', new Date(2026, 2, 1, 0, 0, 0)).season, 'Spring');
+});
+
+test('manual flowers survive calendar changes and Now restores the seasonal choice', () => {
+  for (const month of [0, 3, 6, 9]) {
+    const date = new Date(2026, month, 21);
+    for (const id of ['lily', 'poppy']) {
+      const choice = gardenSelection(id, date);
+      assert.equal(choice.study, gardenStudy(id));
+      assert.equal(choice.keyLight, gardenStudy(id).keyLight);
+      assert.equal(choice.automatic, false);
+    }
+  }
+  const october = new Date(2026, 9, 21);
+  assert.equal(gardenSelection('lily', october).study.id, 'lily');
+  assert.equal(gardenSelection('calendar', october).study.id, 'poppy');
+  assert.equal(gardenSelection('unknown', october).mode, 'calendar');
 });

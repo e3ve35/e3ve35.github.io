@@ -9,9 +9,9 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%2309070d'/%3E%3Ctext x='32' y='49' text-anchor='middle' font-size='53' fill='%23d4ff76'%3E✳%3C/text%3E%3C/svg%3E" />
     <link rel="canonical" href="https://e3ve35.github.io/" />
     <link rel="stylesheet" href="./prototype/style.css" />
-    <link rel="stylesheet" href="./prototype/portfolio.css?v=seasonal-study-1" />
+    <link rel="stylesheet" href="./prototype/portfolio.css?v=calendar-garden-1" />
     <script src="./prototype/vendor/Tone.js" defer></script>
-    <script type="module" src="./prototype/main.js?v=sunset-pollen-1"></script>
+    <script type="module" src="./prototype/main.js?v=calendar-garden-1"></script>
   </head>
   <body data-page="garden">
     <a class="skip-link" href="#page-content">Skip to content</a>
@@ -139,11 +139,12 @@
     </section>
     </main>
 
-    <aside class="season-preview" aria-label="Seasonal garden preview">
-      <p class="study-label">SEASONAL STUDIES <span>PREVIEW</span></p>
-      <div class="study-switch" role="group" aria-label="Choose flower study">
-        <button type="button" data-study="lily" aria-pressed="true"><span>01</span> Lilies</button>
-        <button type="button" data-study="poppy" aria-pressed="false"><span>02</span> Poppies</button>
+    <aside class="season-preview" aria-label="Seasonal garden">
+      <p class="study-label">SEASONAL GARDEN <span id="garden-month"></span></p>
+      <div class="study-switch" role="group" aria-label="Follow the season or choose a flower">
+        <button type="button" data-study-mode="calendar" aria-pressed="true" aria-label="Now — follow the current season">Now</button>
+        <button type="button" data-study-mode="lily" aria-pressed="false"><span>01</span> Lilies</button>
+        <button type="button" data-study-mode="poppy" aria-pressed="false"><span>02</span> Poppies</button>
       </div>
       <p id="study-caption" class="study-caption">Bell tones · rising pollen</p>
     </aside>

@@ -22,7 +22,11 @@
 .study-switch button[aria-pressed="true"] { background: #d2fb8310; color: var(--acid); }
 .study-switch button:hover { color: var(--paper); }
 .study-switch button:focus-visible { outline-offset: 3px; position: relative; }
-.study-caption { font-size: 9px; line-height: 1.6; margin: 9px 0 0; color: #b0a1bb; }
+.study-caption {
+  font-size: 9px; line-height: 1.6; margin: 0; padding: 6px 8px; color: #bfb1c9;
+  background: #100c1880; backdrop-filter: blur(10px);
+  border: 1px solid var(--line); border-top: 0;
+}
 body:not([data-page="garden"]) .season-preview { display: none; }
 .skip-link {
   position: fixed; left: 24px; top: -80px; z-index: 100;
@@ -142,8 +146,8 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   .season-preview { top: 149px; left: 23px; right: auto; width: calc(100% - 189px); padding-top: 10px; }
   .study-label { font-size: 6px; letter-spacing: .03em; gap: 5px; margin-bottom: 9px; }
   .study-switch button { min-height: 44px; font-size: 9px; padding: 5px; }
-  .study-switch button span { font-size: 7px; margin-right: 4px; }
-  .study-caption { font-size: 8px; margin-top: 7px; }
+  .study-switch button span { display: none; }
+  .study-caption { font-size: 8px; }
   .page-nav {
     top: 64px; left: 0; right: 0; transform: none; justify-content: space-between;
     border-top: 1px solid var(--line); padding-top: 10px;
