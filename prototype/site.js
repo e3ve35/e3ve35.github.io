@@ -25,7 +25,7 @@ function showPage({ focus = true } = {}) {
   garden.setAttribute('aria-hidden', String(page !== 'garden'));
   document.querySelector('.specimen-card').hidden = page !== 'garden';
   document.querySelector('.controls').hidden = page !== 'garden';
-  document.querySelector('.footer-index').textContent = labels[page];
+  document.querySelector('.footer-index').textContent = page === 'garden' ? document.body.dataset.studyLabel || labels.garden : labels[page];
   const caption = document.querySelector('.footer-caption span:last-child');
   caption.textContent = page === 'garden' ? 'BOTANICAL FORM. SYNTHETIC SOUL.' : `© ${new Date().getFullYear()} EVELYN WU`;
   document.title = page === 'garden' ? 'Unlikely Garden — Evelyn Wu' : `${page[0].toUpperCase() + page.slice(1)} — Evelyn Wu`;

@@ -1,10 +1,12 @@
-import { bloomProfile } from './expressions.js?v=lily-expression-1';
+import { bloomProfile } from './expressions.js?v=seasonal-study-1';
 
 const MIDI = [50, 53, 55, 57, 60, 62, 65, 67, 69, 72, 74, 77];
+const POPPY_MIDI = [45, 48, 50, 52, 55, 57, 60, 62, 64, 67, 69, 72];
 const NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
 
-export function flowerNote(id) {
-  const midi = MIDI[(id * 7 + 5) % MIDI.length];
+export function flowerNote(id, species = 'lily') {
+  const scale = species === 'poppy' ? POPPY_MIDI : MIDI;
+  const midi = scale[(id * 7 + 5) % scale.length];
   return { midi, frequency: 440 * 2 ** ((midi - 69) / 12), name: `${NAMES[midi % 12]}${Math.floor(midi / 12) - 1}` };
 }
 
@@ -73,14 +75,20 @@ export class GardenAudio {
     document.body.dataset.voicesInUse = '0';
   }
 
-  play(id, screenPosition = 0.5, strength = 0.45) {
+  changeStudy() {
+    this.releaseVoices();
+    this.lastByFlower.clear();
+    this.lastPlayed = -Infinity;
+  }
+
+  play(id, screenPosition = 0.5, strength = 0.45, species = 'lily') {
     if (!this.enabled || !this.ready || document.hidden || document.body.dataset.page !== 'garden') return null;
     const now = performance.now();
     if (now - this.lastPlayed < 100 || now - (this.lastByFlower.get(id) ?? -Infinity) < 550) return null;
     const immediate = window.Tone.immediate();
     const voice = this.voices.find((candidate) => candidate.busyUntil <= immediate);
     if (!voice) return null;
-    const profile = bloomProfile(id, strength);
+    const profile = bloomProfile(id, strength, species);
     const when = window.Tone.now();
     voice.synth.set({
       harmonicity: profile.character.harmonicity,
@@ -91,11 +99,11 @@ export class GardenAudio {
     });
     voice.panner.pan.setValueAtTime(Math.max(-0.78, Math.min(0.78, (screenPosition - 0.5) * 1.56)), when);
     voice.filter.frequency.setValueAtTime(profile.brightness, when);
-    voice.synth.triggerAttackRelease(flowerNote(id).frequency, profile.gate, when, profile.velocity);
+    voice.synth.triggerAttackRelease(flowerNote(id, species).frequency, profile.gate, when, profile.velocity);
     voice.busyUntil = when + profile.gate + profile.release + 0.05;
     this.lastPlayed = now;
     this.lastByFlower.set(id, now);
-    document.body.dataset.lastNote = flowerNote(id).name;
+    document.body.dataset.lastNote = flowerNote(id, species).name;
     document.body.dataset.gestureStrength = profile.strength.toFixed(2);
     document.body.dataset.voiceCharacter = profile.character.name;
     document.body.dataset.voicesInUse = String(this.voices.filter((candidate) => candidate.busyUntil > immediate).length);

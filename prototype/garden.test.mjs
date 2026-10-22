@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js';
-import { createLily, makeFlowerAssets, seededRandom, updateLilyMotion } from './flowers.js';
+import { createLily, createPoppy, makeFlowerAssets, seededRandom, updateLilyMotion, updateFlowerMotion } from './flowers.js';
 import { AsciiPollen, PollenPool } from './pollen.js';
 import * as THREE from './vendor/three.module.min.js';
+import { flowerNote } from './audio.js';
+import { gardenStudy } from './studies.js';
 
 test('gesture strength is bounded and consistent across screen sizes', () => {
   assert.equal(gestureStrength(0, 16, 720), 0);
@@ -139,4 +141,53 @@ test('pollen is released from the moving stamens in world space', () => {
     const point = new THREE.Vector3().fromArray(pool.positions, i * 3);
     assert.ok(point.distanceTo(after) < 0.25);
   }
+});
+
+test('poppies have a distinct silhouette with finite geometry and a bounded draw count', () => {
+  const assets = makeFlowerAssets();
+  const poppy = createPoppy(0, assets, seededRandom(821));
+  assert.equal(poppy.petals.length, 4);
+  assert.equal(poppy.anthers.count, 36);
+  assert.equal(poppy.leaves.length, 3);
+  assert.equal(poppy.species, 'poppy');
+  for (const geometry of [...assets.poppyPetals, assets.poppyCenter, ...poppy.privateGeometries]) {
+    for (const value of geometry.attributes.position.array) assert.ok(Number.isFinite(value));
+    for (const value of geometry.attributes.normal.array) assert.ok(Number.isFinite(value));
+    if (geometry.index) for (const index of geometry.index.array) assert.ok(index < geometry.attributes.position.count);
+  }
+  let draws = 0;
+  poppy.root.traverse((object) => { if (object.isMesh && object.material.visible !== false) draws++; });
+  assert.ok(draws <= 13, `Unexpected draw count per poppy: ${draws}`);
+});
+
+test('poppy timbres are softer and retain consistent identity, pitch, and envelope timing', () => {
+  for (let id = 0; id < 18; id++) {
+    const lily = bloomProfile(id, 0.7);
+    const poppy = bloomProfile(id, 0.7, 'poppy');
+    assert.ok(poppy.attack > lily.attack);
+    assert.ok(poppy.brightness < lily.brightness);
+    assert.ok(poppy.modulation < lily.modulation);
+    assert.ok(flowerNote(id, 'poppy').frequency < flowerNote(id).frequency);
+    assert.deepEqual(poppy.character, bloomProfile(id, 0.1, 'poppy').character);
+    assert.ok(Math.abs(bloomEnvelope(poppy.attack, poppy) - 1) < 1e-9);
+    assert.equal(bloomEnvelope(poppy.gate + poppy.release, poppy), 0);
+  }
+});
+
+test('poppy deformation stays attached and its pollen origin follows the central pod', () => {
+  const poppy = createPoppy(0, makeFlowerAssets(), seededRandom(821));
+  updateFlowerMotion(poppy, 2, 0.23, -0.1, 0.6);
+  assert.equal(poppy.head.position.x, poppy.bend + 0.23);
+  const origin = AsciiPollen.prototype.flowerOrigin.call({ origin: new THREE.Vector3() }, poppy);
+  const local = poppy.head.worldToLocal(origin.clone());
+  assert.ok(Math.abs(local.y - 0.43) < 1e-10);
+  updateFlowerMotion(poppy, 2, 0, 0, 0, true);
+  assert.equal(poppy.head.position.x, poppy.bend);
+  for (const petal of poppy.petals) assert.equal(petal.pivot.rotation.z, petal.rotation.z);
+});
+
+test('garden studies have independent pollen modes and unknown studies use the lily default', () => {
+  assert.equal(gardenStudy('unknown'), gardenStudy('lily'));
+  assert.notEqual(gardenStudy('poppy').pollenMode, gardenStudy('lily').pollenMode);
+  assert.notEqual(gardenStudy('poppy').genus, gardenStudy('lily').genus);
 });

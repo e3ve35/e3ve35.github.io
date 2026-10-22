@@ -1,9 +1,10 @@
-import './site.js';
+import './site.js?v=seasonal-study-1';
 import * as THREE from './vendor/three.module.min.js';
-import { AsciiPollen } from './pollen.js?v=white-pollen-1';
-import { createLily, makeFlowerAssets, seededRandom, updateLilyMotion } from './flowers.js?v=lily-expression-1';
-import { GardenAudio, flowerNote } from './audio.js?v=lily-expression-1';
-import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=lily-expression-1';
+import { AsciiPollen } from './pollen.js?v=seasonal-study-1';
+import { createLily, createPoppy, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=seasonal-study-1';
+import { GardenAudio, flowerNote } from './audio.js?v=seasonal-study-1';
+import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=seasonal-study-1';
+import { gardenStudy } from './studies.js?v=seasonal-study-1';
 
 const $ = (selector) => document.querySelector(selector);
 const garden = $('#garden');
@@ -187,6 +188,9 @@ class Garden {
     const lime = new THREE.DirectionalLight('#cbff94', 2.2);
     lime.position.set(-6, 3, 1);
     this.scene.add(lime);
+    this.keyLight = pink;
+    this.fillLight = lime;
+    this.study = gardenStudy('lily');
 
     this.assets = makeFlowerAssets();
     this.pollen = new AsciiPollen(this.scene);
@@ -216,7 +220,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'white-ascii-pollen';
+    document.body.dataset.gardenRevision = 'seasonal-studies';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }
@@ -291,7 +295,7 @@ class Garden {
       [8.4, -12.0, 1.0], [-9.2, -2.2, 0.94], [0.6, -16, 0.84],
     ];
     placements.forEach(([x, z, scale], id) => {
-      const flower = createLily(id, this.assets, random);
+      const flower = (this.study.id === 'poppy' ? createPoppy : createLily)(id, this.assets, random);
       flower.root.position.set(x + (random() - 0.5) * (id ? 1.1 : 0.2), 0, z + (random() - 0.5) * 0.6);
       flower.root.scale.setScalar(scale * (0.94 + random() * 0.12));
       flower.root.rotation.y = (random() - 0.5) * 0.5;
@@ -306,8 +310,38 @@ class Garden {
     this.clearResponses();
     cursor.classList.remove('visible');
     $('#specimen-id').textContent = '001';
-    $('#note-name').textContent = 'D PENTATONIC';
+    $('#note-name').textContent = this.study.noteLabel;
+    this.syncStudyLabels();
     document.body.dataset.seed = String(this.seed);
+  }
+
+  syncStudyLabels() {
+    document.body.dataset.study = this.study.id;
+    document.body.dataset.studyLabel = `${this.study.index} — ${this.study.name.toUpperCase()}`;
+    $('#flower-genus').textContent = this.study.genus;
+    $('#garden-study-index').textContent = this.study.index.padStart(3, '0');
+    $('#study-caption').textContent = this.study.caption;
+    garden.setAttribute('aria-label', `Interactive chrome ${this.study.name.toLowerCase()} garden`);
+    for (const button of document.querySelectorAll('button[data-study]')) {
+      button.setAttribute('aria-pressed', String(button.dataset.study === this.study.id));
+    }
+    if (!this.contentOpen) $('.footer-index').textContent = document.body.dataset.studyLabel;
+    $('.pointer-instruction').textContent = `Wander over the ${this.study.name.toLowerCase()}.`;
+    $('.touch-instruction').textContent = `Tap the ${this.study.name.toLowerCase()}.`;
+    $('.touch-instruction:last-child').textContent = 'Each flower has its own voice.';
+  }
+
+  changeStudy(id) {
+    const study = gardenStudy(id);
+    if (study === this.study) return;
+    audio.changeStudy();
+    this.study = study;
+    this.keyLight.color.set(study.keyLight);
+    this.fillLight.color.set(study.fillLight);
+    this.pointerInside = false;
+    this.gestureStrength = 0.35;
+    this.replant();
+    status.textContent = `${study.name} planted. ${audio.enabled ? 'Wander to listen.' : 'Enable sound to listen.'}`;
   }
 
   createGrass() {
@@ -408,6 +442,9 @@ class Garden {
       this.replant();
       status.textContent = 'A new arrangement, same roots';
     });
+    for (const button of document.querySelectorAll('button[data-study]')) {
+      button.addEventListener('click', () => this.changeStudy(button.dataset.study));
+    }
     canvas.addEventListener('webglcontextlost', (event) => {
       event.preventDefault();
       audio.mute();
@@ -429,7 +466,7 @@ class Garden {
     this.hoveredId = id;
     cursor.classList.toggle('visible', id >= 0 && !this.mobile);
     garden.style.cursor = id >= 0 && !this.mobile ? 'none' : 'default';
-    if (id >= 0) $('#cursor-label').textContent = `LILIUM / ${String(id + 1).padStart(3, '0')}`;
+    if (id >= 0) $('#cursor-label').textContent = `${this.study.genus.toUpperCase()} / ${String(id + 1).padStart(3, '0')}`;
   }
 
   clearResponses() {
@@ -458,7 +495,7 @@ class Garden {
     flower.head.getWorldPosition(this.projected);
     this.projected.project(this.camera);
     const pan = this.projected.x * 0.5 + 0.5;
-    const note = audio.play(id, pan, strength);
+    const note = audio.play(id, pan, strength, this.study.id);
     const now = performance.now() / 1000;
     // Visual pollen is available with sound off and when all audio voices are busy.
     if (!paused && now - (flower.lastPollen || -Infinity) > 0.18) {
@@ -467,7 +504,7 @@ class Garden {
     }
     if (note || (!audio.enabled && now - flower.lastGesture > 0.25)) {
       flower.lastGesture = now;
-      const gesture = note || { ...bloomProfile(id, strength), startedAt: now };
+      const gesture = note || { ...bloomProfile(id, strength, this.study.id), startedAt: now };
       if (!paused) {
         flower.gesture = gesture;
         this.visualGesture = gesture;
@@ -477,8 +514,8 @@ class Garden {
       this.post.uniforms.focus.value.set(pan, this.projected.y * 0.5 + 0.5);
     }
     $('#specimen-id').textContent = String(id + 1).padStart(3, '0');
-    $('#note-name').textContent = `${flowerNote(id).name} / ${flowerCharacter(id).name.toUpperCase()}`;
-    status.textContent = note ? strength > 0.65 ? 'A bright, ringing bloom' : 'A gentle, synthetic bloom' : audio.enabled ? 'Listening to the last bloom' : 'Enable sound to hear this bloom';
+    $('#note-name').textContent = `${flowerNote(id, this.study.id).name} / ${flowerCharacter(id, this.study.id).name.toUpperCase()}`;
+    status.textContent = note ? this.study.id === 'poppy' ? this.study.sound : strength > 0.65 ? 'A bright, ringing bloom' : 'A gentle, synthetic bloom' : audio.enabled ? 'Listening to the last bloom' : 'Enable sound to hear this bloom';
     document.body.dataset.selectedFlower = String(id);
     if (note) {
       notesPlayed++;
@@ -522,7 +559,7 @@ class Garden {
       const yaw = flower.root.rotation.y;
       const swayX = breezeX * Math.cos(yaw) - breezeZ * Math.sin(yaw) + response * Math.sin(flower.phase) * 0.1;
       const swayZ = breezeX * Math.sin(yaw) + breezeZ * Math.cos(yaw) + response * Math.cos(flower.phase) * 0.045;
-      updateLilyMotion(flower, this.elapsed, swayX, swayZ, response * intensity, paused);
+      updateFlowerMotion(flower, this.elapsed, swayX, swayZ, response * intensity, paused);
       if (flower.id === this.selectedId) {
         card.classList.toggle('playing', !paused && envelope > 0.006);
         card.style.setProperty('--signal-strength', String(Math.max(0.12, Math.min(1, envelope))));
@@ -532,7 +569,7 @@ class Garden {
     // should not repeatedly retrigger music.
     if (this.pointerInside && this.needsPicking) { this.pick(); this.needsPicking = false; }
     const pollenFlower = !paused && !this.contentOpen && this.pointerInside && this.hoveredId >= 0 ? this.flowers[this.hoveredId] : null;
-    const pollenCount = this.pollen.update(this.elapsed, paused ? 0 : delta, pollenFlower, this.gestureStrength, intensity);
+    const pollenCount = this.pollen.update(this.elapsed, paused ? 0 : delta, pollenFlower, this.gestureStrength, intensity, this.study.pollenMode);
     if (document.body.dataset.pollenCount !== String(pollenCount)) document.body.dataset.pollenCount = String(pollenCount);
     this.post.uniforms.time.value = this.elapsed;
     this.post.uniforms.burst.value = this.burst;
@@ -553,6 +590,7 @@ try {
   $('#fallback').hidden = false;
   $('.intro').hidden = true;
   $('.specimen-card').hidden = true;
+  $('.season-preview').hidden = true;
   soundButton.disabled = true;
   document.body.dataset.gardenState = 'unavailable';
 }

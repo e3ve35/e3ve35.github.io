@@ -85,11 +85,11 @@ export class AsciiPollen {
       transparent: true, depthWrite: false, depthTest: true,
       uniforms: {
         atlas: { value: glyphAtlas() }, time: { value: 0 },
-        scale: { value: 800 }, pixelRatio: { value: 1 }, distortion: { value: 0.55 },
+        scale: { value: 800 }, pixelRatio: { value: 1 }, distortion: { value: 0.55 }, seedDrift: { value: 0 },
       },
       vertexShader: `
         attribute vec4 particle;attribute float glyph;
-        uniform float time;uniform float scale;uniform float pixelRatio;uniform float distortion;
+        uniform float time;uniform float scale;uniform float pixelRatio;uniform float distortion;uniform float seedDrift;
         varying float vSeed;varying float vGlyph;varying float vFade;
         float hash(float n){return fract(sin(n*127.1)*43758.5453);}
         void main(){
@@ -97,11 +97,12 @@ export class AsciiPollen {
           vSeed=seed;vGlyph=glyph;
           vFade=smoothstep(0.,.12,age)*(1.-smoothstep(particle.y*.55,particle.y,age));
           vec3 p=position;
-          float angle=seed*62.83+age*(.8+seed*.7);
-          float radius=(.04+age*.18)*(0.5+seed);
+          float angle=seed*62.83+age*mix(.8+seed*.7,.24+seed*.3,seedDrift);
+          float radius=(.04+age*mix(.18,.32,seedDrift))*(0.5+seed);
           p.x+=cos(angle)*radius+sin(age*.7+seed*20.)*age*.1;
           p.z+=sin(angle)*radius;
-          p.y+=age*(.48+seed*.38+particle.w*.15);
+          p.x+=seedDrift*age*(.2+cos(seed*6.283)*.22);
+          p.y+=age*mix(.48+seed*.38+particle.w*.15,.23+seed*.25+particle.w*.1,seedDrift);
           float tick=floor(time*12.+seed*30.);
           p.x+=(hash(tick+seed*97.)-.5)*step(.91,hash(tick+seed*43.))*distortion*.28;
           vec4 view=modelViewMatrix*vec4(p,1.);
@@ -140,7 +141,7 @@ export class AsciiPollen {
   }
 
   flowerOrigin(flower) {
-    this.origin.set(0, 0.85, 0);
+    this.origin.set(0, flower.pollenHeight ?? 0.85, 0);
     return flower.head.localToWorld(this.origin);
   }
 
@@ -155,10 +156,11 @@ export class AsciiPollen {
     this.material.uniforms.pixelRatio.value = pixelRatio;
   }
 
-  update(time, delta, flower, strength, distortion) {
+  update(time, delta, flower, strength, distortion, mode = 0) {
     this.pool.stream(flower ? this.flowerOrigin(flower) : null, time, delta, flower ? flower.id : -1, strength);
     this.material.uniforms.time.value = time;
     this.material.uniforms.distortion.value = distortion;
+    this.material.uniforms.seedDrift.value = mode;
     if (this.pool.dirty) {
       for (const attribute of Object.values(this.geometry.attributes)) attribute.needsUpdate = true;
       this.pool.dirty = false;

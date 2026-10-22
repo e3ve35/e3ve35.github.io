@@ -1,6 +1,6 @@
-# Unlikely Garden · study 001
+# Unlikely Garden · studies 001–002
 
-A garden and portfolio for Evelyn Wu: 18 procedural chrome lilies, colored studio reflections, FM bells, and localized visual glitches. Garden, Work, About, and Contact views share the same scene. The production homepage is the root `index.html`; this folder holds its assets. The previous portfolio is preserved at `/archive/`, and old `/prototype/` links redirect to the homepage with their fragment intact.
+A garden and portfolio for Evelyn Wu: two studies of 18 procedural chrome flowers, colored studio reflections, synthesized tones, and localized visual glitches. Garden, Work, About, and Contact views share the same scene. The production homepage is the root `index.html`; this folder holds its assets. The previous portfolio is preserved at `/archive/`, and old `/prototype/` links redirect to the homepage with their fragment intact.
 
 ## Preview
 
@@ -15,6 +15,7 @@ Open http://127.0.0.1:4173/. No package installation or build is needed. Pinned 
 ## Interact
 
 - Click **Enable sound**, then hover over flower heads. On a phone, tap them.
+- **Seasonal studies** previews Lilies and Poppies. Lilies remain the default. Poppies have four broad, crumpled petals, a dark seed pod, a ring of copper stamens, softer A pentatonic tones, and white ASCII seeds drifting outward. Switching releases active voices, clears pollen, and replants the same field seed; audio stays opt-in and the motion preference is preserved. These are art studies, with no automatic calendar selection yet.
 - Gentle pointer movements produce softer, darker bells; faster sweeps increase brightness and intensity. Each flower retains a stable pitch and a particular bell character. A gesture also sends a small, delayed ripple through nearby flowers.
 - Hovering releases white ASCII pollen with pink glitch echoes from the stamens: an arrival burst followed by a drifting spiral while you linger. Taps and keyboard play also release bursts. The visual works with sound disabled, and lingering never repeats the audio.
 - Focus the garden with Tab. Arrow keys select and play flowers; Space or Enter replays the selected flower. Sound still requires the explicit Enable sound button.
@@ -26,10 +27,11 @@ Open http://127.0.0.1:4173/. No package installation or build is needed. Pinned 
 
 ## Implementation
 
-- `flowers.js`: three shared thick petal variants with folds and curved edges, brushed roughness, asymmetric planting, and analytically bent stems. Leaves, petals, and heads have independent movement. Batched filaments and instanced anthers reduce each lily from 43 visible draw objects to 13. Invisible head meshes follow the bloom for picking.
-- `audio.js`: eight reusable FM voices, with per-note stereo panning and filtering, per-flower cooldown, D minor pentatonic notes, delay, reverb, conservative gain, and a limiter. New timbre settings apply only to free voices, preserving notes already ringing. Synthesis runs locally; there are no recorded samples or network audio requests.
-- `expressions.js`: gesture normalization, stable flower characters, shared audio/visual envelope parameters, frame-rate-independent springs, and delayed neighbor ripples. Visual envelopes are aligned with the scheduled audio onset and approximate its exponential decay.
-- `pollen.js`: a bounded 384-particle pool and one GPU point draw, with a single generated glyph atlas. Particles start at the moving stamens, curl upward in world space, and fade over 2.6–4.2 seconds. Depth testing lets petals occlude pollen. No per-frame canvas texture uploads or DOM particles are needed; pause, replanting, hidden tabs, and portfolio navigation clear the pool.
+- `flowers.js`: shared thick petal variants for six-petal lilies and four-petal poppies, brushed roughness, asymmetric planting, and analytically bent stems. Leaves, petals, and heads have independent movement; poppies flutter more loosely. Batched filaments and instanced anthers keep both species at no more than 13 visible draw objects per flower. Shared assets survive study changes; each replaced flower's private geometry and instance buffers are disposed. Invisible head meshes follow the bloom for picking.
+- `audio.js`: eight reusable FM voices, with per-note stereo panning and filtering, per-flower cooldown, D minor pentatonic notes for lilies and a lower A minor pentatonic palette for poppies, delay, reverb, conservative gain, and a limiter. New timbre settings apply only to free voices, preserving notes already ringing. Synthesis runs locally; there are no recorded samples or network audio requests.
+- `expressions.js`: gesture normalization, stable flower characters, shared audio/visual envelope parameters, frame-rate-independent springs, and delayed neighbor ripples. Poppies use slower attacks, lower filter cutoffs, and less FM modulation. Visual envelopes are aligned with the scheduled audio onset and approximate its exponential decay.
+- `studies.js`: names, specimen labels, lighting colors, and pollen modes for each study, ready for a future calendar mapping.
+- `pollen.js`: a bounded 384-particle pool and one GPU point draw, with a single generated glyph atlas. Particles start at the moving flower center, spiral upward for lilies or drift in a wider, slower fan for poppies, and fade over 2.6–4.2 seconds. Characters are white with pink glitch echoes. Depth testing lets petals occlude pollen. No per-frame canvas texture uploads or DOM particles are needed; pause, replanting, study changes, hidden tabs, and portfolio navigation clear the pool.
 - `main.js`: seeded planting, synthetic environment lighting, scene setup, interactions, and one lightweight postprocessing pass. Hidden tabs and portfolio views rest the garden; pausing clears transient motion.
 - `style.css`: responsive HTML overlay, independent of the WebGL canvas.
 - `site.js` and `portfolio.css`: accessible portfolio navigation, a six-project accordion, an introduction, the existing résumé link, and contact details. Project content was originally migrated from `js/functions.js`; the pixel-art entry has since been updated to SharePix using its repository description and link. The résumé URL comes from `js/sketch.js`.
@@ -42,10 +44,10 @@ The scene requires WebGL 2. Initialization failure presents a readable fallback;
 node --test prototype/garden.test.mjs
 ```
 
-Ten focused tests cover normalized gestures, stable timbres, envelope timing, frame-rate-independent spring motion, ripple propagation, finite geometry and drawing complexity, anchored stem deformation, bounded pollen lifetimes, consistent hover emission, and world-space pollen origins. Browser checks cover audio startup and its eight-voice limit, keyboard play, pointer expression, a fully static pause, replanting, navigation, and the phone layout.
+Fourteen focused tests cover normalized gestures, stable timbres, envelope timing, frame-rate-independent spring motion, ripple propagation, both species' geometry and drawing complexity, anchored deformation, bounded pollen lifetimes, consistent hover emission, world-space pollen origins, distinct poppy timbres, and study fallback. Browser checks cover audio startup and its eight-voice limit, keyboard play, pointer expression, a fully static pause, replanting, study switching, navigation, and the phone layout.
 
-The pollen release versions its entry point and pollen module with `white-pollen-1`. Existing geometry and audio imports retain `lily-expression-1` so returning visitors load the correct dependencies.
+The seasonal preview versions its entry point, portfolio stylesheet, and changed module imports with `seasonal-study-1` so returning visitors load the correct dependencies.
 
 ## Next design decisions
 
-Judge the portfolio presentation alongside the flower silhouette, chrome reflections, field composition, glitch intensity, and sound character before expanding the scene. Monthly species presets can follow once those are settled.
+Compare both studies' silhouettes, chrome reflections, field composition, pollen motion, and sound. Tune this second species before assigning monthly presets or adding further flowers.

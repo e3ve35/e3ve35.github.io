@@ -6,9 +6,14 @@ export function gestureStrength(distance, milliseconds, shortSide) {
   return clamp(screensPerSecond / 1.8);
 }
 
-export function flowerCharacter(id) {
+export function flowerCharacter(id, species = 'lily') {
   const color = (((id + 1) * 2654435761) >>> 0) % 997 / 997;
   const family = (id * 7) % 4;
+  if (species === 'poppy') return {
+    name: ['Silk tone', 'Copper hum', 'Rose chime', 'Hollow tone'][family],
+    harmonicity: [1.002, 1.5, 2.001, 1][family],
+    modulation: [0.35, 0.45, 0.6, 0.3][family], color,
+  };
   return {
     name: ['Silver bell', 'Glass bell', 'Violet bell', 'Air bell'][family],
     harmonicity: [2.002, 3.001, 1.003, 2.5][family],
@@ -17,9 +22,20 @@ export function flowerCharacter(id) {
   };
 }
 
-export function bloomProfile(id, strength = 0.45) {
-  const character = flowerCharacter(id);
+export function bloomProfile(id, strength = 0.45, species = 'lily') {
+  const character = flowerCharacter(id, species);
   strength = clamp(strength);
+  if (species === 'poppy') return {
+    character, strength,
+    attack: 0.035 + (1 - strength) * 0.045,
+    decay: 1.2 + character.color * 0.4,
+    gate: 0.65 + character.color * 0.2,
+    release: 1.65 + character.color * 0.4,
+    velocity: 0.29 + strength * 0.27,
+    brightness: 900 + strength * 2200 + character.color * 300,
+    modulation: character.modulation + strength * 0.7,
+    energy: 0.4 + strength * 0.5,
+  };
   return {
     character,
     strength,

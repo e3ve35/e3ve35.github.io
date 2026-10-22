@@ -9,9 +9,9 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%2309070d'/%3E%3Ctext x='32' y='49' text-anchor='middle' font-size='53' fill='%23d4ff76'%3E✳%3C/text%3E%3C/svg%3E" />
     <link rel="canonical" href="https://e3ve35.github.io/" />
     <link rel="stylesheet" href="./prototype/style.css" />
-    <link rel="stylesheet" href="./prototype/portfolio.css?v=lily-expression-1" />
+    <link rel="stylesheet" href="./prototype/portfolio.css?v=seasonal-study-1" />
     <script src="./prototype/vendor/Tone.js" defer></script>
-    <script type="module" src="./prototype/main.js?v=white-pollen-1"></script>
+    <script type="module" src="./prototype/main.js?v=seasonal-study-1"></script>
   </head>
   <body data-page="garden">
     <a class="skip-link" href="#page-content">Skip to content</a>
@@ -40,7 +40,7 @@
         <a href="#contact" data-page-link="contact">Contact</a>
       </nav>
       <div class="header-right">
-        <span class="edition"><span class="live-dot"></span> GARDEN STUDY / 001</span>
+        <span class="edition"><span class="live-dot"></span><span>GARDEN STUDY / <span id="garden-study-index">001</span></span></span>
         <button id="sound-toggle" class="sound-toggle" type="button" aria-pressed="false">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path class="sound-waves" d="M15 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14"/><path class="sound-slash" d="m16 9 6 6m0-6-6 6"/></svg>
           <span id="sound-label">Enable sound</span>
@@ -139,9 +139,18 @@
     </section>
     </main>
 
+    <aside class="season-preview" aria-label="Seasonal garden preview">
+      <p class="study-label">SEASONAL STUDIES <span>PREVIEW</span></p>
+      <div class="study-switch" role="group" aria-label="Choose flower study">
+        <button type="button" data-study="lily" aria-pressed="true"><span>01</span> Lilies</button>
+        <button type="button" data-study="poppy" aria-pressed="false"><span>02</span> Poppies</button>
+      </div>
+      <p id="study-caption" class="study-caption">Bell tones · rising pollen</p>
+    </aside>
+
     <aside class="specimen-card" aria-label="Current flower">
       <div class="specimen-heading"><span class="tiny-cross">+</span><span>SPECIMEN / <span id="specimen-id">001</span></span><span class="specimen-symbol" aria-hidden="true">↗</span></div>
-      <div class="specimen-name">Lilium <em>synthetica</em></div>
+      <div class="specimen-name"><span id="flower-genus">Lilium</span> <em>synthetica</em></div>
       <div class="specimen-meta"><span>CHROME PETALS</span><span id="note-name">D PENTATONIC</span></div>
       <div class="signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <div class="specimen-footer"><span id="interaction-status" role="status" aria-live="polite">Awaiting a little curiosity</span><span id="note-count">00</span></div>
