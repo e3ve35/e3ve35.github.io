@@ -15,9 +15,9 @@ Open http://127.0.0.1:4173/. No package installation or build is needed. Pinned 
 ## Interact
 
 - Click **Enable sound**, then hover over flower heads. On a phone, tap them.
-- **Seasonal studies** previews Lilies and Poppies. Lilies remain the default. Poppies have four broad, crumpled petals, a dark seed pod, a ring of copper stamens, softer A pentatonic tones, and white ASCII seeds drifting outward. Switching releases active voices, clears pollen, and replants the same field seed; audio stays opt-in and the motion preference is preserved. These are art studies, with no automatic calendar selection yet.
+- **Seasonal studies** previews Lilies and Poppies. Lilies remain the default. Poppies have four broad, crumpled petals, a dark seed pod, a ring of copper stamens, softer A pentatonic tones, and sunset-colored ASCII seeds drifting outward. Switching releases active voices, clears pollen, and replants the same field seed; audio stays opt-in and the motion preference is preserved. These are art studies, with no automatic calendar selection yet.
 - Gentle pointer movements produce softer, darker bells; faster sweeps increase brightness and intensity. Each flower retains a stable pitch and a particular bell character. A gesture also sends a small, delayed ripple through nearby flowers.
-- Hovering releases white ASCII pollen with pink glitch echoes from the stamens: an arrival burst followed by a drifting spiral while you linger. Taps and keyboard play also release bursts. The visual works with sound disabled, and lingering never repeats the audio.
+- Hovering releases mainly bright yellow ASCII pollen, with occasional sunset-orange characters and orange glitch echoes, from the stamens: an arrival burst followed by a drifting spiral while you linger. Taps and keyboard play also release bursts. The visual works with sound disabled, and lingering never repeats the audio.
 - Focus the garden with Tab. Arrow keys select and play flowers; Space or Enter replays the selected flower. Sound still requires the explicit Enable sound button.
 - **Distortion** adjusts chromatic separation, the response to a note, and pollen scrambling, pink echoes, and horizontal skips.
 - **Replant** changes the flowers' proportions, tilt, and placement while preserving their musical identities.
@@ -31,7 +31,7 @@ Open http://127.0.0.1:4173/. No package installation or build is needed. Pinned 
 - `audio.js`: eight reusable FM voices, with per-note stereo panning and filtering, per-flower cooldown, D minor pentatonic notes for lilies and a lower A minor pentatonic palette for poppies, delay, reverb, conservative gain, and a limiter. New timbre settings apply only to free voices, preserving notes already ringing. Synthesis runs locally; there are no recorded samples or network audio requests.
 - `expressions.js`: gesture normalization, stable flower characters, shared audio/visual envelope parameters, frame-rate-independent springs, and delayed neighbor ripples. Poppies use slower attacks, lower filter cutoffs, and less FM modulation. Visual envelopes are aligned with the scheduled audio onset and approximate its exponential decay.
 - `studies.js`: names, specimen labels, lighting colors, and pollen modes for each study, ready for a future calendar mapping.
-- `pollen.js`: a bounded 384-particle pool and one GPU point draw, with a single generated glyph atlas. Particles start at the moving flower center, spiral upward for lilies or drift in a wider, slower fan for poppies, and fade over 2.6–4.2 seconds. Characters are white with pink glitch echoes. Depth testing lets petals occlude pollen. No per-frame canvas texture uploads or DOM particles are needed; pause, replanting, study changes, hidden tabs, and portfolio navigation clear the pool.
+- `pollen.js`: a bounded 384-particle pool and one GPU point draw, with a single generated glyph atlas. Particles start at the moving flower center, spiral upward for lilies or drift in a wider, slower fan for poppies, and fade over 2.6–4.2 seconds. Roughly 80% of characters are bright yellow and 20% sunset orange, with orange glitch echoes. Depth testing lets petals occlude pollen. No per-frame canvas texture uploads or DOM particles are needed; pause, replanting, study changes, hidden tabs, and portfolio navigation clear the pool.
 - `main.js`: seeded planting, synthetic environment lighting, scene setup, interactions, and one lightweight postprocessing pass. Hidden tabs and portfolio views rest the garden; pausing clears transient motion.
 - `style.css`: responsive HTML overlay, independent of the WebGL canvas.
 - `site.js` and `portfolio.css`: accessible portfolio navigation, a six-project accordion, an introduction, the existing résumé link, and contact details. Project content was originally migrated from `js/functions.js`; the pixel-art entry has since been updated to SharePix using its repository description and link. The résumé URL comes from `js/sketch.js`.
@@ -46,7 +46,7 @@ node --test prototype/garden.test.mjs
 
 Fourteen focused tests cover normalized gestures, stable timbres, envelope timing, frame-rate-independent spring motion, ripple propagation, both species' geometry and drawing complexity, anchored deformation, bounded pollen lifetimes, consistent hover emission, world-space pollen origins, distinct poppy timbres, and study fallback. Browser checks cover audio startup and its eight-voice limit, keyboard play, pointer expression, a fully static pause, replanting, study switching, navigation, and the phone layout.
 
-The seasonal preview versions its entry point, portfolio stylesheet, and changed module imports with `seasonal-study-1` so returning visitors load the correct dependencies.
+The sunset pollen release versions its entry point and pollen import with `sunset-pollen-1`; the other seasonal modules and portfolio stylesheet retain `seasonal-study-1` so returning visitors load the correct dependencies.
 
 ## Next design decisions
 

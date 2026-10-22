@@ -1,6 +1,6 @@
 import './site.js?v=seasonal-study-1';
 import * as THREE from './vendor/three.module.min.js';
-import { AsciiPollen } from './pollen.js?v=seasonal-study-1';
+import { AsciiPollen } from './pollen.js?v=sunset-pollen-1';
 import { createLily, createPoppy, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=seasonal-study-1';
 import { GardenAudio, flowerNote } from './audio.js?v=seasonal-study-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=seasonal-study-1';
@@ -220,7 +220,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'seasonal-studies';
+    document.body.dataset.gardenRevision = 'sunset-pollen';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }

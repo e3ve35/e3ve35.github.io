@@ -126,11 +126,11 @@ export class AsciiPollen {
           uv.x+=step(.6,uv.y)*step(uv.y,.78)*glitch*.18;
           float core=ink(uv,glyph);
           float echo=ink(uv+vec2(.12+glitch*.13,0.),glyph)*glitch*.65;
-          vec3 color=vec3(1.3);
+          vec3 color=vSeed>.8?vec3(2.,.23,.008):vec3(2.,1.4,.012);
           float alpha=max(core,echo)*vFade*.88;
           alpha*=1.-step(.94,hash(tick+vSeed*53.))*distortion*.65;
           if(alpha<.015)discard;
-          gl_FragColor=vec4(mix(color,vec3(1.4,.12,.7),echo/(core+echo+.001)),alpha);
+          gl_FragColor=vec4(mix(color,vec3(1.9,.16,.008),echo/(core+echo+.001)),alpha);
         }`,
     });
     this.points = new THREE.Points(this.geometry, this.material);
