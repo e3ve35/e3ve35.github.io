@@ -6,9 +6,9 @@
     <meta name="theme-color" content="#09070d" />
     <meta name="description" content="Evelyn Wu — programmer and game developer exploring computer graphics, computer music, and playful interfaces. Projects, experiments, and a garden you can play." />
     <title>Unlikely Garden — Evelyn Wu</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%2309070d'/%3E%3Ctext x='32' y='49' text-anchor='middle' font-size='53' fill='%23d4ff76'%3E✳%3C/text%3E%3C/svg%3E" />
+    <link rel="icon" type="image/svg+xml" href="./prototype/flower-mark.svg?v=flower-logo-1" />
     <link rel="canonical" href="https://e3ve35.github.io/" />
-    <link rel="stylesheet" href="./prototype/style.css" />
+    <link rel="stylesheet" href="./prototype/style.css?v=flower-logo-1" />
     <link rel="stylesheet" href="./prototype/portfolio.css?v=snowdrop-study-1" />
     <script src="./prototype/vendor/Tone.js" defer></script>
     <script type="module" src="./prototype/main.js?v=sculpted-flowers-1"></script>
@@ -19,9 +19,9 @@
       <canvas id="scene" aria-hidden="true"></canvas>
       <div class="vignette" aria-hidden="true"></div>
       <div class="grain" aria-hidden="true"></div>
-      <div id="loading" class="loading"><span class="loading-flower">✳</span><span>Growing something unlikely…</span></div>
+      <div id="loading" class="loading"><img class="flower-mark loading-flower" src="./prototype/flower-mark.svg?v=flower-logo-1" width="64" height="64" alt="" /><span>Growing something unlikely…</span></div>
       <div id="fallback" class="fallback" hidden>
-        <span class="fallback-flower" aria-hidden="true">✳</span>
+        <img class="flower-mark fallback-flower" src="./prototype/flower-mark.svg?v=flower-logo-1" width="64" height="64" alt="" />
         <p>This garden needs WebGL 2 to bloom.</p>
         <p>Try a browser with hardware acceleration enabled.</p>
       </div>
@@ -30,7 +30,7 @@
 
     <header class="site-header">
       <a class="identity" href="#garden" aria-label="Evelyn Wu, home">
-        <span class="name">EVELYN WU<span class="identity-star" aria-hidden="true">✳</span></span>
+        <span class="name">EVELYN WU<img class="flower-mark identity-flower" src="./prototype/flower-mark.svg?v=flower-logo-1" width="64" height="64" alt="" /></span>
         <span class="discipline">games, gardens, and other experiments</span>
       </a>
       <nav class="page-nav" aria-label="Main navigation">
@@ -51,7 +51,7 @@
     <main id="page-content" tabindex="-1">
     <section class="intro" data-page-view="garden" aria-labelledby="garden-title">
       <p class="eyebrow"><span class="tiny-cross">+</span> A LIVING, LISTENING EXPERIMENT</p>
-      <h1 id="garden-title">Unlikely<br /><em>garden.</em><span class="title-star" aria-hidden="true">✳</span></h1>
+      <h1 id="garden-title">Unlikely<br /><em>garden.</em><img class="flower-mark title-flower" src="./prototype/flower-mark.svg?v=flower-logo-1" width="64" height="64" alt="" /></h1>
       <p class="intro-copy">Nothing here grows quietly.</p>
       <p id="play-instructions" class="instructions">Enable sound. <span class="pointer-instruction">Wander over the lilies.</span><span class="touch-instruction">Tap the lilies.</span><br /><span class="pointer-instruction">Move gently. Sweep for brighter tones.</span><span class="touch-instruction">Each lily has its own voice.</span></p>
       <div class="keyboard-hint">Keyboard: focus the garden, ← → to wander, space to play.</div>
