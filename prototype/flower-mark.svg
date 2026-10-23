@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="#d2fb83">
   <defs>
-    <path id="petal" d="M31 28C22 23 21 12 27 6C30 3 34 3 37 6C43 12 42 23 33 28C32.4 28.4 31.6 28.4 31 28Z"/>
+    <ellipse id="petal" cx="32" cy="16.5" rx="11.5" ry="12.5"/>
   </defs>
   <use href="#petal"/>
   <use href="#petal" transform="rotate(60 32 32)"/>
@@ -8,5 +8,14 @@
   <use href="#petal" transform="rotate(180 32 32)"/>
   <use href="#petal" transform="rotate(240 32 32)"/>
   <use href="#petal" transform="rotate(300 32 32)"/>
-  <circle cx="32" cy="32" r="2.8"/>
+  <circle cx="32" cy="32" r="10.5" fill="#ecffc1"/>
+  <g fill="#f5b576" opacity=".65">
+    <ellipse cx="25.3" cy="34" rx="2" ry="1.4"/>
+    <ellipse cx="38.7" cy="34" rx="2" ry="1.4"/>
+  </g>
+  <g fill="#302136">
+    <circle cx="28.5" cy="30.5" r="1.5"/>
+    <circle cx="35.5" cy="30.5" r="1.5"/>
+  </g>
+  <path d="M29 35Q32 38 35 35" fill="none" stroke="#302136" stroke-width="1.7" stroke-linecap="round"/>
 </svg>
