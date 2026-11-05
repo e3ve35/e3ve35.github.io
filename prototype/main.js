@@ -7,6 +7,7 @@ import { GardenAudio, flowerNote } from './audio.js?v=snowdrop-study-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=snowdrop-study-1';
 import { gardenSelection } from './studies.js?v=snowdrop-study-1';
 import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=garden-depth-1';
+import { GroundSignals } from './ground-signals.js?v=ground-signals-1';
 
 const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop };
 
@@ -209,6 +210,7 @@ class Garden {
 
     this.assets = makeFlowerAssets();
     this.assets.snowdrop = makeSnowdropAssets(this.assets);
+    this.groundSignals = new GroundSignals(this.scene);
     this.pollen = new AsciiPollen(this.scene);
     this.flowers = [];
     this.selectedId = 0;
@@ -236,7 +238,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'garden-depth';
+    document.body.dataset.gardenRevision = 'ground-signals';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }
@@ -318,6 +320,7 @@ class Garden {
       this.scene.add(this.contactShadows);
     }
     updateContactShadows(this.contactShadows, placements);
+    this.groundSignals.replant(placements, this.seed);
     this.selectedId = 0;
     this.hoveredId = -1;
     this.needsPicking = true;
@@ -501,6 +504,7 @@ class Garden {
 
   clearResponses() {
     this.pollen.clear();
+    this.groundSignals.clear();
     document.body.dataset.pollenCount = '0';
     this.ripples.length = 0;
     this.visualGesture = null;
@@ -540,6 +544,7 @@ class Garden {
         this.visualGesture = gesture;
         this.ripples.push({ ...gesture, id, x: flower.root.position.x, z: flower.root.position.z });
         this.ripples = this.ripples.slice(-6);
+        this.groundSignals.pulse(id, this.elapsed, strength);
       }
       this.post.uniforms.focus.value.set(pan, this.projected.y * 0.5 + 0.5);
     }
@@ -610,6 +615,7 @@ class Garden {
     this.post.uniforms.burst.value = this.burst;
     this.post.uniforms.distortion.value = intensity;
     this.post.uniforms.motion.value = paused ? 0 : 1;
+    this.groundSignals.update(this.elapsed, intensity, paused);
     this.renderer.setRenderTarget(this.renderTarget);
     this.renderer.render(this.scene, this.camera);
     this.renderer.setRenderTarget(null);

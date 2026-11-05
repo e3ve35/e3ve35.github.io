@@ -8,6 +8,97 @@ import { flowerNote } from './audio.js';
 import { gardenStudy, gardenSelection } from './studies.js';
 import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js';
 import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js';
+import { GroundSignals, groundMarks, groundGlyphAtlas } from './ground-signals.js';
+
+test('ground marks remain deterministic, bounded, and attached to each flower base', () => {
+  const planting = gardenPlanting(821);
+  const marks = groundMarks(planting, 821);
+  assert.deepEqual(marks, groundMarks(planting, 821));
+  assert.notDeepEqual(marks, groundMarks(planting, 822));
+  assert.equal(marks.length, 388);
+  const rings = marks.filter(({ kind }) => kind === 2);
+  assert.equal(rings.length, planting.length);
+  rings.forEach((ring, i) => {
+    assert.equal(ring.root, i);
+    assert.equal(ring.x, planting[i].x);
+    assert.equal(ring.z, planting[i].z);
+  });
+  for (const mark of marks) {
+    assert.ok(Object.values(mark).every(Number.isFinite));
+    assert.ok(mark.width > 0 && mark.height > 0);
+    assert.ok(mark.glyph >= 0 && mark.glyph < 8);
+  }
+  assert.deepEqual(groundMarks([], 821), []);
+  assert.ok(groundMarks([...planting, ...planting], 821).length <= 388);
+});
+
+test('ground effects reuse one draw and fixed buffers through replanting', () => {
+  const scene = new THREE.Scene();
+  const ground = new GroundSignals(scene);
+  const geometry = ground.geometry, atlas = ground.material.uniforms.atlas.value;
+  const attributes = { ...geometry.attributes };
+  assert.equal(scene.children.length, 1);
+  assert.ok(geometry.isInstancedBufferGeometry);
+  assert.equal(ground.material.forceSinglePass, true);
+  assert.equal(ground.material.depthWrite, false);
+  assert.equal(ground.material.depthTest, true);
+  for (const seed of [821, 822, 823]) {
+    ground.replant(gardenPlanting(seed), seed);
+    assert.equal(ground.geometry, geometry);
+    assert.equal(ground.material.uniforms.atlas.value, atlas);
+    assert.equal(geometry.instanceCount, 388);
+    for (const [name, attribute] of Object.entries(attributes)) {
+      assert.equal(geometry.attributes[name], attribute);
+      for (const value of attribute.array) assert.ok(Number.isFinite(value));
+    }
+  }
+  ground.replant([], 821);
+  assert.equal(geometry.instanceCount, 0);
+  assert.equal(ground.mesh.visible, false);
+  ground.dispose();
+  assert.equal(scene.children.length, 0);
+});
+
+test('ground motion freezes on pause and clears old ripples on reset', () => {
+  const ground = new GroundSignals(new THREE.Scene());
+  ground.replant(gardenPlanting(821), 821);
+  ground.update(2, 0.55, false);
+  ground.pulse(4, 2, 2);
+  const uniforms = ground.material.uniforms;
+  assert.equal(uniforms.pulseRoot.value, 4);
+  assert.equal(uniforms.pulseStrength.value, 1);
+  ground.update(3, 0.55, true);
+  assert.equal(uniforms.time.value, 2);
+  assert.equal(uniforms.motion.value, 0);
+  assert.equal(uniforms.pulseRoot.value, -1);
+  ground.update(4, 0.55, true);
+  assert.equal(uniforms.time.value, 2);
+  ground.update(2.1, 0.1, false);
+  assert.equal(uniforms.time.value, 2.1);
+  assert.equal(uniforms.motion.value, 1);
+  assert.equal(uniforms.distortion.value, 0.1);
+  ground.pulse(3, 2.1, 0.5);
+  ground.replant(gardenPlanting(822), 822);
+  assert.equal(uniforms.pulseRoot.value, -1);
+  assert.equal(uniforms.pulseStrength.value, 0);
+  ground.dispose();
+});
+
+test('the ground glyph atlas has eight separate visible glyphs with transparent gutters', () => {
+  const atlas = groundGlyphAtlas();
+  const { data, width, height } = atlas.image;
+  assert.equal(width, 64); assert.equal(height, 8);
+  for (let glyph = 0; glyph < 8; glyph++) {
+    let ink = 0;
+    for (let y = 0; y < height; y++) {
+      assert.equal(data[(y * width + glyph * 8) * 4 + 3], 0);
+      assert.equal(data[(y * width + glyph * 8 + 7) * 4 + 3], 0);
+      for (let x = 0; x < 8; x++) if (data[(y * width + glyph * 8 + x) * 4 + 3]) ink++;
+    }
+    assert.ok(ink > 0 && ink < 35);
+  }
+  atlas.dispose();
+});
 
 test('clustered planting preserves the lead bloom and separation across replant seeds', () => {
   assert.deepEqual(gardenPlanting(821), gardenPlanting(821));
