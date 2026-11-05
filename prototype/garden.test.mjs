@@ -7,6 +7,118 @@ import * as THREE from './vendor/three.module.min.js';
 import { flowerNote } from './audio.js';
 import { gardenStudy, gardenSelection } from './studies.js';
 import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js';
+import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js';
+
+test('clustered planting preserves the lead bloom and separation across replant seeds', () => {
+  assert.deepEqual(gardenPlanting(821), gardenPlanting(821));
+  assert.notDeepEqual(gardenPlanting(821), gardenPlanting(822));
+  for (let seed = 0; seed < 100; seed++) {
+    const planting = gardenPlanting(seed);
+    assert.equal(planting.length, 18);
+    assert.ok(Math.abs(planting[0].x - 1.65) < 0.1);
+    assert.ok(Math.abs(planting[0].z - 1.1) < 0.1);
+    assert.ok(planting[0].scale > 1.1);
+    for (let i = 0; i < planting.length; i++) {
+      const flower = planting[i];
+      assert.ok([flower.x, flower.z, flower.scale, flower.yaw].every(Number.isFinite));
+      assert.ok(flower.scale > 0.5 && flower.scale < 1.3);
+      for (let j = i + 1; j < planting.length; j++) {
+        assert.ok(Math.hypot(flower.x - planting[j].x, flower.z - planting[j].z) > 1.8, 'Stems must retain room to breathe');
+      }
+    }
+    assert.ok(planting.some(({ z }) => z < -23), 'The field needs a distant layer');
+  }
+});
+
+test('the lead flower stays visible and pickable on desktop and phone in every study', () => {
+  const assets = makeFlowerAssets();
+  assets.snowdrop = makeSnowdropAssets(assets);
+  for (const seed of [821, 922, 1337]) for (const createFlower of [createLily, createPoppy, createSnowdrop]) {
+    const random = seededRandom(seed);
+    const flowers = gardenPlanting(seed).map(({ x, z, scale, yaw }, id) => {
+      const flower = createFlower(id, assets, random);
+      flower.root.position.set(x, 0, z);
+      flower.root.scale.setScalar(scale);
+      flower.root.rotation.y = yaw;
+      flower.root.updateMatrixWorld(true);
+      return flower;
+    });
+    for (const [width, height] of [[1743, 1244], [1440, 900], [390, 844], [320, 740]]) {
+      const mobile = width < 601;
+      const camera = new THREE.PerspectiveCamera(mobile ? 49 : 40, width / height, 0.1, 150);
+      camera.position.set(mobile ? 1 : 0, mobile ? 6.8 : 5.65, mobile ? 13.6 : 13.9);
+      camera.lookAt(mobile ? new THREE.Vector3(1, 2, 0) : new THREE.Vector3(0, 2.5, 0));
+      camera.updateMatrixWorld(true);
+      const center = flowers[0].hit.getWorldPosition(new THREE.Vector3());
+      const screen = center.clone().project(camera);
+      assert.ok(Math.abs(screen.x) < 0.85 && Math.abs(screen.y) < 0.8, 'The lead bloom should remain within reach');
+      const ray = new THREE.Raycaster(camera.position, center.sub(camera.position).normalize());
+      const hits = ray.intersectObjects(flowers.map(({ hit }) => hit));
+      assert.equal(hits[0]?.object.userData.flowerId, 0, 'Other flowers should not block the focal hover target');
+    }
+    for (const flower of flowers) {
+      flower.anthers.dispose();
+      flower.privateGeometries.forEach((geometry) => geometry.dispose());
+    }
+  }
+});
+
+test('distance haze leaves the lead bloom clear and softens the distant layer', () => {
+  const camera = new THREE.PerspectiveCamera(40, 1.4, 0.1, 150);
+  camera.position.set(0, 5.65, 13.9);
+  camera.lookAt(0, 2.5, 0);
+  camera.updateMatrixWorld(true);
+  const planting = gardenPlanting(821);
+  const hazeAt = ({ x, z, scale }) => {
+    const depth = -new THREE.Vector3(x, 3 * scale, z).applyMatrix4(camera.matrixWorldInverse).z;
+    return THREE.MathUtils.smoothstep(depth, gardenAtmosphere.near, gardenAtmosphere.far);
+  };
+  assert.ok(hazeAt(planting[0]) < 0.05);
+  const distant = planting.filter(({ z }) => z < -20);
+  assert.ok(distant.length >= 3);
+  for (const flower of distant) assert.ok(hazeAt(flower) > 0.65);
+});
+
+test('meadow grass follows the flower drifts without adding drawing complexity', () => {
+  const planting = gardenPlanting(821);
+  const grass = meadowGrass(planting, 821);
+  assert.equal(grass.length, 220);
+  assert.deepEqual(grass, meadowGrass(planting, 821));
+  let nearFlowers = 0;
+  for (const blade of grass) {
+    assert.ok(Object.values(blade).every(Number.isFinite));
+    if (planting.some(({ x, z }) => Math.hypot(x - blade.x, z - blade.z) < 3.2)) nearFlowers++;
+  }
+  assert.ok(nearFlowers > grass.length * 0.75);
+});
+
+test('contact shadows stay grounded, fade to transparent edges, and reuse their assets', () => {
+  const planting = gardenPlanting(821);
+  const shadows = createContactShadows(planting.length);
+  const geometry = shadows.geometry, map = shadows.material.map;
+  assert.ok(shadows.isInstancedMesh);
+  assert.equal(shadows.count, 18);
+  assert.equal(shadows.material.depthWrite, false);
+  const { data, width } = map.image;
+  assert.equal(data[3], 0);
+  assert.ok(data[((width / 2) * width + width / 2) * 4 + 3] > 245);
+  for (const seed of [821, 822, 823]) {
+    const next = gardenPlanting(seed);
+    updateContactShadows(shadows, next);
+    assert.equal(shadows.geometry, geometry);
+    assert.equal(shadows.material.map, map);
+    assert.ok(Number.isFinite(shadows.boundingSphere.radius));
+    for (let i = 0; i < next.length; i++) {
+      const matrix = new THREE.Matrix4();
+      shadows.getMatrixAt(i, matrix);
+      const point = new THREE.Vector3().setFromMatrixPosition(matrix);
+      assert.ok(Math.abs(point.x - next[i].x) < 1e-5);
+      assert.ok(Math.abs(point.z - next[i].z) < 1e-5);
+      assert.ok(Math.abs(point.y + 0.14) < 1e-6);
+    }
+  }
+  geometry.dispose(); map.dispose(); shadows.material.dispose(); shadows.dispose();
+});
 
 test('gesture strength is bounded and consistent across screen sizes', () => {
   assert.equal(gestureStrength(0, 16, 720), 0);

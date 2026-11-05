@@ -6,6 +6,7 @@ import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=sculpted-fl
 import { GardenAudio, flowerNote } from './audio.js?v=snowdrop-study-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=snowdrop-study-1';
 import { gardenSelection } from './studies.js?v=snowdrop-study-1';
+import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=garden-depth-1';
 
 const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop };
 
@@ -183,7 +184,7 @@ class Garden {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.08;
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2('#130b1d', 0.042);
+    this.scene.fog = new THREE.Fog(gardenAtmosphere.color, gardenAtmosphere.near, gardenAtmosphere.far);
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 150);
     this.environment = environmentTexture(this.renderer);
     this.scene.environment = this.environment.texture;
@@ -235,7 +236,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'sculpted-flowers';
+    document.body.dataset.gardenRevision = 'garden-depth';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }
@@ -301,24 +302,22 @@ class Garden {
     }
     const random = seededRandom(this.seed);
     this.flowers = [];
-    const placements = [
-      [1.65, 1.1, 1.18], [-2.2, -0.5, 0.90], [4.6, -1.4, 0.91],
-      [-4.9, -3.4, 0.79], [0.3, -3.2, 0.81], [2.8, -5.6, 0.78],
-      [-2.8, -6.8, 0.73], [6.7, -6.4, 0.85], [-7.0, -7.7, 0.83],
-      [5.9, 3.7, 1.21], [-5.2, 3.0, 1.05], [8.9, -2.0, 1.0],
-      [-0.7, -10.4, 0.79], [4.0, -11.5, 0.92], [-5.7, -12.1, 0.78],
-      [8.4, -12.0, 1.0], [-9.2, -2.2, 0.94], [0.6, -16, 0.84],
-    ];
-    placements.forEach(([x, z, scale], id) => {
+    const placements = gardenPlanting(this.seed);
+    placements.forEach(({ x, z, scale, yaw }, id) => {
       const flower = flowerFactories[this.study.id](id, this.assets, random);
-      flower.root.position.set(x + (random() - 0.5) * (id ? 1.1 : 0.2), 0, z + (random() - 0.5) * 0.6);
-      flower.root.scale.setScalar(scale * (0.94 + random() * 0.12));
-      flower.root.rotation.y = (random() - 0.5) * 0.5;
+      flower.root.position.set(x, 0, z);
+      flower.root.scale.setScalar(scale);
+      flower.root.rotation.y = yaw;
       this.scene.add(flower.root);
       this.flowers.push(flower);
     });
     this.hitTargets = this.flowers.map((flower) => flower.hit);
-    if (!this.grass) this.createGrass();
+    this.createGrass(placements);
+    if (!this.contactShadows) {
+      this.contactShadows = createContactShadows(placements.length);
+      this.scene.add(this.contactShadows);
+    }
+    updateContactShadows(this.contactShadows, placements);
     this.selectedId = 0;
     this.hoveredId = -1;
     this.needsPicking = true;
@@ -371,19 +370,21 @@ class Garden {
 
   refreshCalendar() { this.changeStudy(this.selection.mode, false); }
 
-  createGrass() {
-    const random = seededRandom(186);
-    this.grass = new THREE.InstancedMesh(this.assets.leaf, this.assets.green, 220);
+  createGrass(placements) {
+    if (!this.grass) {
+      this.grass = new THREE.InstancedMesh(this.assets.leaf, this.assets.green, 220);
+      this.scene.add(this.grass);
+    }
     const dummy = new THREE.Object3D();
-    for (let i = 0; i < 220; i++) {
-      dummy.position.set((random() - 0.5) * 30, -0.1, (random() - 0.7) * 29);
-      dummy.rotation.set(0, random() * Math.PI * 2, 0.65 + random() * 0.6);
-      const scale = 0.13 + random() * 0.45;
+    meadowGrass(placements, this.seed).forEach(({ x, z, yaw, lean, scale }, i) => {
+      dummy.position.set(x, -0.1, z);
+      dummy.rotation.set(0, yaw, lean);
       dummy.scale.set(scale, scale, scale * 0.65);
       dummy.updateMatrix();
       this.grass.setMatrixAt(i, dummy.matrix);
-    }
-    this.scene.add(this.grass);
+    });
+    this.grass.instanceMatrix.needsUpdate = true;
+    this.grass.computeBoundingSphere();
   }
 
   resize() {
