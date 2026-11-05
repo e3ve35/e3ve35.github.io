@@ -1,4 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
+import { createPetalSurfaces } from './petal-surfaces.js?v=chrome-finish-1';
 
 export function seededRandom(seed) {
   return function () {
@@ -110,46 +111,6 @@ function makeBlade(variant = 0, leaf = false, poppy = false, pointAt = null) {
   return geometry;
 }
 
-function poppyGrain() {
-  const size = 256;
-  const data = new Uint8Array(size * size * 4);
-  const random = seededRandom(931);
-  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-    const t = y / (size - 1), u = x / (size - 1) * 2 - 1;
-    const vein = Math.sin(u * 34 + Math.sin(t * 8 + u * 3) * 0.8) * Math.sin(Math.PI * t);
-    const height = Math.round(128 + vein * 34 + (random() - 0.5) * 12);
-    const offset = (y * size + x) * 4;
-    data[offset] = data[offset + 1] = data[offset + 2] = height;
-    data[offset + 3] = 255;
-  }
-  const texture = new THREE.DataTexture(data, size, size);
-  texture.needsUpdate = true;
-  texture.magFilter = THREE.LinearFilter;
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
-  texture.generateMipmaps = true;
-  return texture;
-}
-
-function brushedRoughness() {
-  const size = 128;
-  const data = new Uint8Array(size * size * 4);
-  const random = seededRandom(744);
-  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-    const u = x / (size - 1) * 2 - 1;
-    const edge = Math.abs(u) ** 1.8;
-    const vein = Math.cos(u * Math.PI * 3 + Math.sin(y / size * 5) * 0.12);
-    const value = Math.round(180 + edge * 53 + vein * 6 + random() * 12);
-    const offset = (y * size + x) * 4;
-    data[offset] = data[offset + 1] = data[offset + 2] = value;
-    data[offset + 3] = 255;
-  }
-  const texture = new THREE.DataTexture(data, size, size);
-  texture.needsUpdate = true;
-  texture.magFilter = THREE.LinearFilter;
-  texture.minFilter = THREE.LinearFilter;
-  return texture;
-}
-
 // Merge the tiny filaments into a single draw, retaining actual surface normals.
 export function mergeSurfaces(geometries) {
   const arrays = { position: [], normal: [], uv: [] };
@@ -173,11 +134,13 @@ export function makeFlowerAssets() {
   const poppyPetals = [0, 1, 2].map((variant) => makeBlade(variant, false, true));
   const poppyLeaf = makeBlade(0, true, false, poppyLeafPoint);
   const leaf = makeBlade(0, true);
-  const roughnessMap = brushedRoughness();
-  const base = { metalness: 0.97, roughness: 0.29, envMapIntensity: 1.65, roughnessMap, side: THREE.DoubleSide };
+  const lilySurface = createPetalSurfaces('lily');
+  const poppySurface = createPetalSurfaces('poppy');
+  const base = { metalness: 0.97, roughness: 0.36, envMapIntensity: 1.65,
+    ...lilySurface, bumpScale: 0.0075, aoMapIntensity: 0.65, side: THREE.DoubleSide };
   const silver = new THREE.MeshStandardMaterial({ ...base, color: '#e4deea' });
-  const lavender = new THREE.MeshStandardMaterial({ ...base, color: '#cbbcdf', roughness: 0.33 });
-  const pink = new THREE.MeshStandardMaterial({ ...base, color: '#dfbfd5', roughness: 0.27 });
+  const lavender = new THREE.MeshStandardMaterial({ ...base, color: '#cbbcdf', roughness: 0.38 });
+  const pink = new THREE.MeshStandardMaterial({ ...base, color: '#dfbfd5', roughness: 0.34 });
   const green = new THREE.MeshStandardMaterial({ color: '#8b9b82', metalness: 0.84, roughness: 0.36, envMapIntensity: 1.55, side: THREE.DoubleSide });
   const stem = new THREE.MeshStandardMaterial({ color: '#839379', metalness: 0.88, roughness: 0.32, envMapIntensity: 1.45 });
   const anther = new THREE.MeshStandardMaterial({ color: '#d5ee91', emissive: '#899d35', emissiveIntensity: 0.08, metalness: 0.58, roughness: 0.33 });
@@ -185,8 +148,8 @@ export function makeFlowerAssets() {
   const antherGeometry = new THREE.SphereGeometry(1, 12, 8);
   const hitGeometry = new THREE.SphereGeometry(1.38, 12, 8);
   const hitMaterial = new THREE.MeshBasicMaterial({ visible: false });
-  const poppyBump = poppyGrain();
-  const poppyMaterials = ['#e3dce7', '#dfc4cb', '#c9bddb'].map((color) => new THREE.MeshStandardMaterial({ ...base, color, roughness: 0.32, vertexColors: true, bumpMap: poppyBump, bumpScale: 0.025 }));
+  const poppyMaterials = ['#e3dce7', '#dfc4cb', '#c9bddb'].map((color) => new THREE.MeshStandardMaterial({ ...base, ...poppySurface,
+    color, roughness: 0.38, vertexColors: true, bumpScale: 0.022, aoMapIntensity: 0.4 }));
   const poppyAnther = new THREE.MeshStandardMaterial({ color: '#e4ba80', metalness: 0.76, roughness: 0.34 });
   const poppyCenterMaterial = new THREE.MeshStandardMaterial({ color: '#302434', metalness: 0.65, roughness: 0.54, envMapIntensity: 1.1 });
   const poppyFilament = new THREE.MeshStandardMaterial({ color: '#77635f', metalness: 0.85, roughness: 0.34 });
@@ -201,7 +164,7 @@ export function makeFlowerAssets() {
     crown.push(ridge);
   }
   const poppyCenter = mergeSurfaces(crown);
-  return { petals, poppyPetals, poppyLeaf, leaf, petalMaterials: [silver, lavender, pink], poppyMaterials, poppyCenter,
+  return { petals, poppyPetals, poppyLeaf, leaf, surfaces: { lily: lilySurface, poppy: poppySurface }, petalMaterials: [silver, lavender, pink], poppyMaterials, poppyCenter,
     poppyCenterMaterial, poppyFilament, poppyAnther, green, stem, anther, pistil, antherGeometry, hitGeometry, hitMaterial };
 }
 

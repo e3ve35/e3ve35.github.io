@@ -9,6 +9,65 @@ import { gardenStudy, gardenSelection } from './studies.js';
 import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js';
 import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js';
 import { GroundSignals, groundMarks, groundGlyphAtlas } from './ground-signals.js';
+import { createPetalSurfaces } from './petal-surfaces.js';
+
+test('petal finishes keep rims and tips smoother than the brushed body', () => {
+  for (const species of ['lily', 'poppy', 'snowdrop']) {
+    const surface = createPetalSurfaces(species);
+    const sample = (map, u, t) => {
+      const { data, width, height } = map.image;
+      return data[(Math.round(t * (height - 1)) * width + Math.round(u * (width - 1))) * 4] / 255;
+    };
+    const body = sample(surface.roughnessMap, 0.4, 0.5);
+    assert.ok(sample(surface.roughnessMap, 0.02, 0.5) < body * 0.65);
+    assert.ok(sample(surface.roughnessMap, 0.4, 0.98) < body * 0.7);
+    assert.ok(sample(surface.aoMap, 0.5, 0.03) < sample(surface.aoMap, 0.5, 0.95));
+    assert.ok(sample(surface.aoMap, 0.5, 0.5) < sample(surface.aoMap, 0.2, 0.5));
+    for (const map of Object.values(surface)) {
+      assert.equal(map.colorSpace, THREE.NoColorSpace);
+      assert.equal(map.channel, 0, 'Petal maps must use the existing UV channel');
+      assert.equal(map.generateMipmaps, true);
+      assert.equal(map.minFilter, THREE.LinearMipmapLinearFilter);
+      for (let i = 3; i < map.image.data.length; i += 4) assert.equal(map.image.data[i], 255);
+      map.dispose();
+    }
+  }
+});
+
+test('procedural petal textures are repeatable and retain distinct surface grain', () => {
+  const first = createPetalSurfaces('lily');
+  const repeat = createPetalSurfaces('lily');
+  const poppy = createPetalSurfaces('poppy');
+  for (const name of Object.keys(first)) assert.deepEqual(first[name].image.data, repeat[name].image.data);
+  assert.notDeepEqual(first.bumpMap.image.data, poppy.bumpMap.image.data);
+  for (const surface of [first, repeat, poppy]) for (const map of Object.values(surface)) map.dispose();
+});
+
+test('all petal variants share bounded PBR maps without extra render objects', () => {
+  const assets = makeFlowerAssets();
+  assets.snowdrop = makeSnowdropAssets(assets);
+  const families = [
+    [assets.petalMaterials, assets.surfaces.lily],
+    [assets.poppyMaterials, assets.surfaces.poppy],
+    [[assets.snowdrop.material, assets.snowdrop.innerMaterial], assets.snowdrop.surface],
+  ];
+  let bytes = 0;
+  for (const [materials, surface] of families) {
+    for (const map of Object.values(surface)) bytes += map.image.data.byteLength;
+    for (const material of materials) {
+      assert.ok(material.isMeshStandardMaterial);
+      assert.ok(material.metalness >= 0.9);
+      for (const [name, map] of Object.entries(surface)) assert.equal(material[name], map);
+      assert.ok(material.bumpScale > 0 && material.bumpScale <= 0.025);
+      const data = surface.roughnessMap.image.data;
+      for (let i = 1; i < data.length; i += 4) {
+        const roughness = material.roughness * data[i] / 255;
+        assert.ok(roughness > 0.08 && roughness < 0.4, 'Reflections need contrast without a perfect-mirror surface');
+      }
+    }
+  }
+  assert.ok(bytes <= 1200000, `Unexpected texture footprint: ${bytes}`);
+});
 
 test('ground marks remain deterministic, bounded, and attached to each flower base', () => {
   const planting = gardenPlanting(821);

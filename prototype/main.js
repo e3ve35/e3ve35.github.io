@@ -1,13 +1,13 @@
 import './site.js?v=project-previews-1';
 import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=snowdrop-study-1';
-import { createLily, createPoppy, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=sculpted-flowers-1';
-import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=sculpted-flowers-1';
+import { createLily, createPoppy, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=chrome-finish-1';
+import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=chrome-finish-1';
 import { GardenAudio, flowerNote } from './audio.js?v=snowdrop-study-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=snowdrop-study-1';
 import { gardenSelection } from './studies.js?v=snowdrop-study-1';
-import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=garden-depth-1';
-import { GroundSignals } from './ground-signals.js?v=ground-signals-1';
+import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=chrome-finish-1';
+import { GroundSignals } from './ground-signals.js?v=chrome-finish-1';
 
 const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop };
 
@@ -120,6 +120,8 @@ function environmentTexture(renderer) {
   strip(580, 36, '#ffffff', 0, 430);
   strip(690, 190, '#b8a1ff', 10, 290);
   strip(930, 50, '#ddff9d', 100, 320);
+  strip(548, 14, '#faf9ff', 45, 350);
+  strip(862, 11, '#f8ffed', 130, 240);
   const map = new THREE.CanvasTexture(surface);
   map.mapping = THREE.EquirectangularReflectionMapping;
   map.colorSpace = THREE.SRGBColorSpace;
@@ -238,7 +240,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'ground-signals';
+    document.body.dataset.gardenRevision = 'chrome-finish';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }
