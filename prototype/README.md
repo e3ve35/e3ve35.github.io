@@ -26,6 +26,7 @@ Open http://127.0.0.1:4173/. No package installation or build is needed. Pinned 
 - **Pause motion** disables wind, parallax, animated deformation, glitch bursts, and pollen. The operating system's reduced-motion preference is respected initially and when it changes.
 - Audio is muted and active voices are released while the tab is hidden.
 - The navigation links switch views without reloading the garden. Hash URLs support direct links and browser back/forward. Opening a portfolio view rests the audio and rendering until you return to the garden.
+- Work includes real previews for all seven projects. Above 900 px, the selected project's image appears beneath the introduction and changes when a different entry opens. On smaller screens it appears inside the expanded entry. Preview images link to the existing demo or repository; video playback remains on Drive. A brief transition respects reduced motion, and closing every entry retains the last desktop preview.
 
 ## Implementation
 
@@ -38,6 +39,7 @@ Open http://127.0.0.1:4173/. No package installation or build is needed. Pinned 
 - `main.js`: seeded planting, synthetic environment lighting, scene setup, interactions, and one lightweight postprocessing pass. Hidden tabs and portfolio views rest the garden; pausing clears transient motion.
 - `style.css`: responsive HTML overlay, independent of the WebGL canvas.
 - `site.js` and `portfolio.css`: accessible portfolio navigation, a seven-project accordion, an introduction, the existing résumé link, and contact details. Project content was originally migrated from `js/functions.js`; the pixel-art entry has since been updated to SharePix using its repository description and link. Randforest links to its demo video and describes furniture crafting, foraging, and Perlin-noise weather. The résumé URL comes from `js/sketch.js`.
+- `project-previews.js`: moves each original preview figure between its project and the desktop preview area. Native details elements still work without JavaScript, with images inline. Existing order, numbering, links, and single-open behavior are preserved. `projects/` contains seven optimized WebP images totaling about 330 KB, plus source attribution. No video files or additional runtime libraries are required.
 
 The scene requires WebGL 2. Initialization failure presents a readable fallback; the HTML portfolio remains usable. No tracking, microphone access, or backend is involved.
 
@@ -49,7 +51,9 @@ node --test prototype/garden.test.mjs
 
 Twenty focused tests cover normalized gestures, stable timbres, envelope timing, frame-rate-independent spring motion, ripple propagation, all three species' geometry and drawing complexity, anchored deformation, bounded pollen lifetimes, consistent hover emission, world-space pollen origins, distinct species timbres, the snowdrop arch and pendant, sparse winter pollen, study fallback, season boundaries, and manual calendar overrides. Browser checks cover audio startup and its eight-voice limit, keyboard play, pointer expression, a fully static pause, replanting, study switching, navigation, session persistence, and the phone layout.
 
-The sculpted flower pass versions its entry point, `flowers.js`, and `snowdrops.js` with `sculpted-flowers-1`. Unchanged modules retain their prior versions so returning visitors load the correct dependencies.
+The project-preview pass versions its entry point, `site.js`, `project-previews.js`, and `portfolio.css` with `project-previews-1`. Unchanged garden modules retain their prior versions so returning visitors load the correct dependencies.
+
+The preview interaction was checked in a temporary DOM environment for all seven selections, single-open behavior, mobile and desktop placement, repeated resizing, retained selection, reduced motion, navigation, and cleanup. All seven image files were inspected. Browser layout verification was unavailable for this pass; served-file checks verify that all preview assets resolve.
 
 ## Next design decisions
 

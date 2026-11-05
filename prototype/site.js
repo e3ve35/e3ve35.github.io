@@ -1,3 +1,5 @@
+import { setupProjectPreviews } from './project-previews.js?v=project-previews-1';
+
 const pages = ['garden', 'work', 'about', 'contact'];
 const labels = { garden: '01 — LILIES', work: '02 — WORK', about: '03 — ABOUT', contact: '04 — CONTACT' };
 const views = [...document.querySelectorAll('[data-page-view]')];
@@ -48,3 +50,5 @@ for (const project of projects) {
     for (const other of projects) if (other !== project) other.open = false;
   });
 }
+
+setupProjectPreviews(document.getElementById('work'));

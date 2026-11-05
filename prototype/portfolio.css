@@ -92,6 +92,46 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
 .project-links a { font-size: 10px; color: #dbd4e1; }
 .project-links a span { color: var(--acid); margin-left: 8px; }
 .project-links a:hover { color: var(--acid); }
+.work-preview { display: none; }
+.project-preview { margin: 0 0 19px; min-width: 0; }
+.project-preview-link {
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  aspect-ratio: 16 / 10; background: #0b0910; border: 1px solid #b69bc530;
+  transition: border-color .2s;
+}
+.project-preview-link:hover { border-color: #d2fb8373; }
+.project-preview-link:focus-visible { outline-offset: 4px; }
+.project-preview img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.project-preview figcaption {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: baseline;
+  gap: 10px; padding-top: 11px; font-size: 8px; line-height: 1.6; letter-spacing: .025em;
+}
+.preview-number { color: var(--acid); }
+.preview-title { color: #c8bbd0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.preview-note { font-size: 7px; letter-spacing: .07em; color: #8e7d9b; }
+@media (min-width: 901px) {
+  .work-view .view-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 6vw; }
+  .work-view h2 { font-size: clamp(64px, 5.4vw, 90px); }
+  .work-view .view-intro { margin-top: 20px; max-width: 300px; }
+  .work-view .view-footnote { margin-top: 18px; }
+  .work-view.has-work-preview .work-preview { display: block; margin-top: 27px; }
+  .work-preview .project-preview { margin-bottom: 0; }
+  .work-preview .project-preview-link { aspect-ratio: 16 / 10; }
+  .work-view.has-work-preview .project-description > .project-preview { display: none; }
+  .work-view .project summary { padding: 17px 0; }
+  .work-view .project-description { margin-bottom: 23px; }
+}
+@media (min-width: 901px) and (max-height: 850px) {
+  .work-view .eyebrow { margin-bottom: 18px; }
+  .work-view h2 { font-size: 65px; }
+  .work-view .view-intro { margin-top: 15px; font-size: 11px; line-height: 1.7; }
+  .work-view.has-work-preview .work-preview { margin-top: 20px; }
+  .work-preview .project-preview-link { aspect-ratio: 16 / 9; max-height: 29vh; }
+}
+@media (max-width: 900px) {
+  .project-preview figcaption { gap: 7px; }
+  .preview-note { display: none; }
+}
 .about-copy { max-width: 610px; }
 .about-copy .large-copy {
   margin: -6px 0 24px; font-family: Georgia, 'Times New Roman', serif;
