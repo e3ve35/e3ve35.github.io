@@ -27,6 +27,15 @@
   border: 1px solid var(--line); border-top: 0;
 }
 body:not([data-page="garden"]) .season-preview { display: none; }
+body[data-season="winter"] .vignette::after {
+  content: '';
+  position: absolute; inset: 0 0 auto; height: 155px;
+  background: linear-gradient(#09070d94, transparent);
+}
+body[data-season="winter"] .season-preview { background: #151928e8; }
+body[data-season="winter"] .study-label { padding-inline: 8px; }
+body[data-season="winter"] .study-label span { color: #bdb4c6; }
+body[data-season="winter"] .specimen-card { background: #151928db; }
 .skip-link {
   position: fixed; left: 24px; top: -80px; z-index: 100;
   padding: 12px 18px; background: var(--acid); color: #09070d; font-size: 12px;
@@ -182,6 +191,7 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   .view-intro { font-size: 11px; }
 }
 @media (max-width: 600px) {
+  body[data-season="winter"] .vignette::after { height: 215px; }
   .season-preview { top: 149px; left: 23px; right: auto; width: calc(100% - 189px); padding-top: 10px; }
   .study-label { font-size: 6px; letter-spacing: .03em; gap: 5px; margin-bottom: 9px; }
   .study-switch button { min-height: 44px; font-size: 9px; padding: 5px; }

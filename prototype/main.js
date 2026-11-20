@@ -5,7 +5,7 @@ import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, 
 import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=four-seasons-1';
 import { GardenAudio, flowerNote } from './audio.js?v=four-seasons-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
-import { gardenSelection } from './studies.js?v=four-seasons-1';
+import { gardenSelection } from './studies.js?v=winter-pearl-1';
 import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=four-seasons-1';
 import { GroundSignals } from './ground-signals.js?v=four-seasons-1';
 
@@ -256,7 +256,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'four-seasons';
+    document.body.dataset.gardenRevision = 'winter-pearl';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }

@@ -19,7 +19,7 @@ const studies = {
     noteLabel: 'D GLASS TONES',
     sound: 'A quiet, glassy bloom', pollenMode: 2,
     keyLight: '#b8ccff', fillLight: '#cdf7f1',
-    sky: { night: '#131f32', horizon: '#345982', glow: '#366b82', accent: '#364463', fog: '#1a3048', ground: '#121d2c' },
+    sky: { night: '#363d51', horizon: '#828b9c', glow: '#b9c2cc', accent: '#494459', fog: '#475163', ground: '#232936' },
   },
   chrysanthemum: {
     id: 'chrysanthemum', index: '04', season: 'Autumn', name: 'Chrysanthemums', genus: 'Chrysanthemum',
