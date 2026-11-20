@@ -5,8 +5,8 @@ import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, 
 import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=four-seasons-1';
 import { GardenAudio, flowerNote } from './audio.js?v=four-seasons-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
-import { gardenSelection } from './studies.js?v=winter-sunset-1';
-import { createSnowfall } from './snowfall.js?v=winter-sunset-1';
+import { gardenSelection } from './studies.js?v=seasonal-weather-1';
+import { createSeasonParticles } from './season-particles.js?v=seasonal-weather-1';
 import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=four-seasons-1';
 import { GroundSignals } from './ground-signals.js?v=four-seasons-1';
 
@@ -210,8 +210,7 @@ class Garden {
     this.environment = environmentTexture(this.renderer);
     this.scene.environment = this.environment.texture;
     this.setBackgroundPalette = setupBackground(this.scene);
-    this.snowfall = createSnowfall();
-    this.scene.add(this.snowfall);
+    this.particleFields = new Map();
     this.scene.add(new THREE.HemisphereLight('#e4cee7', '#2d243b', 1.2));
     const white = new THREE.DirectionalLight('#f0eaf4', 2.7);
     white.position.set(-3, 9, 5);
@@ -259,7 +258,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'winter-sunset';
+    document.body.dataset.gardenRevision = 'seasonal-weather';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }
@@ -380,7 +379,15 @@ class Garden {
     this.keyLight.color.set(this.selection.keyLight);
     this.fillLight.color.set(this.selection.fillLight);
     this.setBackgroundPalette(this.selection.study.sky);
-    this.snowfall.visible = this.selection.season === 'Winter';
+    const { season } = this.selection;
+    if (!this.particleFields.has(season)) {
+      const field = createSeasonParticles(season);
+      this.particleFields.set(season, field);
+      this.scene.add(field);
+    }
+    for (const [name, field] of this.particleFields) field.visible = name === season;
+    this.activeParticles = this.particleFields.get(season);
+    if (this.renderTarget) this.activeParticles.material.uniforms.viewportHeight.value = this.renderTarget.height;
   }
 
   changeStudy(mode, remember = true) {
@@ -406,18 +413,28 @@ class Garden {
 
   createGrass(placements) {
     if (!this.grass) {
-      this.grass = new THREE.InstancedMesh(this.assets.leaf, this.assets.green, 220);
+      const material = this.assets.green.clone();
+      material.color.set('#ffffff');
+      material.metalness = 0.22;
+      material.roughness = 0.54;
+      material.envMapIntensity = 0.55;
+      this.grass = new THREE.InstancedMesh(this.assets.leaf, material, 220);
       this.scene.add(this.grass);
     }
     const dummy = new THREE.Object3D();
+    const [shade, tip] = this.study.grass.map((color) => new THREE.Color(color));
+    const bladeColor = new THREE.Color();
+    const variation = seededRandom(this.seed + 371);
     meadowGrass(placements, this.seed).forEach(({ x, z, yaw, lean, scale }, i) => {
       dummy.position.set(x, -0.1, z);
       dummy.rotation.set(0, yaw, lean);
       dummy.scale.set(scale, scale, scale * 0.65);
       dummy.updateMatrix();
       this.grass.setMatrixAt(i, dummy.matrix);
+      this.grass.setColorAt(i, bladeColor.lerpColors(shade, tip, variation()));
     });
     this.grass.instanceMatrix.needsUpdate = true;
+    this.grass.instanceColor.needsUpdate = true;
     this.grass.computeBoundingSphere();
   }
 
@@ -430,7 +447,7 @@ class Garden {
     this.renderer.setPixelRatio(this.pixelRatio);
     this.renderer.setSize(this.width, this.height, false);
     this.renderTarget.setSize(Math.round(this.width * this.pixelRatio), Math.round(this.height * this.pixelRatio));
-    this.snowfall.material.uniforms.viewportHeight.value = this.renderTarget.height;
+    this.activeParticles.material.uniforms.viewportHeight.value = this.renderTarget.height;
     this.post.uniforms.resolution.value.set(this.width * this.pixelRatio, this.height * this.pixelRatio);
     this.camera.aspect = this.width / this.height;
     this.camera.fov = this.mobile ? 49 : 40;
@@ -648,7 +665,7 @@ class Garden {
     this.post.uniforms.distortion.value = intensity;
     this.post.uniforms.motion.value = paused ? 0 : 1;
     this.groundSignals.update(this.elapsed, intensity, paused);
-    this.snowfall.material.uniforms.time.value = this.elapsed;
+    this.activeParticles.material.uniforms.time.value = this.elapsed;
     this.renderer.setRenderTarget(this.renderTarget);
     this.renderer.render(this.scene, this.camera);
     this.renderer.setRenderTarget(null);

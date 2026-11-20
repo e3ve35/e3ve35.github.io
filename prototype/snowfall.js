@@ -22,62 +22,79 @@ function snowflakeTexture() {
   return new THREE.CanvasTexture(canvas);
 }
 
-export function createSnowfall() {
-  const count = 170;
-  const random = seededRandom(153);
+export function createDriftingParticles({
+  texture, count, seed, height, speed, size, sway, spin, shimmer,
+}) {
+  const random = seededRandom(seed);
   const positions = new Float32Array(count * 3);
-  const flakes = new Float32Array(count * 4);
+  const particles = new Float32Array(count * 4);
   for (let i = 0; i < count; i++) {
-    positions.set([(random() - 0.5) * 28, random() * 9, -22 + random() * 30], i * 3);
+    positions.set([(random() - 0.5) * 28, random() * height, -22 + random() * 30], i * 3);
     const phase = random() * Math.PI * 2;
-    const speed = 0.17 + random() * 0.24;
-    const size = 0.045 + random() ** 2 * 0.14;
+    const fallRate = speed[0] + random() * speed[1];
+    const diameter = size[0] + random() ** 2 * size[1];
     const opacity = 0.48 + random() * 0.37;
-    flakes.set([phase, speed, size, opacity], i * 4);
+    particles.set([phase, fallRate, diameter, opacity], i * 4);
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute('flake', new THREE.BufferAttribute(flakes, 4));
+  geometry.setAttribute('particle', new THREE.BufferAttribute(particles, 4));
+  texture.colorSpace = THREE.SRGBColorSpace;
   const material = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
     uniforms: {
-      flakeMap: { value: snowflakeTexture() },
+      spriteMap: { value: texture },
       time: { value: 0 },
       viewportHeight: { value: 1 },
+      fieldHeight: { value: height },
+      sway: { value: sway },
+      spin: { value: spin },
+      shimmer: { value: shimmer },
     },
     vertexShader: `
-      attribute vec4 flake;
-      uniform float time, viewportHeight;
+      attribute vec4 particle;
+      uniform float time, viewportHeight, fieldHeight, sway, spin, shimmer;
       varying float opacity, angle;
       void main() {
         vec3 point = position;
-        point.x += .55 * sin(time * .46 + flake.x);
-        point.z += .22 * cos(time * .34 + flake.x);
-        point.y = .12 + mod(position.y - time * flake.y, 9.);
+        point.x += sway * sin(time * .46 + particle.x);
+        point.z += sway * .4 * cos(time * .34 + particle.x);
+        point.y = .12 + mod(position.y - time * particle.y, fieldHeight);
+        point.y += shimmer * .28 * sin(time * .6 + particle.x);
         vec4 view = modelViewMatrix * vec4(point, 1.);
         float depth = -view.z;
-        float edge = smoothstep(.12, .65, point.y) * (1. - smoothstep(8., 9., point.y));
-        opacity = flake.w * edge * (1. - smoothstep(18., 37., depth));
-        angle = flake.x + time * (.15 + flake.y * .35);
-        gl_PointSize = clamp(flake.z * viewportHeight * projectionMatrix[1][1] / (2. * max(depth, .1)), 2., 26.);
+        float edge = smoothstep(.12, .65, point.y) * (1. - smoothstep(fieldHeight - 1., fieldHeight, point.y));
+        float pulse = mix(1., .62 + .38 * sin(time * 1.7 + particle.x), shimmer);
+        opacity = particle.w * edge * pulse * (1. - smoothstep(18., 37., depth));
+        angle = particle.x + time * (spin + abs(particle.y) * .35);
+        gl_PointSize = clamp(particle.z * viewportHeight * projectionMatrix[1][1] / (2. * max(depth, .1)), 2., 30.);
         gl_Position = projectionMatrix * view;
       }
     `,
     fragmentShader: `
-      uniform sampler2D flakeMap;
+      uniform sampler2D spriteMap;
       varying float opacity, angle;
       void main() {
         float c = cos(angle), s = sin(angle);
         vec2 uv = mat2(c, -s, s, c) * (gl_PointCoord - .5) + .5;
-        float alpha = texture2D(flakeMap, uv).a * opacity;
+        if (any(lessThan(uv, vec2(0.))) || any(greaterThan(uv, vec2(1.)))) discard;
+        vec4 sprite = texture2D(spriteMap, uv);
+        float alpha = sprite.a * opacity;
         if (alpha < .025) discard;
-        gl_FragColor = vec4(1., .97, .92, alpha);
+        gl_FragColor = vec4(sprite.rgb, alpha);
       }
     `,
   });
-  const snow = new THREE.Points(geometry, material);
-  snow.frustumCulled = false; // The shader moves flakes beyond the initial bounds.
-  snow.renderOrder = 1.75;
-  return snow;
+  const points = new THREE.Points(geometry, material);
+  points.frustumCulled = false; // The shader moves particles beyond the initial bounds.
+  points.renderOrder = 1.75;
+  return points;
+}
+
+export function createSnowfall() {
+  return createDriftingParticles({
+    texture: snowflakeTexture(), count: 170, seed: 153, height: 9,
+    speed: [0.17, 0.24], size: [0.045, 0.14], sway: 0.55, spin: 0.15, shimmer: 0,
+  });
 }
