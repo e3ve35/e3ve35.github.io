@@ -30,7 +30,7 @@ const studies = {
     sound: 'A warm, coppery pluck', pollenMode: 0,
     keyLight: '#ffab6c', fillLight: '#ffcaa3',
     grass: ['#755335', '#c59b55'],
-    sky: { night: '#301b24', horizon: '#87432a', glow: '#884126', accent: '#503044', fog: '#39242b', ground: '#26191b' },
+    sky: { night: '#422a34', horizon: '#985637', glow: '#995735', accent: '#5f3a4b', fog: '#443038', ground: '#26191b' },
   },
 };
 
