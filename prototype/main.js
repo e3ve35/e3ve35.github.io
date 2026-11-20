@@ -1,4 +1,4 @@
-import './site.js?v=languages-1';
+import './site.js?v=wordmark-1';
 import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=flower-distortion-1';
 import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=sculpted-petals-1';
@@ -9,7 +9,7 @@ import { gardenSelection } from './studies.js?v=languages-1';
 import { createSnowfall } from './snowfall.js?v=sculpted-petals-1';
 import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=flower-distortion-1';
 import { GroundSignals } from './ground-signals.js?v=flower-distortion-1';
-import { currentLanguage, text } from './i18n.js?v=languages-1';
+import { currentLanguage, text } from './i18n.js?v=wordmark-1';
 
 const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop, chrysanthemum: createChrysanthemum };
 
@@ -43,7 +43,11 @@ for (const [i, bar] of [...document.querySelectorAll('.signal i')].entries()) {
 function syncMotion() {
   motionButton.setAttribute('aria-pressed', String(paused));
   motionButton.textContent = text(paused ? 'garden.resume' : 'garden.pause');
-  document.body.dataset.motion = paused ? 'paused' : 'running';
+  const motion = paused ? 'paused' : 'running';
+  if (document.body.dataset.motion !== motion) {
+    document.body.dataset.motion = motion;
+    window.dispatchEvent(new Event('garden:motionchange'));
+  }
 }
 syncMotion();
 
@@ -265,7 +269,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'languages';
+    document.body.dataset.gardenRevision = 'wordmark';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }

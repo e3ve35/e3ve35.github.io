@@ -1,6 +1,6 @@
-import { translations } from './translations.js?v=languages-1';
+import { translations } from './translations.js?v=wordmark-1';
 
-const languages = ['en', 'zh-Hans', 'ja'];
+export const languages = ['en', 'zh-Hans', 'ja'];
 const preferenceKey = 'evelyn-site-language';
 const localizedAttributes = [
   ['data-i18n', 'textContent'],
@@ -11,6 +11,7 @@ const localizedAttributes = [
 let language = 'en';
 
 export function currentLanguage() { return language; }
+export function siteName(locale = language) { return translations[locale]['site.name']; }
 
 export function text(key, values = {}, fallback = '') {
   const template = translations[language][key] ?? translations.en[key] ?? fallback;
@@ -63,7 +64,7 @@ export function initializeLocale() {
     if (language === 'en') canonicalUrl.searchParams.delete('lang');
     else canonicalUrl.searchParams.set('lang', language);
     canonical.href = canonicalUrl;
-    const values = { name: text('site.name') };
+    const values = { name: siteName() };
     for (const update of fields) update(values);
     syncLinks();
     if (notify) window.dispatchEvent(new Event('site:localechange'));

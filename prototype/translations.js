@@ -32,7 +32,6 @@ const en = {
 
 const zh = {
   'site.name': '伍芷萱',
-  'site.brand': '伍芷萱',
   'site.tagline': '游戏、花园和其他实验',
   'site.title': '异想花园',
   'site.home': '{name}的主页',
@@ -193,12 +192,11 @@ const zh = {
 };
 
 const ja = {
-  'site.name': 'Go Shikae',
-  'site.brand': 'Go Shikae',
+  'site.name': 'ゴ・カヤ',
   'site.tagline': 'ゲーム、庭、その他の実験',
   'site.title': 'ふしぎな庭',
   'site.home': '{name}のホーム',
-  'site.description': 'Go Shikaeの個人サイト。ゲーム開発、コンピューター音楽、インタラクティブな作品と、演奏できる庭。',
+  'site.description': '{name}の個人サイト。ゲーム開発、コンピューター音楽、インタラクティブな作品と、演奏できる庭。',
   'site.copyright': '© {year} {name}',
   'site.skip': '本文へ移動',
   'site.nav': 'メインナビゲーション',

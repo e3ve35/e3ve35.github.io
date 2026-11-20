@@ -15,6 +15,7 @@ Open http://127.0.0.1:4173/. No package installation or build is needed. Pinned 
 ## Interact
 
 - The header switches between English, Simplified Chinese, and Japanese. Share any tab with `?lang=en`, `?lang=zh-Hans`, or `?lang=ja` before the tab hash. Language changes keep the garden and the expanded project in place.
+- The header wordmark cycles through the three names with a brief chromatic glitch. **Pause motion** and the system reduced-motion preference hold the name for the current language.
 - Click **Enable sound**, then hover over flower heads. On a phone, tap them.
 - **Seasonal garden** uses the visitor’s local month and a Northern Hemisphere calendar. Spring poppies (March–May) sit against rose, summer lilies (June–August) against violet, autumn chrysanthemums (September–November) against ember orange, and winter snowdrops (December–February) against a pale peach sunset. The season buttons preview the corresponding flowers and palette. The preview survives reloads in the same tab. **Now** returns to the current season.
 - Poppies have four overlapping, crumpled petals with curled edges, fine radial grain, dark basal markings, a small seed pod, and 56 irregular copper stamens. Lobed leaves and varied flower tilt distinguish their silhouette. They use softer A pentatonic tones and sunset-colored ASCII seeds drifting outward. Changing species releases active voices, clears pollen, and replants the same field seed; switching modes within the same species keeps the scene intact. Sound stays opt-in and the motion preference is preserved.
