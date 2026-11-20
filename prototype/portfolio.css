@@ -51,17 +51,6 @@ body[data-season="winter"] .specimen-card { background: #151928db; }
   content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--acid);
 }
 .header-tools { display: grid; justify-items: end; gap: 4px; }
-.name-label { display: inline-block; }
-.name-label:lang(en) { text-transform: uppercase; }
-.name-label:lang(zh-Hans) { font-family: "Noto Sans CJK SC", "Microsoft YaHei", "PingFang SC", sans-serif; }
-.name-label:lang(ja) { font-family: "Noto Sans CJK JP", "Yu Gothic", "Hiragino Sans", sans-serif; }
-.name-glitch { animation: name-glitch 300ms step-end both; }
-@keyframes name-glitch {
-  0% { transform: translateX(-.06em) skewX(-7deg); text-shadow: .09em 0 #ed93c3, -.07em 0 #91e6da; }
-  18% { transform: translateX(.07em); clip-path: inset(28% -.25em 18%); text-shadow: -.09em 0 #ed93c3, .06em 0 #91e6da; }
-  38% { transform: translateX(-.04em); clip-path: inset(0 -.25em 0); text-shadow: .05em 0 #ed93c3, -.04em 0 #91e6da; }
-  62%, 100% { transform: none; clip-path: none; text-shadow: none; }
-}
 .language-switch {
   display: flex; align-items: center; padding: 0 2px; border: 1px solid var(--line);
   background: #100c18b8; font-size: 10px; line-height: 1;
@@ -200,7 +189,7 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
 .quiet-link > [aria-hidden="true"] { margin-left: 8px; }
 .contact-view { padding-top: 24px; }
 .contact-view h2 { font-size: clamp(80px, 9vw, 146px); }
-.contact-star { display: inline-block; font-size: .45em; color: var(--acid); vertical-align: top; margin: .17em 0 0 .45em; }
+.contact-star { display: inline-block; font-size: .45em; vertical-align: top; margin: .17em 0 0 .45em; }
 .contact-intro { font-size: 12px; line-height: 1.8; color: #b9a9c2; margin: 34px 0 29px; }
 .email-link {
   display: inline-flex; align-items: center; gap: 28px; font-family: Georgia, 'Times New Roman', serif;

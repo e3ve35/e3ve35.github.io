@@ -1,5 +1,5 @@
 import { setupProjectPreviews } from './project-previews.js?v=project-previews-1';
-import { currentLanguage, initializeLocale, languages, siteName, text } from './i18n.js?v=wordmark-1';
+import { initializeLocale, text } from './i18n.js?v=white-flower-1';
 
 const pages = ['garden', 'work', 'about', 'contact'];
 const views = [...document.querySelectorAll('[data-page-view]')];
@@ -10,7 +10,7 @@ let currentPage;
 function syncPageLabels() {
   const page = currentPage ?? 'garden';
   const title = page === 'garden' ? text('site.title') : text(`page.${page}`);
-  const name = siteName();
+  const name = text('site.name');
   const index = String(pages.indexOf(page) + 1).padStart(2, '0');
   document.querySelector('.footer-index').textContent = page === 'garden'
     ? document.body.dataset.studyLabel || `01 — ${text('species.lily', {}, 'Lilies').toUpperCase()}`
@@ -49,42 +49,8 @@ function showPage({ focus = true } = {}) {
   }
 }
 
-function setupWordmark() {
-  const label = document.querySelector('.name-label');
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  let index;
-  let timer;
-
-  function showName() {
-    const language = languages[index];
-    label.lang = language;
-    label.textContent = siteName(language);
-  }
-
-  function reset() {
-    clearInterval(timer);
-    label.classList.remove('name-glitch');
-    index = languages.indexOf(currentLanguage());
-    showName();
-    if (document.hidden || reducedMotion.matches || document.body.dataset.motion === 'paused') return;
-    timer = setInterval(() => {
-      index = (index + 1) % languages.length;
-      showName();
-      label.classList.add('name-glitch');
-    }, 3400);
-  }
-
-  label.addEventListener('animationend', () => label.classList.remove('name-glitch'));
-  window.addEventListener('site:localechange', reset);
-  window.addEventListener('garden:motionchange', reset);
-  document.addEventListener('visibilitychange', reset);
-  reducedMotion.addEventListener('change', reset);
-  reset();
-}
-
 // Native hash links support direct URLs, reloads, browser history, and keyboard use.
 initializeLocale();
-setupWordmark();
 window.addEventListener('site:localechange', syncPageLabels);
 window.addEventListener('hashchange', () => showPage());
 showPage({ focus: false });
