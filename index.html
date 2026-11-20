@@ -12,14 +12,14 @@
     <link rel="alternate" hreflang="zh-Hans" href="https://e3ve35.github.io/?lang=zh-Hans" />
     <link rel="alternate" hreflang="ja" href="https://e3ve35.github.io/?lang=ja" />
     <link rel="alternate" hreflang="x-default" href="https://e3ve35.github.io/" />
-    <link rel="stylesheet" href="./prototype/style.css?v=white-flower-1" />
-    <link rel="stylesheet" href="./prototype/portfolio.css?v=white-flower-1" />
+    <link rel="stylesheet" href="./prototype/style.css?v=copy-trim-1" />
+    <link rel="stylesheet" href="./prototype/portfolio.css?v=copy-trim-1" />
     <script src="./prototype/vendor/Tone.js" defer></script>
-    <script type="module" src="./prototype/main.js?v=white-flower-1"></script>
+    <script type="module" src="./prototype/main.js?v=copy-trim-1"></script>
   </head>
   <body data-page="garden">
     <a class="skip-link" data-i18n="site.skip" href="#page-content">Skip to content</a>
-    <div id="garden" role="region" aria-label="Interactive chrome lily garden" tabindex="0" aria-describedby="play-instructions">
+    <div id="garden" role="region" aria-label="Interactive chrome lily garden" tabindex="0" aria-describedby="keyboard-hint">
       <canvas id="scene" aria-hidden="true"></canvas>
       <div class="vignette" aria-hidden="true"></div>
       <div class="grain" aria-hidden="true"></div>
@@ -63,9 +63,8 @@
     <section class="intro" data-page-view="garden" aria-labelledby="garden-title">
       <p class="eyebrow"><span class="tiny-cross">+</span> <span data-i18n="garden.eyebrow">A LIVING, LISTENING EXPERIMENT</span></p>
       <h1 id="garden-title"><span class="garden-title-line"><span data-i18n="garden.titleFirst">Unlikely</span><img class="flower-mark title-flower" src="./prototype/flower-mark.svg?v=white-flower-1" width="64" height="64" alt="" /></span><br /><em data-i18n="garden.titleLast">garden.</em></h1>
-      <p class="intro-copy" data-i18n="garden.intro">Nothing here grows quietly.</p>
-      <p id="play-instructions" class="instructions"><span data-i18n="garden.listen">Enable sound.</span> <span class="pointer-instruction">Wander over the lilies.</span><span class="touch-instruction">Tap the lilies.</span><br /><span class="pointer-instruction" data-i18n="garden.gesture">Move gently. Sweep for brighter tones.</span><span class="touch-instruction">Each lily has its own voice.</span></p>
-      <div class="keyboard-hint" data-i18n="garden.keyboard">Keyboard: focus the garden, ← → to wander, space to play.</div>
+      <p class="intro-copy" data-i18n="garden.listen">Enable sound.</p>
+      <div id="keyboard-hint" class="keyboard-hint" data-i18n="garden.keyboard">Keyboard: focus the garden, ← → to wander, space to play.</div>
     </section>
 
     <section id="work" class="portfolio-view work-view" data-page-view="work" aria-labelledby="work-title" hidden>
@@ -176,14 +175,12 @@
     <section id="about" class="portfolio-view about-view" data-page-view="about" aria-labelledby="about-title" hidden>
       <div class="view-grid">
         <div class="view-heading">
-          <p class="eyebrow"><span class="tiny-cross">+</span> <span data-i18n="about.eyebrow">03 / THE PERSON BEHIND THE GARDEN</span></p>
+          <p class="eyebrow"><span class="tiny-cross">+</span> <span data-i18n="about.eyebrow">03 / ABOUT ME</span></p>
           <h2 id="about-title" tabindex="-1"><span data-i18n="about.titleFirst">Hello,</span><br /><em data-i18n="about.titleLast">I’m Evelyn.</em></h2>
-          <p class="view-intro"><span data-i18n="about.introFirst">Programmer. Game developer.</span><br /><span data-i18n="about.introLast">Curious about what code can become.</span></p>
         </div>
         <div class="about-copy">
           <p class="large-copy"><span data-i18n="about.leadStart">I explore the space between </span><em data-i18n="about.graphics">computer graphics</em><span data-i18n="about.leadJoin">, </span><em data-i18n="about.music">computer music</em><span data-i18n="about.leadEnd">, and the joy of making things interactive.</span></p>
           <p data-i18n="about.projects">My projects range from visual music composition and procedural game worlds to augmented reality gardens, data visualization, and creative tools.</p>
-          <p data-i18n="about.garden">This little garden brings a few of those interests together: botanical forms, synthetic sound, and something to discover by playing.</p>
           <div class="about-interests"><span data-i18n="about.tagGraphics">GRAPHICS</span><span data-i18n="about.tagMusic">MUSIC</span><span data-i18n="about.tagGames">GAMES</span><span data-i18n="about.tagInteraction">INTERACTION</span></div>
           <a class="resume-link" href="https://docs.google.com/document/d/1klBwffp1zl149jt6uduXRdGl6dP8hgR-xbq6mOyV9ok/edit?usp=sharing" target="_blank" rel="noopener noreferrer"><span data-i18n="about.resume">View my résumé</span><span aria-hidden="true">↗</span></a>
           <a class="quiet-link" href="#contact"><span data-i18n="about.contact">Say hello</span> <span aria-hidden="true">↗</span></a>

@@ -291,10 +291,9 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
 
 html:is(:lang(zh-Hans), :lang(ja)) :is(.view-intro, .about-copy p:not(.large-copy), .contact-intro, .project-description p) { font-size: 13px; }
 html:is(:lang(zh-Hans), :lang(ja)) :is(.project-kind, .specimen-meta, .study-label, .footer-caption) { font-size: 10px; }
-html:is(:lang(zh-Hans), :lang(ja)) .instructions { font-size: 12px; }
 
 @media (max-width: 600px) {
-  html:is(:lang(zh-Hans), :lang(ja)) :is(.instructions, .study-caption, .keyboard-hint) { font-size: 11px; }
+  html:is(:lang(zh-Hans), :lang(ja)) :is(.study-caption, .keyboard-hint) { font-size: 11px; }
   html:is(:lang(zh-Hans), :lang(ja)) .specimen-meta { font-size: 9px; }
   html:lang(zh-Hans) #about-title { font-size: clamp(36px, 11vw, 48px); }
 }

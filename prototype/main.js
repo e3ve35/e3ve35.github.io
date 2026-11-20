@@ -1,4 +1,4 @@
-import './site.js?v=white-flower-1';
+import './site.js?v=copy-trim-1';
 import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=flower-distortion-1';
 import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=sculpted-petals-1';
@@ -9,7 +9,7 @@ import { gardenSelection } from './studies.js?v=languages-1';
 import { createSnowfall } from './snowfall.js?v=sculpted-petals-1';
 import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=flower-distortion-1';
 import { GroundSignals } from './ground-signals.js?v=flower-distortion-1';
-import { currentLanguage, text } from './i18n.js?v=white-flower-1';
+import { currentLanguage, text } from './i18n.js?v=copy-trim-1';
 
 const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop, chrysanthemum: createChrysanthemum };
 
@@ -265,7 +265,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'white-flower';
+    document.body.dataset.gardenRevision = 'copy-trim';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }
@@ -398,9 +398,6 @@ class Garden {
       button.setAttribute('aria-pressed', String(button.dataset.studyMode === this.selection.mode));
     }
     if (!this.contentOpen) $('.footer-index').textContent = document.body.dataset.studyLabel;
-    $('.pointer-instruction').textContent = text('garden.hover', { flower });
-    $('.touch-instruction').textContent = text('garden.tap', { flower });
-    $('.touch-instruction:last-child').textContent = text('garden.voice');
     this.syncSpecimenNote();
   }
 
