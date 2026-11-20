@@ -14,7 +14,7 @@ const studies = {
     sound: 'A soft, floating bloom', pollenMode: 1,
     keyLight: '#ffa8c6', fillLight: '#daffb1',
     grass: ['#428b31', '#b6ea55'],
-    sky: { night: '#2d1a2b', horizon: '#813a59', glow: '#8a475d', accent: '#2c493b', fog: '#342034', ground: '#261822' },
+    sky: { night: '#344429', horizon: '#85953a', glow: '#94a640', accent: '#405929', fog: '#394b32', ground: '#261822' },
   },
   snowdrop: {
     id: 'snowdrop', index: '03', season: 'Winter', name: 'Snowdrops', genus: 'Galanthus',

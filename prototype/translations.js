@@ -108,7 +108,7 @@ const zh = {
   'timbre.Ember tone': '余烬',
   'work.eyebrow': '02 / 作品选集',
   'work.titleFirst': '游玩',
-  'work.titleLast': '指南',
+  'work.titleLast': '指南。',
   'work.intro': '关于声音、程序生成世界和视觉交互的实验。',
   'work.preview': '选中作品的预览',
   'work.footnote': '七件作品 / 多种可能',
