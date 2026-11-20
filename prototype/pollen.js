@@ -10,6 +10,7 @@ export class PollenPool {
     this.positions = new Float32Array(capacity * 3);
     this.particles = new Float32Array(capacity * 4);
     this.glyphs = new Float32Array(capacity);
+    this.distortions = new Float32Array(capacity);
     this.cursor = 0;
     this.carry = 0;
     this.source = -1;
@@ -24,7 +25,7 @@ export class PollenPool {
     this.dirty = true;
   }
 
-  emit(origin, time, count, strength = 0.5, mode = 0) {
+  emit(origin, time, count, strength = 0.5, mode = 0, distortion = 0.55) {
     const winter = mode === 2;
     for (let i = 0; i < Math.min(this.capacity, count); i++) {
       const slot = this.cursor++ % this.capacity;
@@ -33,18 +34,19 @@ export class PollenPool {
       this.positions.set([origin.x + Math.cos(angle) * radius, origin.y + (this.random() - 0.5) * 0.16, origin.z + Math.sin(angle) * radius], slot * 3);
       this.particles.set([time, (winter ? 3.7 : 2.6) + this.random() * 1.6, this.random(), Math.max(0, Math.min(1, strength))], slot * 4);
       this.glyphs[slot] = Math.floor(this.random() * GLYPHS.length);
+      this.distortions[slot] = distortion;
     }
     this.dirty = true;
   }
 
-  stream(origin, time, delta, source, strength, mode = 0) {
+  stream(origin, time, delta, source, strength, mode = 0, distortion) {
     if (source !== this.source) this.carry = 0;
     this.source = source;
     if (source < 0) return;
     this.carry += Math.min(0.05, Math.max(0, delta)) * (mode === 2 ? 7 + strength * 6 : 19 + strength * 15);
     const count = Math.floor(this.carry);
     this.carry -= count;
-    if (count) this.emit(origin, time, count, strength, mode);
+    if (count) this.emit(origin, time, count, strength, mode, distortion);
   }
 
   count(time) {
@@ -82,20 +84,21 @@ export class AsciiPollen {
     this.geometry.setAttribute('position', new THREE.BufferAttribute(this.pool.positions, 3).setUsage(THREE.DynamicDrawUsage));
     this.geometry.setAttribute('particle', new THREE.BufferAttribute(this.pool.particles, 4).setUsage(THREE.DynamicDrawUsage));
     this.geometry.setAttribute('glyph', new THREE.BufferAttribute(this.pool.glyphs, 1).setUsage(THREE.DynamicDrawUsage));
+    this.geometry.setAttribute('distortion', new THREE.BufferAttribute(this.pool.distortions, 1).setUsage(THREE.DynamicDrawUsage));
     this.material = new THREE.ShaderMaterial({
       transparent: true, depthWrite: false, depthTest: true,
       uniforms: {
         atlas: { value: glyphAtlas() }, time: { value: 0 },
-        scale: { value: 800 }, pixelRatio: { value: 1 }, distortion: { value: 0.55 }, seedDrift: { value: 0 },
+        scale: { value: 800 }, pixelRatio: { value: 1 }, seedDrift: { value: 0 },
       },
       vertexShader: `
-        attribute vec4 particle;attribute float glyph;
-        uniform float time;uniform float scale;uniform float pixelRatio;uniform float distortion;uniform float seedDrift;
-        varying float vSeed;varying float vGlyph;varying float vFade;
+        attribute vec4 particle;attribute float glyph;attribute float distortion;
+        uniform float time;uniform float scale;uniform float pixelRatio;uniform float seedDrift;
+        varying float vSeed;varying float vGlyph;varying float vFade;varying float vDistortion;
         float hash(float n){return fract(sin(n*127.1)*43758.5453);}
         void main(){
           float age=max(0.,time-particle.x);float seed=particle.z;
-          vSeed=seed;vGlyph=glyph;
+          vSeed=seed;vGlyph=glyph;vDistortion=distortion;
           vFade=smoothstep(0.,.12,age)*(1.-smoothstep(particle.y*.55,particle.y,age));
           vec3 p=position;
           float fan=step(.5,seedDrift)*(1.-step(1.5,seedDrift));
@@ -116,8 +119,8 @@ export class AsciiPollen {
           if(age>=particle.y||time<particle.x){gl_Position=vec4(2.,2.,2.,1.);gl_PointSize=0.;}
         }`,
       fragmentShader: `
-        uniform sampler2D atlas;uniform float time;uniform float distortion;
-        varying float vSeed;varying float vGlyph;varying float vFade;
+        uniform sampler2D atlas;uniform float time;
+        varying float vSeed;varying float vGlyph;varying float vFade;varying float vDistortion;
         float hash(float n){return fract(sin(n*127.1)*43758.5453);}
         float ink(vec2 uv,float glyph){
           if(uv.x<0.||uv.x>1.||uv.y<0.||uv.y>1.)return 0.;
@@ -126,14 +129,14 @@ export class AsciiPollen {
         void main(){
           vec2 uv=vec2(gl_PointCoord.x,1.-gl_PointCoord.y);
           float tick=floor(time*10.+vSeed*31.);
-          float glitch=step(.83,hash(tick+vSeed*71.))*distortion;
+          float glitch=step(.83,hash(tick+vSeed*71.))*vDistortion;
           float glyph=mix(vGlyph,floor(hash(tick+vSeed*29.)*32.),step(.01,glitch)*step(.45,hash(tick+vSeed*9.)));
           uv.x+=step(.6,uv.y)*step(uv.y,.78)*glitch*.18;
           float core=ink(uv,glyph);
           float echo=ink(uv+vec2(.12+glitch*.13,0.),glyph)*glitch*.65;
           vec3 color=vSeed>.8?vec3(2.,.23,.008):vec3(2.,1.4,.012);
           float alpha=max(core,echo)*vFade*.88;
-          alpha*=1.-step(.94,hash(tick+vSeed*53.))*distortion*.65;
+          alpha*=1.-step(.94,hash(tick+vSeed*53.))*vDistortion*.65;
           if(alpha<.015)discard;
           gl_FragColor=vec4(mix(color,vec3(1.9,.16,.008),echo/(core+echo+.001)),alpha);
         }`,
@@ -152,7 +155,7 @@ export class AsciiPollen {
 
   burst(flower, time, strength) {
     const winter = flower.pollenMode === 2;
-    this.pool.emit(this.flowerOrigin(flower), time, winter ? 7 + Math.floor(strength * 6) : 15 + Math.floor(strength * 12), strength, winter ? 2 : 0);
+    this.pool.emit(this.flowerOrigin(flower), time, winter ? 7 + Math.floor(strength * 6) : 15 + Math.floor(strength * 12), strength, winter ? 2 : 0, flower.distortion);
   }
 
   clear() { this.pool.clear(); }
@@ -162,10 +165,9 @@ export class AsciiPollen {
     this.material.uniforms.pixelRatio.value = pixelRatio;
   }
 
-  update(time, delta, flower, strength, distortion, mode = 0) {
-    this.pool.stream(flower ? this.flowerOrigin(flower) : null, time, delta, flower ? flower.id : -1, strength, mode);
+  update(time, delta, flower, strength, mode = 0) {
+    this.pool.stream(flower ? this.flowerOrigin(flower) : null, time, delta, flower ? flower.id : -1, strength, mode, flower?.distortion);
     this.material.uniforms.time.value = time;
-    this.material.uniforms.distortion.value = distortion;
     this.material.uniforms.seedDrift.value = mode;
     if (this.pool.dirty) {
       for (const attribute of Object.values(this.geometry.attributes)) attribute.needsUpdate = true;

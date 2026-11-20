@@ -16,6 +16,7 @@ export const gardenAtmosphere = Object.freeze({ color: '#24152f', near: 18, far:
 
 export function gardenPlanting(seed) {
   const random = seededRandom(seed + 1709);
+  const distortionRandom = seededRandom(seed + 3011);
   return drifts.flatMap((drift, cluster) => {
     const dx = (random() - 0.5) * 0.45;
     const dz = (random() - 0.5) * 0.55;
@@ -27,6 +28,7 @@ export function gardenPlanting(seed) {
         z: drift.z + z + (lead ? 0 : dz) + (random() - 0.5) * jitter,
         scale: scale * (0.95 + random() * 0.10),
         yaw: lead ? -0.08 + (random() - 0.5) * 0.10 : drift.yaw + (random() - 0.5) * 0.85,
+        distortion: 0.3 + distortionRandom() * 0.5,
         cluster,
       };
     });

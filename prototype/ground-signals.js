@@ -1,11 +1,12 @@
 import * as THREE from './vendor/three.module.min.js';
 import { seededRandom } from './flowers.js?v=sculpted-petals-1';
-import { gardenAtmosphere } from './composition.js?v=sculpted-petals-1';
+import { gardenAtmosphere } from './composition.js?v=flower-distortion-1';
 
 const TRACE_COUNT = 260;
 const GLYPH_COUNT = 110;
 const MAX_ROOTS = 18;
 const MAX_MARKS = TRACE_COUNT + GLYPH_COUNT + MAX_ROOTS;
+const AMBIENT_DISTORTION = 0.55;
 
 // A tiny, font-independent ASCII atlas. Rows are written bottom-up for UV space.
 export function groundGlyphAtlas() {
@@ -50,12 +51,13 @@ export function groundMarks(planting, seed) {
       height: glyph ? 0.34 + random() * 0.16 : 0.025 + random() * 0.035,
       angle: random() < 0.22 ? Math.PI / 2 : 0,
       kind: glyph ? 1 : 0,
+      distortion: nearRoot ? root.distortion ?? AMBIENT_DISTORTION : AMBIENT_DISTORTION,
       seed: random(), glyph: Math.floor(random() * 8), root: nearRoot ? rootId : -1,
     });
   }
-  roots.forEach(({ x, z, scale }, root) => marks.push({
+  roots.forEach(({ x, z, scale, distortion = AMBIENT_DISTORTION }, root) => marks.push({
     x, z, width: 4.8 * scale, height: 4.8 * scale,
-    angle: 0, kind: 2, seed: random(), glyph: 0, root,
+    angle: 0, kind: 2, seed: random(), glyph: 0, root, distortion,
   }));
   return marks;
 }
@@ -77,21 +79,22 @@ export class GroundSignals {
       side: THREE.DoubleSide, forceSinglePass: true,
       uniforms: {
         atlas: { value: groundGlyphAtlas() }, time: { value: 0 }, motion: { value: 1 },
-        distortion: { value: 0.55 }, fogNear: { value: gardenAtmosphere.near }, fogFar: { value: gardenAtmosphere.far },
+        fogNear: { value: gardenAtmosphere.near }, fogFar: { value: gardenAtmosphere.far },
         pulseRoot: { value: -1 }, pulseTime: { value: 0 }, pulseStrength: { value: 0 },
       },
       vertexShader: `
         attribute vec3 origin; attribute vec4 shape; attribute vec4 signal;
-        uniform float time; uniform float motion; uniform float distortion;
+        uniform float time; uniform float motion;
         varying vec2 vUv; varying float vKind; varying float vSeed;
-        varying float vGlyph; varying float vRoot; varying float vDepth;
+        varying float vGlyph; varying float vRoot; varying float vDepth; varying float vDistortion;
         float hash(float n){return fract(sin(n*127.1)*43758.5453);}
         void main(){
-          vUv=uv; vKind=shape.w; vSeed=signal.x; vGlyph=signal.z; vRoot=signal.w;
+          vUv=uv; vKind=shape.w; vSeed=signal.x; vDistortion=signal.y; vGlyph=signal.z; vRoot=signal.w;
           vec2 p=position.xy*shape.xy;
-          float tick=floor(time*7.+signal.y*19.);
-          float skip=step(.96,hash(tick+signal.x*91.))*motion*distortion;
-          if(shape.w<1.5) p.x+=skip*(hash(tick+signal.y)-.5)*.24;
+          float jitterSeed=signal.x*3.7;
+          float tick=floor(time*7.+jitterSeed*19.);
+          float skip=step(.96,hash(tick+signal.x*91.))*motion*vDistortion;
+          if(shape.w<1.5) p.x+=skip*(hash(tick+jitterSeed)-.5)*.24;
           float c=cos(shape.z),s=sin(shape.z);
           vec3 point=origin+vec3(p.x*c-p.y*s,0.,-p.x*s-p.y*c);
           vec4 mvPosition=modelViewMatrix*vec4(point,1.);
@@ -99,11 +102,11 @@ export class GroundSignals {
           gl_Position=projectionMatrix*mvPosition;
         }`,
       fragmentShader: `
-        uniform sampler2D atlas; uniform float time; uniform float motion; uniform float distortion;
+        uniform sampler2D atlas; uniform float time; uniform float motion;
         uniform float fogNear; uniform float fogFar;
         uniform float pulseRoot; uniform float pulseTime; uniform float pulseStrength;
         varying vec2 vUv; varying float vKind; varying float vSeed;
-        varying float vGlyph; varying float vRoot; varying float vDepth;
+        varying float vGlyph; varying float vRoot; varying float vDepth; varying float vDistortion;
         float hash(float n){return fract(sin(n*127.1)*43758.5453);}
         float ink(vec2 uv,float glyph){
           if(uv.x<0.||uv.x>1.||uv.y<0.||uv.y>1.)return 0.;
@@ -111,7 +114,7 @@ export class GroundSignals {
         }
         void main(){
           float tick=floor(time*9.+vSeed*23.);
-          float glitch=step(.93,hash(tick+vSeed*67.))*motion*distortion;
+          float glitch=step(.93,hash(tick+vSeed*67.))*motion*vDistortion;
           float age=time-pulseTime;
           float selected=(1.-step(.1,abs(vRoot-pulseRoot)))*step(-.5,pulseRoot);
           float pulse=selected*step(0.,age)*exp(-max(0.,age)*1.1)*pulseStrength*motion;
@@ -119,7 +122,7 @@ export class GroundSignals {
           if(vKind<.5){
             float dash=step(.18,fract(vUv.x*(3.+floor(vSeed*5.))));
             mask=(1.-smoothstep(.22,.5,abs(vUv.y-.5)))*dash;
-            opacity=.13+distortion*.15+pulse*.24;
+            opacity=.13+vDistortion*.15+pulse*.24;
           }else if(vKind<1.5){
             vec2 uv=vUv;
             uv.x+=step(.55,uv.y)*step(uv.y,.76)*glitch*.18;
@@ -127,7 +130,7 @@ export class GroundSignals {
             mask=ink(uv,glyph);
             float echo=ink(uv+vec2(.13,0.),glyph)*glitch*.6;
             mask=max(mask,echo);
-            opacity=.28+distortion*.18+pulse*.28;
+            opacity=.28+vDistortion*.18+pulse*.28;
           }else{
             vec2 p=vUv*2.-1.; float r=length(p);
             float angle=atan(p.y,p.x);
@@ -160,7 +163,7 @@ export class GroundSignals {
     marks.forEach((mark, i) => {
       origin.setXYZ(i, mark.x, -0.12, mark.z);
       shape.setXYZW(i, mark.width, mark.height, mark.angle, mark.kind);
-      signal.setXYZW(i, mark.seed, mark.seed * 3.7, mark.glyph, mark.root);
+      signal.setXYZW(i, mark.seed, mark.distortion, mark.glyph, mark.root);
     });
     origin.needsUpdate = shape.needsUpdate = signal.needsUpdate = true;
     this.geometry.instanceCount = marks.length;
@@ -180,11 +183,10 @@ export class GroundSignals {
     this.material.uniforms.pulseStrength.value = 0;
   }
 
-  update(time, distortion, paused) {
+  update(time, paused) {
     const uniforms = this.material.uniforms;
     if (!paused) uniforms.time.value = time;
     uniforms.motion.value = paused ? 0 : 1;
-    uniforms.distortion.value = distortion;
     if (paused) this.clear();
   }
 

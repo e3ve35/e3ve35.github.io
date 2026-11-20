@@ -84,6 +84,7 @@ test('ground marks remain deterministic, bounded, and attached to each flower ba
   });
   for (const mark of marks) {
     assert.ok(Object.values(mark).every(Number.isFinite));
+    assert.equal(mark.distortion, mark.root < 0 ? 0.55 : planting[mark.root].distortion);
     assert.ok(mark.width > 0 && mark.height > 0);
     assert.ok(mark.glyph >= 0 && mark.glyph < 8);
   }
@@ -102,10 +103,12 @@ test('ground effects reuse one draw and fixed buffers through replanting', () =>
   assert.equal(ground.material.depthWrite, false);
   assert.equal(ground.material.depthTest, true);
   for (const seed of [821, 822, 823]) {
-    ground.replant(gardenPlanting(seed), seed);
+    const planting = gardenPlanting(seed);
+    ground.replant(planting, seed);
     assert.equal(ground.geometry, geometry);
     assert.equal(ground.material.uniforms.atlas.value, atlas);
     assert.equal(geometry.instanceCount, 388);
+    assert.equal(attributes.signal.getY(388 - planting.length), Math.fround(planting[0].distortion));
     for (const [name, attribute] of Object.entries(attributes)) {
       assert.equal(geometry.attributes[name], attribute);
       for (const value of attribute.array) assert.ok(Number.isFinite(value));
@@ -121,21 +124,20 @@ test('ground effects reuse one draw and fixed buffers through replanting', () =>
 test('ground motion freezes on pause and clears old ripples on reset', () => {
   const ground = new GroundSignals(new THREE.Scene());
   ground.replant(gardenPlanting(821), 821);
-  ground.update(2, 0.55, false);
+  ground.update(2, false);
   ground.pulse(4, 2, 2);
   const uniforms = ground.material.uniforms;
   assert.equal(uniforms.pulseRoot.value, 4);
   assert.equal(uniforms.pulseStrength.value, 1);
-  ground.update(3, 0.55, true);
+  ground.update(3, true);
   assert.equal(uniforms.time.value, 2);
   assert.equal(uniforms.motion.value, 0);
   assert.equal(uniforms.pulseRoot.value, -1);
-  ground.update(4, 0.55, true);
+  ground.update(4, true);
   assert.equal(uniforms.time.value, 2);
-  ground.update(2.1, 0.1, false);
+  ground.update(2.1, false);
   assert.equal(uniforms.time.value, 2.1);
   assert.equal(uniforms.motion.value, 1);
-  assert.equal(uniforms.distortion.value, 0.1);
   ground.pulse(3, 2.1, 0.5);
   ground.replant(gardenPlanting(822), 822);
   assert.equal(uniforms.pulseRoot.value, -1);
@@ -162,6 +164,9 @@ test('the ground glyph atlas has eight separate visible glyphs with transparent 
 test('clustered planting preserves the lead bloom and separation across replant seeds', () => {
   assert.deepEqual(gardenPlanting(821), gardenPlanting(821));
   assert.notDeepEqual(gardenPlanting(821), gardenPlanting(822));
+  const distortionLevels = (seed) => gardenPlanting(seed).map(({ distortion }) => distortion);
+  assert.ok(new Set(distortionLevels(821)).size > 1);
+  assert.notDeepEqual(distortionLevels(821), distortionLevels(821 + 127));
   for (let seed = 0; seed < 100; seed++) {
     const planting = gardenPlanting(seed);
     assert.equal(planting.length, 18);
@@ -172,6 +177,7 @@ test('clustered planting preserves the lead bloom and separation across replant 
       const flower = planting[i];
       assert.ok([flower.x, flower.z, flower.scale, flower.yaw].every(Number.isFinite));
       assert.ok(flower.scale > 0.5 && flower.scale < 1.3);
+      assert.ok(flower.distortion >= 0.3 && flower.distortion <= 0.8);
       for (let j = i + 1; j < planting.length; j++) {
         assert.ok(Math.hypot(flower.x - planting[j].x, flower.z - planting[j].z) > 1.8, 'Stems must retain room to breathe');
       }
@@ -403,6 +409,15 @@ test('a stationary hover keeps emitting at a consistent rate and leaving stops i
     return emitted;
   };
   assert.ok(Math.abs(simulate(20) - simulate(144)) <= 1);
+});
+
+test('pollen retains its source distortion when another flower starts emitting', () => {
+  const pool = new PollenPool(16, seededRandom(12));
+  const origin = { x: 1, y: 3, z: 2 };
+  pool.emit(origin, 0, 2, 0.5, 0, 0.375);
+  pool.stream(origin, 0.0625, 0.05, 1, 0.5, 0, 0.75);
+  assert.equal(pool.count(0.0625), 3);
+  assert.deepEqual([...pool.distortions.slice(0, 3)], [0.375, 0.375, 0.75]);
 });
 
 test('pollen is released from the moving stamens in world space', () => {

@@ -1,14 +1,14 @@
 import './site.js?v=project-previews-1';
 import * as THREE from './vendor/three.module.min.js';
-import { AsciiPollen } from './pollen.js?v=snowdrop-study-1';
+import { AsciiPollen } from './pollen.js?v=flower-distortion-1';
 import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=sculpted-petals-1';
 import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=sculpted-petals-1';
 import { GardenAudio, flowerNote } from './audio.js?v=master-gain-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
 import { gardenSelection } from './studies.js?v=autumn-amber-1';
 import { createSnowfall } from './snowfall.js?v=sculpted-petals-1';
-import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=sculpted-petals-1';
-import { GroundSignals } from './ground-signals.js?v=sculpted-petals-1';
+import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=flower-distortion-1';
+import { GroundSignals } from './ground-signals.js?v=flower-distortion-1';
 
 const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop, chrysanthemum: createChrysanthemum };
 
@@ -24,7 +24,6 @@ const motionButton = $('#motion-toggle');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const audio = new GardenAudio();
 let paused = reducedMotion.matches;
-let intensity = 0.55;
 let notesPlayed = 0;
 let app;
 
@@ -70,10 +69,6 @@ async function toggleSound() {
 }
 soundButton.addEventListener('click', toggleSound);
 
-$('#distortion').addEventListener('input', (event) => {
-  intensity = Number(event.target.value) / 100;
-  $('#distortion-value').value = `${event.target.value}%`;
-});
 motionButton.addEventListener('click', () => {
   paused = !paused;
   app?.clearResponses();
@@ -247,7 +242,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'master-gain';
+    document.body.dataset.gardenRevision = 'flower-distortion';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }
@@ -263,7 +258,7 @@ class Garden {
       depthTest: false, depthWrite: false,
       uniforms: {
         image: { value: this.renderTarget.texture }, resolution: { value: new THREE.Vector2() },
-        time: { value: 0 }, burst: { value: 0 }, distortion: { value: intensity },
+        time: { value: 0 }, burst: { value: 0 }, distortion: { value: 0 },
         focus: { value: new THREE.Vector2(0.6, 0.6) }, motion: { value: paused ? 0 : 1 },
       },
       vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}`,
@@ -279,7 +274,7 @@ class Garden {
           float tick=floor(time*18.);
           float tear=step(.91,hash(band+tick*29.));
           uv.x+=tear*(hash(band+tick)-.5)*.13*energy*region;
-          float split=(.00045+energy*region*.018)*distortion;
+          float split=.00045*.55+energy*region*.018*distortion;
           vec3 col;
           col.r=texture2D(image,uv+vec2(split,0.)).r;
           col.g=texture2D(image,uv).g;
@@ -294,7 +289,7 @@ class Garden {
             glow+=hot/(1.+hot);
           }
           col+=glow*.06;
-          float scan=sin(vUv.y*resolution.y*1.4)*.007*distortion;
+          float scan=sin(vUv.y*resolution.y*1.4)*.007*.55;
           col-=scan;
           col+=vec3(.13,.01,.1)*tear*energy*region*.15;
           gl_FragColor=vec4(col,1.);
@@ -317,8 +312,9 @@ class Garden {
     if (this.study.id === 'chrysanthemum' && !this.assets.chrysanthemum) {
       this.assets.chrysanthemum = makeChrysanthemumAssets(this.assets);
     }
-    placements.forEach(({ x, z, scale, yaw }, id) => {
+    placements.forEach(({ x, z, scale, yaw, distortion }, id) => {
       const flower = flowerFactories[this.study.id](id, this.assets, random);
+      flower.distortion = distortion;
       flower.root.position.set(x, 0, z);
       flower.root.scale.setScalar(scale);
       flower.root.rotation.y = yaw;
@@ -571,7 +567,7 @@ class Garden {
       const gesture = note || { ...bloomProfile(id, strength, this.study.id), startedAt: now };
       if (!paused) {
         flower.gesture = gesture;
-        this.visualGesture = gesture;
+        this.visualGesture = { ...gesture, distortion: flower.distortion };
         this.ripples.push({ ...gesture, id, x: flower.root.position.x, z: flower.root.position.z });
         this.ripples = this.ripples.slice(-6);
         this.groundSignals.pulse(id, this.elapsed, strength);
@@ -629,7 +625,7 @@ class Garden {
       const yaw = flower.root.rotation.y;
       const swayX = breezeX * Math.cos(yaw) - breezeZ * Math.sin(yaw) + response * Math.sin(flower.phase) * 0.1;
       const swayZ = breezeX * Math.sin(yaw) + breezeZ * Math.cos(yaw) + response * Math.cos(flower.phase) * 0.045;
-      updateFlowerMotion(flower, this.elapsed, swayX, swayZ, response * intensity, paused);
+      updateFlowerMotion(flower, this.elapsed, swayX, swayZ, response * flower.distortion, paused);
       if (flower.id === this.selectedId) {
         card.classList.toggle('playing', !paused && envelope > 0.006);
         card.style.setProperty('--signal-strength', String(Math.max(0.12, Math.min(1, envelope))));
@@ -639,13 +635,13 @@ class Garden {
     // should not repeatedly retrigger music.
     if (this.pointerInside && this.needsPicking) { this.pick(); this.needsPicking = false; }
     const pollenFlower = !paused && !this.contentOpen && this.pointerInside && this.hoveredId >= 0 ? this.flowers[this.hoveredId] : null;
-    const pollenCount = this.pollen.update(this.elapsed, paused ? 0 : delta, pollenFlower, this.gestureStrength, intensity, this.study.pollenMode);
+    const pollenCount = this.pollen.update(this.elapsed, paused ? 0 : delta, pollenFlower, this.gestureStrength, this.study.pollenMode);
     if (document.body.dataset.pollenCount !== String(pollenCount)) document.body.dataset.pollenCount = String(pollenCount);
     this.post.uniforms.time.value = this.elapsed;
     this.post.uniforms.burst.value = this.burst;
-    this.post.uniforms.distortion.value = intensity;
+    this.post.uniforms.distortion.value = this.visualGesture?.distortion ?? 0;
     this.post.uniforms.motion.value = paused ? 0 : 1;
-    this.groundSignals.update(this.elapsed, intensity, paused);
+    this.groundSignals.update(this.elapsed, paused);
     if (this.snowfall.visible) this.snowfall.material.uniforms.time.value = this.elapsed;
     this.renderer.setRenderTarget(this.renderTarget);
     this.renderer.render(this.scene, this.camera);
