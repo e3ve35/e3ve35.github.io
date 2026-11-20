@@ -1,6 +1,14 @@
 import * as THREE from './vendor/three.module.min.js';
 import { createPetalSurfaces } from './petal-surfaces.js?v=chrome-finish-1';
 
+export const pearlFinish = Object.freeze({
+  color: '#e6edf1', metalness: 0.82, roughness: 0.41, envMapIntensity: 1.35, side: THREE.DoubleSide,
+});
+export const bloomColors = Object.freeze({
+  innerPearl: '#dce5e7', jade: '#56876c', sage: '#91aa9e', pollenGold: '#dfc477',
+});
+const pearlShades = [pearlFinish.color, '#e1e9eb', bloomColors.innerPearl];
+
 export function seededRandom(seed) {
   return function () {
     seed |= 0;
@@ -111,13 +119,13 @@ function makeBlade(variant = 0, leaf = false, poppy = false, pointAt = null, opt
   geometry.computeVertexNormals();
   if (poppy) {
     const colors = [];
-    const ink = new THREE.Color('#211522');
+    const sage = new THREE.Color(bloomColors.sage);
     const white = new THREE.Color('#ffffff');
     for (let i = 0; i < geometry.attributes.uv.count; i++) {
       const t = geometry.attributes.uv.getY(i);
       const u = geometry.attributes.uv.getX(i) * 2 - 1;
       const edge = 0.29 + 0.035 * Math.cos(u * 6 + variant);
-      const color = ink.clone().lerp(white, THREE.MathUtils.smoothstep(t, 0.07, edge));
+      const color = sage.clone().lerp(white, THREE.MathUtils.smoothstep(t, 0.07, edge));
       colors.push(color.r, color.g, color.b);
     }
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
@@ -150,23 +158,21 @@ export function makeFlowerAssets() {
   const leaf = makeBlade(0, true);
   const lilySurface = createPetalSurfaces('lily');
   const poppySurface = createPetalSurfaces('poppy');
-  const base = { metalness: 0.97, roughness: 0.36, envMapIntensity: 1.65,
-    ...lilySurface, bumpScale: 0.0075, aoMapIntensity: 0.65, side: THREE.DoubleSide };
-  const silver = new THREE.MeshStandardMaterial({ ...base, color: '#e4deea' });
-  const lavender = new THREE.MeshStandardMaterial({ ...base, color: '#cbbcdf', roughness: 0.38 });
-  const pink = new THREE.MeshStandardMaterial({ ...base, color: '#dfbfd5', roughness: 0.34 });
+  const petalMaterials = pearlShades.map((color) => new THREE.MeshStandardMaterial({
+    ...pearlFinish, ...lilySurface, color, bumpScale: 0.003, aoMapIntensity: 0.5,
+  }));
   const green = new THREE.MeshStandardMaterial({ color: '#8b9b82', metalness: 0.84, roughness: 0.36, envMapIntensity: 1.55, side: THREE.DoubleSide });
   const stem = new THREE.MeshStandardMaterial({ color: '#839379', metalness: 0.88, roughness: 0.32, envMapIntensity: 1.45 });
-  const anther = new THREE.MeshStandardMaterial({ color: '#d5ee91', emissive: '#899d35', emissiveIntensity: 0.08, metalness: 0.58, roughness: 0.33 });
+  const anther = new THREE.MeshStandardMaterial({ color: bloomColors.pollenGold, metalness: 0.7, roughness: 0.33 });
   const pistil = new THREE.MeshStandardMaterial({ color: '#cfb6df', metalness: 0.8, roughness: 0.25 });
   const antherGeometry = new THREE.SphereGeometry(1, 12, 8);
   const hitGeometry = new THREE.SphereGeometry(1.38, 12, 8);
   const hitMaterial = new THREE.MeshBasicMaterial({ visible: false });
-  const poppyMaterials = ['#e3dce7', '#dfc4cb', '#c9bddb'].map((color) => new THREE.MeshStandardMaterial({ ...base, ...poppySurface,
-    color, roughness: 0.41, vertexColors: true, bumpScale: 0.016, aoMapIntensity: 0.4 }));
-  const poppyAnther = new THREE.MeshStandardMaterial({ color: '#e4ba80', metalness: 0.76, roughness: 0.34 });
-  const poppyCenterMaterial = new THREE.MeshStandardMaterial({ color: '#302434', metalness: 0.65, roughness: 0.54, envMapIntensity: 1.1 });
-  const poppyFilament = new THREE.MeshStandardMaterial({ color: '#77635f', metalness: 0.85, roughness: 0.34 });
+  const poppyMaterials = pearlShades.map((color) => new THREE.MeshStandardMaterial({
+    ...pearlFinish, ...poppySurface, color, vertexColors: true, bumpScale: 0.003, aoMapIntensity: 0.4,
+  }));
+  const poppyCenterMaterial = new THREE.MeshStandardMaterial({ color: bloomColors.jade, metalness: 0.65, roughness: 0.54, envMapIntensity: 1.1 });
+  const filament = new THREE.MeshStandardMaterial({ color: bloomColors.innerPearl, metalness: 0.65, roughness: 0.42 });
   const pod = new THREE.CylinderGeometry(0.21, 0.16, 0.18, 16);
   pod.translate(0, 0.23, 0);
   const crown = [pod];
@@ -178,8 +184,8 @@ export function makeFlowerAssets() {
     crown.push(ridge);
   }
   const poppyCenter = mergeSurfaces(crown);
-  return { petals, poppyPetals, poppyLeaf, leaf, surfaces: { lily: lilySurface, poppy: poppySurface }, petalMaterials: [silver, lavender, pink], poppyMaterials, poppyCenter,
-    poppyCenterMaterial, poppyFilament, poppyAnther, green, stem, anther, pistil, antherGeometry, hitGeometry, hitMaterial };
+  return { petals, poppyPetals, poppyLeaf, leaf, surfaces: { lily: lilySurface, poppy: poppySurface }, petalMaterials, poppyMaterials, poppyCenter,
+    poppyCenterMaterial, filament, green, stem, anther, pistil, antherGeometry, hitGeometry, hitMaterial };
 }
 
 export function createLily(id, assets, random) {
@@ -249,7 +255,7 @@ function createFlower(id, assets, random, species) {
   const stamens = new THREE.Group();
   const filaments = [];
   const stamenCount = poppy ? 56 : 6;
-  const anthers = new THREE.InstancedMesh(assets.antherGeometry, poppy ? assets.poppyAnther : assets.anther, poppy ? stamenCount : 7);
+  const anthers = new THREE.InstancedMesh(assets.antherGeometry, assets.anther, poppy ? stamenCount : 7);
   const dummy = new THREE.Object3D();
   for (let i = 0; i < stamenCount; i++) {
     const angle = i / stamenCount * Math.PI * 2 + 0.2 + (poppy ? (random() - 0.5) * 0.08 : 0);
@@ -271,7 +277,7 @@ function createFlower(id, assets, random, species) {
   }
   const filamentGeometry = mergeSurfaces(filaments);
   privateGeometries.push(filamentGeometry);
-  stamens.add(new THREE.Mesh(filamentGeometry, poppy ? assets.poppyFilament : assets.pistil));
+  stamens.add(new THREE.Mesh(filamentGeometry, assets.filament));
   if (poppy) stamens.add(new THREE.Mesh(assets.poppyCenter, assets.poppyCenterMaterial));
   else {
     dummy.position.set(0, 1.14, 0);
@@ -296,14 +302,16 @@ function createFlower(id, assets, random, species) {
 
 export function makeChrysanthemumAssets(assets) {
   const random = seededRandom(410);
+  const material = assets.petalMaterials[0].clone();
+  material.bumpMap = null;
   const layers = [
-    { count: 17, base: 0.22, level: 0.03, length: 1.42, lift: 0.27, curl: 0.28, width: 0.155, color: '#ca805e' },
-    { count: 15, base: 0.18, level: 0.12, length: 1.14, lift: 0.35, curl: 0.20, width: 0.144, color: '#e6a166' },
-    { count: 12, base: 0.13, level: 0.22, length: 0.86, lift: 0.41, curl: 0.14, width: 0.124, color: '#edb475' },
-    { count: 9, base: 0.09, level: 0.32, length: 0.60, lift: 0.36, curl: 0.07, width: 0.102, color: '#eeba83' },
-    { count: 6, base: 0.06, level: 0.40, length: 0.35, lift: 0.23, curl: 0.03, width: 0.086, color: '#d79a5d' },
+    { count: 17, base: 0.22, level: 0.03, length: 1.42, lift: 0.27, curl: 0.28, width: 0.155 },
+    { count: 15, base: 0.18, level: 0.12, length: 1.14, lift: 0.35, curl: 0.20, width: 0.144 },
+    { count: 12, base: 0.13, level: 0.22, length: 0.86, lift: 0.41, curl: 0.14, width: 0.124 },
+    { count: 9, base: 0.09, level: 0.32, length: 0.60, lift: 0.36, curl: 0.07, width: 0.102 },
+    { count: 6, base: 0.06, level: 0.40, length: 0.35, lift: 0.23, curl: 0.03, width: 0.086 },
   ];
-  const tiers = layers.map(({ count, base, level, length, lift, curl, width, color }, tier) => {
+  const tiers = layers.map(({ count, base, level, length, lift, curl, width }, tier) => {
     const petals = Array.from({ length: count }, (_, i) => {
       const reach = length * (0.88 + random() * 0.22);
       const rise = lift * (0.9 + random() * 0.22);
@@ -322,11 +330,6 @@ export function makeChrysanthemumAssets(assets) {
       }, { rows: 20, columns: 7, normalThickness: true });
       return petal.rotateY(yaw);
     });
-    const material = assets.petalMaterials[0].clone();
-    material.color.set(color);
-    material.roughness = 0.41;
-    material.metalness = 0.91;
-    material.bumpMap = null;
     return { geometry: mergeSurfaces(petals), material };
   });
   const florets = Array.from({ length: 24 }, (_, i) => {
@@ -342,8 +345,7 @@ export function makeChrysanthemumAssets(assets) {
     return new THREE.Vector3(t * 1.42, t * 0.76 - t * t * 0.44 + u * u * outline * 0.13, u * outline * lobes * 0.43);
   }, { rows: 28, columns: 10 });
   const center = mergeSurfaces(florets);
-  const centerMaterial = assets.poppyAnther.clone();
-  centerMaterial.color.set('#c28a45');
+  const centerMaterial = assets.anther.clone();
   centerMaterial.roughness = 0.52;
   return { tiers, center, centerMaterial, leaf };
 }

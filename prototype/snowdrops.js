@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
-import { makePetalBlade, mergeSurfaces } from './flowers.js?v=sculpted-petals-1';
+import { bloomColors, makePetalBlade, mergeSurfaces, pearlFinish } from './flowers.js?v=pearl-blooms-1';
 import { createPetalSurfaces } from './petal-surfaces.js?v=chrome-finish-1';
 
 function snowdropPoint(t, u, inner = false, variant = 0) {
@@ -31,8 +31,8 @@ export function makeSnowdropAssets(assets) {
   const outers = [0, 1, 2].map((variant) => makePetalBlade((t, u) => snowdropPoint(t, u, false, variant)));
   const inner = makePetalBlade((t, u) => snowdropPoint(t, u, true));
   const colors = [];
-  const baseColor = new THREE.Color('#dce5e7');
-  const green = new THREE.Color('#56876c');
+  const baseColor = new THREE.Color(bloomColors.innerPearl);
+  const green = new THREE.Color(bloomColors.jade);
   for (let i = 0; i < inner.attributes.position.count; i++) {
     const t = inner.attributes.uv.getY(i);
     const u = inner.attributes.uv.getX(i) * 2 - 1;
@@ -43,9 +43,7 @@ export function makeSnowdropAssets(assets) {
   inner.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   const surface = createPetalSurfaces('snowdrop');
   const material = new THREE.MeshStandardMaterial({
-    color: '#e6edf1', metalness: 0.82, roughness: 0.41,
-    ...surface, bumpScale: 0.003, aoMapIntensity: 0.5,
-    envMapIntensity: 1.35, side: THREE.DoubleSide,
+    ...pearlFinish, ...surface, bumpScale: 0.003, aoMapIntensity: 0.5,
   });
   const innerMaterial = material.clone();
   innerMaterial.color.set('#ffffff');
@@ -55,13 +53,12 @@ export function makeSnowdropAssets(assets) {
   innerMaterial.bumpScale = 0.003;
   innerMaterial.aoMapIntensity = 0.3;
   const cap = new THREE.SphereGeometry(0.105, 14, 10);
-  const capMaterial = new THREE.MeshStandardMaterial({ color: '#91aa9e', metalness: 0.65, roughness: 0.4 });
-  const antherMaterial = new THREE.MeshStandardMaterial({ color: '#dfc477', metalness: 0.7, roughness: 0.33 });
+  const capMaterial = new THREE.MeshStandardMaterial({ color: bloomColors.sage, metalness: 0.65, roughness: 0.4 });
   const leaf = makePetalBlade((t, u) => new THREE.Vector3(
     t * 2.1, t * 0.9 + 0.12 * Math.sin(Math.PI * t),
     u * 0.12 * Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.6) + 0.03 * Math.sin(t * Math.PI * 2),
   ));
-  return { outer: outers[0], outers, inner, leaf, surface, material, innerMaterial, cap, capMaterial, antherMaterial };
+  return { outer: outers[0], outers, inner, leaf, surface, material, innerMaterial, cap, capMaterial };
 }
 
 export function createSnowdrop(id, assets, random) {
@@ -118,7 +115,7 @@ export function createSnowdrop(id, assets, random) {
   head.add(cap);
   const stamens = new THREE.Group();
   const filaments = [];
-  const anthers = new THREE.InstancedMesh(assets.antherGeometry, snow.antherMaterial, 6);
+  const anthers = new THREE.InstancedMesh(assets.antherGeometry, assets.anther, 6);
   const dummy = new THREE.Object3D();
   for (let i = 0; i < 6; i++) {
     const angle = i * Math.PI * 2 / 6;

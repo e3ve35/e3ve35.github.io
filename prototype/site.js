@@ -1,5 +1,5 @@
 import { setupProjectPreviews } from './project-previews.js?v=project-previews-1';
-import { initializeLocale, text } from './i18n.js?v=spring-lime-1';
+import { initializeLocale, text } from './i18n.js?v=pearl-blooms-1';
 
 const pages = ['garden', 'work', 'about', 'contact'];
 const views = [...document.querySelectorAll('[data-page-view]')];

@@ -29,7 +29,6 @@ const en = {
 
 const zh = {
   'site.name': '伍芷萱',
-  'site.tagline': '游戏、花园和其他实验',
   'site.title': '异想花园',
   'site.home': '{name}的主页',
   'site.description': '伍芷萱的个人网站。这里有游戏开发、计算机音乐、互动视觉作品，还有一座可以演奏的花园。',
@@ -179,7 +178,6 @@ const zh = {
 
 const ja = {
   'site.name': 'ゴ・カヤ',
-  'site.tagline': 'ゲーム、庭、その他の実験',
   'site.title': 'ふしぎな庭',
   'site.home': '{name}のホーム',
   'site.description': '{name}の個人サイト。ゲーム開発、コンピューター音楽、インタラクティブな作品と、演奏できる庭。',

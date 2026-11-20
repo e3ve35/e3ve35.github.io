@@ -47,10 +47,17 @@ test('all petal variants share bounded PBR maps without extra render objects', (
   const assets = makeFlowerAssets();
   assets.snowdrop = makeSnowdropAssets(assets);
   const families = [
-    [assets.petalMaterials, assets.surfaces.lily, 0.9, 0.4],
-    [assets.poppyMaterials, assets.surfaces.poppy, 0.9, 0.43],
+    [assets.petalMaterials, assets.surfaces.lily, 0.8, 0.43],
+    [assets.poppyMaterials, assets.surfaces.poppy, 0.8, 0.43],
     [[assets.snowdrop.material, assets.snowdrop.innerMaterial], assets.snowdrop.surface, 0.65, 0.45],
   ];
+  const winterPetal = assets.snowdrop.material;
+  for (const material of [...assets.petalMaterials, ...assets.poppyMaterials, ...makeChrysanthemumAssets(assets).tiers.map(({ material }) => material)]) {
+    assert.equal(material.metalness, winterPetal.metalness);
+    assert.equal(material.roughness, winterPetal.roughness);
+    assert.equal(material.envMapIntensity, winterPetal.envMapIntensity);
+    assert.ok(material.color.r > 0.7 && material.color.r <= material.color.g && material.color.g <= material.color.b);
+  }
   let bytes = 0;
   for (const [materials, surface, minMetalness, maxRoughness] of families) {
     for (const map of Object.values(surface)) bytes += map.image.data.byteLength;
@@ -58,7 +65,7 @@ test('all petal variants share bounded PBR maps without extra render objects', (
       assert.ok(material.isMeshStandardMaterial);
       assert.ok(material.metalness >= minMetalness && material.metalness <= 1);
       for (const [name, map] of Object.entries(surface)) assert.equal(material[name], map);
-      assert.ok(material.bumpScale > 0 && material.bumpScale <= 0.025);
+      assert.ok(material.bumpScale > 0 && material.bumpScale <= 0.005);
       const data = surface.roughnessMap.image.data;
       for (let i = 1; i < data.length; i += 4) {
         const roughness = material.roughness * data[i] / 255;
