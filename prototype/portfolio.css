@@ -10,7 +10,7 @@
 }
 .study-label span { color: #95859f; letter-spacing: .04em; }
 .study-switch {
-  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border: 1px solid var(--line); background: #100c1855;
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border: 1px solid var(--line); background: #100c18b8;
   backdrop-filter: blur(12px);
 }
 .study-switch button {
@@ -23,7 +23,7 @@
 .study-switch button:focus-visible { outline-offset: 3px; position: relative; }
 .study-caption {
   font-size: 9px; line-height: 1.6; margin: 0; padding: 6px 8px; color: #bfb1c9;
-  background: #100c1880; backdrop-filter: blur(10px);
+  background: #100c18b8; backdrop-filter: blur(10px);
   border: 1px solid var(--line); border-top: 0;
 }
 body:not([data-page="garden"]) .season-preview { display: none; }

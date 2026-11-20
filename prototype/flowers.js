@@ -20,7 +20,7 @@ function petalPoint(t, u, variant = 0, leaf = false) {
   );
   const length = [1.68, 1.8, 1.72][variant];
   const width = Math.pow(Math.max(0, edge), 0.82) * [0.46, 0.48, 0.43][variant];
-  const fold = -0.045 * Math.exp(-u * u * 18) * edge;
+  const fold = -0.056 * Math.exp(-u * u * 18) * edge;
   const veins = 0.006 * Math.cos(u * Math.PI * 3) * edge * (1 - Math.abs(u) * 0.6);
   const ruffle = 0.016 * Math.sin(t * 15 + variant) * Math.abs(u) ** 3 * edge;
   return new THREE.Vector3(
@@ -38,8 +38,8 @@ function poppyPoint(t, u, variant) {
     + Math.sin(u * 4.5 + variant * 1.7) * 0.07
     + Math.sin(u * 15 + variant) * 0.025 * rim);
   const fold = Math.sin(u * 16 + Math.sin(t * 6 + variant) * 0.8) * 0.025 * Math.sin(Math.PI * t * 0.85) * Math.sqrt(t);
-  const rimCurl = (Math.sin(u * 10 + variant * 2) * 0.065 + Math.cos(u * 18 - variant) * 0.025) * rim;
-  const edgeCurl = Math.sin(t * 14 + variant) * 0.045 * Math.abs(u) ** 5 * t;
+  const rimCurl = (Math.sin(u * 10 + variant * 2) * 0.048 + Math.cos(u * 18 - variant) * 0.018) * rim;
+  const edgeCurl = Math.sin(t * 14 + variant) * 0.038 * Math.abs(u) ** 5 * t;
   return new THREE.Vector3(
     radius * Math.cos(angle),
     0.08 + 0.40 * Math.sin(t * Math.PI * 0.68) + 0.10 * t * t + u * u * 0.11 * t + fold + rimCurl + edgeCurl,
@@ -53,10 +53,12 @@ function poppyLeafPoint(t, u) {
   return new THREE.Vector3(t * 1.8, t * 0.83 - 0.34 * t * t + Math.abs(u) * 0.07 * Math.sin(Math.PI * t), u * width);
 }
 
-function makeBlade(variant = 0, leaf = false, poppy = false, pointAt = null, resolution = null) {
-  const rows = resolution?.rows ?? (leaf ? 22 : poppy ? 52 : 38);
-  const columns = resolution?.columns ?? (leaf ? 8 : poppy ? 36 : 20);
+function makeBlade(variant = 0, leaf = false, poppy = false, pointAt = null, options = {}) {
+  const rows = options.rows ?? (leaf ? 22 : poppy ? 52 : 38);
+  const columns = options.columns ?? (leaf ? 8 : poppy ? 36 : 20);
   const layers = leaf ? 1 : 2;
+  const surface = pointAt ?? (poppy ? (t, u) => poppyPoint(t, u, variant) : (t, u) => petalPoint(t, u, variant, leaf));
+  const normalThickness = options.normalThickness ?? poppy;
   const layerSize = (rows + 1) * (columns + 1);
   const positions = [];
   const uv = [];
@@ -66,8 +68,20 @@ function makeBlade(variant = 0, leaf = false, poppy = false, pointAt = null, res
       for (let j = 0; j <= columns; j++) {
         const t = i / rows;
         const u = j / columns * 2 - 1;
-        const point = pointAt ? pointAt(t, u, variant) : poppy ? poppyPoint(t, u, variant) : petalPoint(t, u, variant, leaf);
-        if (!leaf) point.y += (layer ? -1 : 1) * (0.004 + 0.008 * Math.sin(Math.PI * t));
+        const point = surface(t, u);
+        if (!leaf) {
+          const thickness = (layer ? -1 : 1) * (0.003 + 0.005 * Math.sin(Math.PI * t));
+          if (normalThickness) {
+            // Near a tapered tip, sample slightly inside the surface so the
+            // cross-petal tangent still has a direction.
+            const sample = THREE.MathUtils.clamp(t, 0.001, 0.999);
+            const across = surface(sample, Math.min(u + 0.001, 1)).sub(surface(sample, Math.max(u - 0.001, -1)));
+            const along = surface(sample + 0.001, u).sub(surface(sample - 0.001, u));
+            point.addScaledVector(across.cross(along).normalize(), thickness);
+          } else {
+            point.y += thickness;
+          }
+        }
         positions.push(...point.toArray());
         uv.push(j / columns, t);
         if (i < rows && j < columns) {
@@ -127,7 +141,7 @@ export function mergeSurfaces(geometries) {
   return merged;
 }
 
-export function makePetalBlade(pointAt) { return makeBlade(0, false, false, pointAt); }
+export function makePetalBlade(pointAt) { return makeBlade(0, false, false, pointAt, { normalThickness: true }); }
 
 export function makeFlowerAssets() {
   const petals = [0, 1, 2].map((variant) => makeBlade(variant));
@@ -149,7 +163,7 @@ export function makeFlowerAssets() {
   const hitGeometry = new THREE.SphereGeometry(1.38, 12, 8);
   const hitMaterial = new THREE.MeshBasicMaterial({ visible: false });
   const poppyMaterials = ['#e3dce7', '#dfc4cb', '#c9bddb'].map((color) => new THREE.MeshStandardMaterial({ ...base, ...poppySurface,
-    color, roughness: 0.38, vertexColors: true, bumpScale: 0.022, aoMapIntensity: 0.4 }));
+    color, roughness: 0.41, vertexColors: true, bumpScale: 0.016, aoMapIntensity: 0.4 }));
   const poppyAnther = new THREE.MeshStandardMaterial({ color: '#e4ba80', metalness: 0.76, roughness: 0.34 });
   const poppyCenterMaterial = new THREE.MeshStandardMaterial({ color: '#302434', metalness: 0.65, roughness: 0.54, envMapIntensity: 1.1 });
   const poppyFilament = new THREE.MeshStandardMaterial({ color: '#77635f', metalness: 0.85, roughness: 0.34 });
@@ -176,7 +190,7 @@ export function createPoppy(id, assets, random) {
   return createFlower(id, assets, random, 'poppy');
 }
 
-function createFlowerStem(id, assets, random, poppy) {
+function createFlowerStem(id, assets, random, poppy, foliage = poppy ? assets.poppyLeaf : assets.leaf) {
   const root = new THREE.Group();
   const height = (poppy ? 2.45 : 2.65) + random() * 0.65;
   const bend = (random() - 0.5) * 0.4;
@@ -198,7 +212,7 @@ function createFlowerStem(id, assets, random, poppy) {
   const privateGeometries = [stemGeometry];
   const leaves = [];
   for (let i = 0; i < (poppy ? 3 : 4); i++) {
-    const blade = new THREE.Mesh(poppy ? assets.poppyLeaf : assets.leaf, assets.green);
+    const blade = new THREE.Mesh(foliage, assets.green);
     blade.position.copy(curve.getPoint(0.19 + i * 0.155));
     blade.rotation.set((random() - 0.5) * 0.12, i * 2.45 + id, 0.48 + i * 0.06);
     blade.scale.setScalar((poppy ? 0.48 : 0.65) + random() * 0.2);
@@ -225,7 +239,7 @@ function createFlower(id, assets, random, species) {
     if (poppy) {
       pivot.rotation.y += (random() - 0.5) * 0.09;
       pivot.rotation.z = (i % 2 ? 0.11 : -0.025) + (random() - 0.5) * 0.08;
-      pivot.position.y = i % 2 ? 0.055 : 0;
+      pivot.position.y = i % 2 ? 0.095 : 0;
       pivot.scale.multiplyScalar(i % 2 ? 0.96 : 1.07);
     }
     pivot.add(new THREE.Mesh((poppy ? assets.poppyPetals : assets.petals)[(i + id) % 3], (poppy ? assets.poppyMaterials : assets.petalMaterials)[(id + i % 2) % 3]));
@@ -282,56 +296,74 @@ function createFlower(id, assets, random, species) {
 
 export function makeChrysanthemumAssets(assets) {
   const random = seededRandom(410);
-  // Shorter, more upright tiers fill the center above the long curled rays.
-  const tiers = [
-    { count: 15, base: 0.28, length: 1.36, lift: 0.30, width: 0.18, color: '#e6a372' },
-    { count: 13, base: 0.22, length: 1.10, lift: 0.48, width: 0.165, color: '#efb879' },
-    { count: 10, base: 0.14, length: 0.79, lift: 0.65, width: 0.135, color: '#f5ca8d' },
-    { count: 8, base: 0.06, length: 0.48, lift: 0.73, width: 0.108, color: '#e6a15c' },
+  const layers = [
+    { count: 17, base: 0.22, level: 0.03, length: 1.42, lift: 0.27, curl: 0.28, width: 0.155, color: '#ca805e' },
+    { count: 15, base: 0.18, level: 0.12, length: 1.14, lift: 0.35, curl: 0.20, width: 0.144, color: '#e6a166' },
+    { count: 12, base: 0.13, level: 0.22, length: 0.86, lift: 0.41, curl: 0.14, width: 0.124, color: '#edb475' },
+    { count: 9, base: 0.09, level: 0.32, length: 0.60, lift: 0.36, curl: 0.07, width: 0.102, color: '#eeba83' },
+    { count: 6, base: 0.06, level: 0.40, length: 0.35, lift: 0.23, curl: 0.03, width: 0.086, color: '#d79a5d' },
   ];
-  return tiers.map(({ count, base, length, lift, width, color }, tier) => {
+  const tiers = layers.map(({ count, base, level, length, lift, curl, width, color }, tier) => {
     const petals = Array.from({ length: count }, (_, i) => {
-      const reach = length * (0.92 + random() * 0.16);
-      const rise = lift * (0.9 + random() * 0.20);
-      const curl = (tier < 2 ? 0.33 : 0.21) * (0.85 + random() * 0.30);
-      const yaw = (i + tier * 0.42) * Math.PI * 2 / count + (random() - 0.5) * 0.09;
-      const sweep = (random() - 0.4) * 0.17;
+      const reach = length * (0.88 + random() * 0.22);
+      const rise = lift * (0.9 + random() * 0.22);
+      const yaw = i * Math.PI * 2 / count + tier * 0.19 + (random() - 0.5) * 0.035;
+      const twist = (random() - 0.5) * 0.08;
       const petal = makeBlade(0, false, false, (t, u) => {
-        const profile = Math.sin(Math.PI * t);
-        const spread = (0.24 + 0.76 * Math.sqrt(profile)) * (1 - THREE.MathUtils.smoothstep(t, 0.88, 1) * 0.98);
+        const radius = base + reach * (t - 0.13 * t ** 6);
+        const spread = Math.sin(Math.PI * t ** 1.25) ** 0.56;
+        const halfAngle = Math.min(width * spread / radius, Math.PI / count * 0.80);
+        const angle = u * halfAngle + 0.12 * (radius / (base + length)) ** 2;
         return new THREE.Vector3(
-          base + reach * t - reach * 0.17 * t ** 6,
-          0.05 + rise * Math.sin(t * 1.65) - curl * t ** 5 + u * u * profile * 0.085,
-          u * width * spread + sweep * t * t,
+          radius * Math.cos(angle),
+          level + rise * Math.sin(t * 1.72) - curl * t ** 4 + (u * u * 0.056 + u * twist) * spread,
+          radius * Math.sin(angle),
         );
-      }, { rows: 18, columns: 8 });
+      }, { rows: 20, columns: 7, normalThickness: true });
       return petal.rotateY(yaw);
     });
     const material = assets.petalMaterials[0].clone();
     material.color.set(color);
-    material.roughness = 0.34;
-    material.bumpScale = 0.004;
+    material.roughness = 0.41;
+    material.metalness = 0.91;
+    material.bumpMap = null;
     return { geometry: mergeSurfaces(petals), material };
   });
+  const florets = Array.from({ length: 24 }, (_, i) => {
+    const angle = i * Math.PI * (3 - Math.sqrt(5));
+    const radius = 0.20 * Math.sqrt(i / 24);
+    return new THREE.SphereGeometry(1, 8, 6)
+      .scale(0.026, 0.046, 0.026)
+      .translate(Math.cos(angle) * radius, 0.49 + (1 - radius / 0.20) * 0.08, Math.sin(angle) * radius);
+  });
+  const leaf = makeBlade(0, true, false, (t, u) => {
+    const outline = Math.sin(Math.PI * t) ** 0.75;
+    const lobes = 0.82 + 0.18 * Math.cos(t * Math.PI * 10);
+    return new THREE.Vector3(t * 1.42, t * 0.76 - t * t * 0.44 + u * u * outline * 0.13, u * outline * lobes * 0.43);
+  }, { rows: 28, columns: 10 });
+  const center = mergeSurfaces(florets);
+  const centerMaterial = assets.poppyAnther.clone();
+  centerMaterial.color.set('#c28a45');
+  centerMaterial.roughness = 0.52;
+  return { tiers, center, centerMaterial, leaf };
 }
 
 export function createChrysanthemum(id, assets, random) {
-  const stem = createFlowerStem(id, assets, random, true);
+  const chrysanthemum = assets.chrysanthemum;
+  const stem = createFlowerStem(id, assets, random, true, chrysanthemum.leaf);
   const { root, height, bend } = stem;
   const head = new THREE.Group();
   head.position.set(bend, height, 0);
   head.rotation.set(0.67 + random() * 0.33, random() * 2 * Math.PI, (random() - 0.5) * 0.36);
   root.add(head);
-  const petals = assets.chrysanthemum.map(({ geometry, material }) => {
+  const petals = chrysanthemum.tiers.map(({ geometry, material }) => {
     const pivot = new THREE.Mesh(geometry, material);
-    pivot.rotation.y = random() * 0.25;
-    pivot.scale.setScalar(0.94 + random() * 0.12);
+    pivot.rotation.y = random() * 0.12;
+    pivot.scale.setScalar(0.97 + random() * 0.06);
     head.add(pivot);
     return { pivot, rotation: pivot.rotation.clone(), phase: random() * Math.PI * 2 };
   });
-  const stamens = new THREE.Mesh(assets.antherGeometry, assets.poppyAnther);
-  stamens.position.y = 0.24;
-  stamens.scale.set(0.18, 0.13, 0.18);
+  const stamens = new THREE.Mesh(chrysanthemum.center, chrysanthemum.centerMaterial);
   head.add(stamens);
   const hit = new THREE.Mesh(assets.hitGeometry, assets.hitMaterial);
   hit.scale.set(1.08, 0.54, 1.08);
@@ -348,6 +380,7 @@ export function createChrysanthemum(id, assets, random) {
 export function updateFlowerMotion(flower, time, swayX, swayZ, response, paused = false) {
   const poppy = flower.species === 'poppy';
   const snowdrop = flower.species === 'snowdrop';
+  const petalResponse = flower.species === 'chrysanthemum' ? response * 0.33 : response;
   const { height, stemGeometry, stemPositions, stemNormals } = flower;
   if (Math.abs(swayX - flower.lastBend[0]) + Math.abs(swayZ - flower.lastBend[1]) > 0.00001) {
     const positions = stemGeometry.attributes.position.array;
@@ -382,8 +415,8 @@ export function updateFlowerMotion(flower, time, swayX, swayZ, response, paused 
   }
   for (const petal of flower.petals) {
     const flutter = paused ? 0 : Math.sin(time * (snowdrop ? 0.65 : poppy ? 1.8 : 1.1) + petal.phase) * (snowdrop ? 0.005 : poppy ? 0.025 : 0.009);
-    petal.pivot.rotation.z = petal.rotation.z + flutter + response * ((snowdrop ? 0.035 : poppy ? 0.075 : 0.12) + Math.sin(petal.phase) * (snowdrop ? 0.008 : 0.035));
-    petal.pivot.rotation.x = petal.rotation.x + response * Math.sin(petal.phase) * (poppy ? 0.05 : 0.025);
+    petal.pivot.rotation.z = petal.rotation.z + flutter + petalResponse * ((snowdrop ? 0.035 : poppy ? 0.075 : 0.12) + Math.sin(petal.phase) * (snowdrop ? 0.008 : 0.035));
+    petal.pivot.rotation.x = petal.rotation.x + petalResponse * Math.sin(petal.phase) * (poppy ? 0.05 : 0.025);
   }
   flower.stamens.rotation.z = -swayX / height * 0.45 + response * 0.028;
 }

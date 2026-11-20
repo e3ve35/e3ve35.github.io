@@ -1,14 +1,14 @@
 import './site.js?v=project-previews-1';
 import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=snowdrop-study-1';
-import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=four-seasons-1';
-import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=four-seasons-1';
+import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=sculpted-petals-1';
+import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=sculpted-petals-1';
 import { GardenAudio, flowerNote } from './audio.js?v=four-seasons-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
 import { gardenSelection } from './studies.js?v=seasonal-weather-1';
-import { createSnowfall } from './snowfall.js?v=ascii-weather-1';
-import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=four-seasons-1';
-import { GroundSignals } from './ground-signals.js?v=four-seasons-1';
+import { createSnowfall } from './snowfall.js?v=sculpted-petals-1';
+import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=sculpted-petals-1';
+import { GroundSignals } from './ground-signals.js?v=sculpted-petals-1';
 
 const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop, chrysanthemum: createChrysanthemum };
 
@@ -247,7 +247,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'winter-only';
+    document.body.dataset.gardenRevision = 'sculpted-petals';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }

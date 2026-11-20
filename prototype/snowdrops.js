@@ -1,22 +1,29 @@
 import * as THREE from './vendor/three.module.min.js';
-import { makePetalBlade, mergeSurfaces } from './flowers.js?v=four-seasons-1';
+import { makePetalBlade, mergeSurfaces } from './flowers.js?v=sculpted-petals-1';
 import { createPetalSurfaces } from './petal-surfaces.js?v=chrome-finish-1';
 
 function snowdropPoint(t, u, inner = false, variant = 0) {
+  if (!inner) {
+    const belly = Math.sin(Math.PI * t);
+    const flare = THREE.MathUtils.smoothstep(t, 0.27, 0.92);
+    const tipCurl = THREE.MathUtils.smoothstep(t, 0.77, 1);
+    const width = (0.27 + variant * 0.023) * Math.sin(Math.PI * t ** 1.12) ** 0.65;
+    const groove = (0.035 * (1 - u * u) + 0.013 * Math.cos(u * 8)) * belly;
+    return new THREE.Vector3(
+      0.065 + 0.16 * belly + (0.53 + variant * 0.028) * flare - 0.045 * tipCurl + groove,
+      -1.64 * t + 0.08 * t ** 4 + 0.028 * u * u * belly,
+      u * width + 0.03 * Math.sin(t * 4 + variant) * belly,
+    );
+  }
   const profile = Math.sin(Math.PI * t * 0.75);
-  const flare = Math.pow(THREE.MathUtils.smoothstep(t, 0.3, 1), 1.15);
-  const radius = inner
-    ? 0.055 + 0.24 * Math.sin(Math.PI * t * 0.6) + 0.035 * t
-    : 0.055 + profile * 0.22 + flare * (0.48 + variant * 0.025);
-  const width = inner ? Math.pow(Math.max(0, profile), 0.18) : Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.58);
-  const angle = u * (inner ? 0.95 : 1.05) * width;
-  const ridge = (Math.cos(u * 8) * 0.009 + Math.cos(u * 18) * 0.003) * Math.sin(Math.PI * t);
-  const notch = inner ? Math.exp(-u * u * 16) * THREE.MathUtils.smoothstep(t, 0.7, 1) * 0.1 : 0;
-  const y = inner ? -0.1 - t * 0.86 + notch : -t * 1.65 + Math.pow(t, 4) * 0.1;
+  const radius = 0.06 + 0.20 * Math.sin(Math.PI * t * 0.6) + 0.035 * t;
+  const angle = u * 0.79 * profile ** 0.18;
+  const ridge = 0.008 * Math.cos(u * 8) * Math.sin(Math.PI * t);
+  const notch = Math.exp(-u * u * 16) * THREE.MathUtils.smoothstep(t, 0.7, 1) * 0.13;
   return new THREE.Vector3(
     (radius + ridge) * Math.cos(angle),
-    y + (inner ? 0 : Math.sin(u * 4 + variant) * 0.025 * t * Math.sin(Math.PI * t)),
-    radius * Math.sin(angle) + (inner ? 0 : Math.sin(t * 3 + variant) * t * 0.025),
+    -0.11 - t * 0.89 + notch,
+    radius * Math.sin(angle),
   );
 }
 
@@ -25,7 +32,7 @@ export function makeSnowdropAssets(assets) {
   const inner = makePetalBlade((t, u) => snowdropPoint(t, u, true));
   const colors = [];
   const baseColor = new THREE.Color('#dce5e7');
-  const green = new THREE.Color('#456c56');
+  const green = new THREE.Color('#56876c');
   for (let i = 0; i < inner.attributes.position.count; i++) {
     const t = inner.attributes.uv.getY(i);
     const u = inner.attributes.uv.getX(i) * 2 - 1;
@@ -36,14 +43,15 @@ export function makeSnowdropAssets(assets) {
   inner.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   const surface = createPetalSurfaces('snowdrop');
   const material = new THREE.MeshStandardMaterial({
-    color: '#e1eaf0', metalness: 0.90, roughness: 0.34,
-    ...surface, bumpScale: 0.004, aoMapIntensity: 0.5,
-    envMapIntensity: 1.5, side: THREE.DoubleSide,
+    color: '#e6edf1', metalness: 0.82, roughness: 0.41,
+    ...surface, bumpScale: 0.003, aoMapIntensity: 0.5,
+    envMapIntensity: 1.35, side: THREE.DoubleSide,
   });
   const innerMaterial = material.clone();
   innerMaterial.color.set('#ffffff');
   innerMaterial.vertexColors = true;
-  innerMaterial.roughness = 0.37;
+  innerMaterial.metalness = 0.69;
+  innerMaterial.roughness = 0.45;
   innerMaterial.bumpScale = 0.003;
   innerMaterial.aoMapIntensity = 0.3;
   const cap = new THREE.SphereGeometry(0.105, 14, 10);

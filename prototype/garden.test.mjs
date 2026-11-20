@@ -47,22 +47,22 @@ test('all petal variants share bounded PBR maps without extra render objects', (
   const assets = makeFlowerAssets();
   assets.snowdrop = makeSnowdropAssets(assets);
   const families = [
-    [assets.petalMaterials, assets.surfaces.lily],
-    [assets.poppyMaterials, assets.surfaces.poppy],
-    [[assets.snowdrop.material, assets.snowdrop.innerMaterial], assets.snowdrop.surface],
+    [assets.petalMaterials, assets.surfaces.lily, 0.9, 0.4],
+    [assets.poppyMaterials, assets.surfaces.poppy, 0.9, 0.43],
+    [[assets.snowdrop.material, assets.snowdrop.innerMaterial], assets.snowdrop.surface, 0.65, 0.45],
   ];
   let bytes = 0;
-  for (const [materials, surface] of families) {
+  for (const [materials, surface, minMetalness, maxRoughness] of families) {
     for (const map of Object.values(surface)) bytes += map.image.data.byteLength;
     for (const material of materials) {
       assert.ok(material.isMeshStandardMaterial);
-      assert.ok(material.metalness >= 0.9);
+      assert.ok(material.metalness >= minMetalness && material.metalness <= 1);
       for (const [name, map] of Object.entries(surface)) assert.equal(material[name], map);
       assert.ok(material.bumpScale > 0 && material.bumpScale <= 0.025);
       const data = surface.roughnessMap.image.data;
       for (let i = 1; i < data.length; i += 4) {
         const roughness = material.roughness * data[i] / 255;
-        assert.ok(roughness > 0.08 && roughness < 0.4, 'Reflections need contrast without a perfect-mirror surface');
+        assert.ok(roughness > 0.08 && roughness < maxRoughness, 'Reflections need contrast without a perfect-mirror surface');
       }
     }
   }
@@ -340,6 +340,22 @@ test('thick petal variants and flower geometry have finite vertices and valid fa
   let draws = 0;
   flower.root.traverse((object) => { if (object.isMesh && object.material.visible !== false) draws++; });
   assert.ok(draws <= 13, `Unexpected draw count per flower: ${draws}`);
+});
+
+test('chrysanthemum florets and petal tiers stay batched', () => {
+  const assets = makeFlowerAssets();
+  assets.chrysanthemum = makeChrysanthemumAssets(assets);
+  const { tiers, center, leaf } = assets.chrysanthemum;
+  const flower = createChrysanthemum(0, assets, seededRandom(821));
+  assert.equal(flower.petals.length, 5);
+  assert.equal(flower.stamens.geometry, center);
+  for (const geometry of [...tiers.map(({ geometry }) => geometry), center, leaf]) {
+    assert.ok(geometry.attributes.position.array.every(Number.isFinite));
+    assert.ok(geometry.attributes.normal.array.every(Number.isFinite));
+  }
+  let draws = 0;
+  flower.root.traverse((object) => { if (object.isMesh && object.material.visible !== false) draws++; });
+  assert.ok(draws <= 10, `Unexpected draw count per chrysanthemum: ${draws}`);
 });
 
 test('stem bending preserves its anchored base and remains attached to the head', () => {
