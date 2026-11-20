@@ -4,6 +4,7 @@ const MIDI = [50, 53, 55, 57, 60, 62, 65, 67, 69, 72, 74, 77];
 const POPPY_MIDI = [45, 48, 50, 52, 55, 57, 60, 62, 64, 67, 69, 72];
 const CHRYSANTHEMUM_MIDI = [43, 45, 47, 50, 52, 55, 57, 59, 62, 64, 67, 69];
 const scales = { poppy: POPPY_MIDI, chrysanthemum: CHRYSANTHEMUM_MIDI };
+const MASTER_GAIN = 0.78;
 const NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
 
 export function flowerNote(id, species = 'lily') {
@@ -52,7 +53,7 @@ export class GardenAudio {
       this.ready = true;
     }
     this.enabled = true;
-    this.master.gain.rampTo(0.62, 0.15);
+    this.master.gain.rampTo(MASTER_GAIN, 0.15);
     this.updateState();
   }
 
@@ -65,7 +66,7 @@ export class GardenAudio {
 
   setVisibility(visible) {
     if (!this.ready) return;
-    this.master.gain.rampTo(visible && this.enabled ? 0.62 : 0, 0.08);
+    this.master.gain.rampTo(visible && this.enabled ? MASTER_GAIN : 0, 0.08);
     if (!visible) this.releaseVoices();
   }
 
