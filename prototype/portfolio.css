@@ -50,13 +50,13 @@ body[data-season="winter"] .specimen-card { background: #151928db; }
 .page-nav a[aria-current="page"]::after {
   content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--acid);
 }
-.header-tools { display: grid; justify-items: end; gap: 4px; }
+.sound-toggle:hover { border-color: #d2fb8366; color: var(--acid); }
 .language-switch {
   display: flex; align-items: center; padding: 0 2px; border: 1px solid var(--line);
   background: #100c18b8; font-size: 10px; line-height: 1;
 }
 .language-switch[hidden] { display: none; }
-.language-switch a { display: grid; place-items: center; min-height: 24px; padding-inline: 8px; color: #d2c6dc; }
+.language-switch a { display: grid; place-items: center; min-height: 32px; padding-inline: 10px; color: #d2c6dc; white-space: nowrap; }
 .language-switch a + a { border-left: 1px solid var(--line); }
 .language-switch a:hover, .language-switch a[aria-current="true"] { color: var(--acid); }
 .language-switch a[aria-current="true"] { background: #d2fb8310; }
@@ -225,6 +225,7 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
 }
 @media (max-width: 600px) {
   body[data-season="winter"] .vignette::after { height: 215px; }
+  .language-switch a { padding-inline: 8px; }
   .season-preview { top: 149px; left: 23px; right: auto; width: calc(100% - 189px); padding-top: 10px; }
   .study-label { font-size: 6px; letter-spacing: .03em; gap: 5px; margin-bottom: 9px; }
   .study-switch button { min-height: 44px; font-size: 9px; padding: 5px; }
@@ -235,7 +236,7 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   .study-caption { font-size: 8px; }
   body[data-study="chrysanthemum"] .specimen-name { font-size: 15px; }
   .page-nav {
-    top: 76px; left: 0; right: 0; transform: none; justify-content: space-between;
+    top: 64px; left: 0; right: 0; transform: none; justify-content: space-between;
     border-top: 1px solid var(--line); padding-top: 10px;
   }
   .page-nav a { font-size: 10px; padding: 6px 0 9px; min-width: 44px; }
@@ -301,6 +302,8 @@ html:is(:lang(zh-Hans), :lang(ja)) :is(.project-kind, .specimen-meta, .study-lab
 @media (max-width: 600px) and (max-height: 700px) {
   .intro { bottom: 125px; }
   .intro h1 { font-size: 60px; }
+  .sound-toggle { margin-top: 12px; }
+  .season-preview, .specimen-card { top: 135px; }
   html:is(:lang(zh-Hans), :lang(ja)) .intro h1 { font-size: 44px; }
   .study-switch { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .study-switch button { padding-inline: 3px; }
