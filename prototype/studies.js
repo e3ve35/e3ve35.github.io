@@ -45,7 +45,7 @@ export function gardenSelection(mode = 'calendar', date = new Date()) {
   const automatic = mode === 'calendar';
   const study = gardenStudy(automatic ? seasons[Math.floor(((monthIndex + 1) % 12) / 3)] : mode);
   return {
-    mode, automatic, study, month: months[monthIndex], season: study.season,
+    mode, automatic, study, monthIndex, month: months[monthIndex], season: study.season,
     monthKey: `${date.getFullYear()}-${monthIndex}`,
     keyLight: study.keyLight,
     fillLight: study.fillLight,

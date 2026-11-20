@@ -1,14 +1,15 @@
-import './site.js?v=project-previews-1';
+import './site.js?v=languages-1';
 import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=flower-distortion-1';
 import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=sculpted-petals-1';
 import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=sculpted-petals-1';
 import { GardenAudio, flowerNote } from './audio.js?v=master-gain-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
-import { gardenSelection } from './studies.js?v=autumn-amber-1';
+import { gardenSelection } from './studies.js?v=languages-1';
 import { createSnowfall } from './snowfall.js?v=sculpted-petals-1';
 import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=flower-distortion-1';
 import { GroundSignals } from './ground-signals.js?v=flower-distortion-1';
+import { currentLanguage, text } from './i18n.js?v=languages-1';
 
 const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop, chrysanthemum: createChrysanthemum };
 
@@ -26,6 +27,8 @@ const audio = new GardenAudio();
 let paused = reducedMotion.matches;
 let notesPlayed = 0;
 let app;
+let soundTuning = false;
+let renderStatus = () => { status.textContent = text('status.waiting'); };
 
 const studyPreferenceKey = 'evelyn-garden-season';
 function savedStudyMode() {
@@ -39,31 +42,51 @@ for (const [i, bar] of [...document.querySelectorAll('.signal i')].entries()) {
 
 function syncMotion() {
   motionButton.setAttribute('aria-pressed', String(paused));
-  motionButton.textContent = paused ? 'Resume motion' : 'Pause motion';
+  motionButton.textContent = text(paused ? 'garden.resume' : 'garden.pause');
   document.body.dataset.motion = paused ? 'paused' : 'running';
 }
 syncMotion();
+
+function syncSoundLabel() {
+  soundLabel.textContent = text(soundTuning ? 'sound.tuning' : audio.enabled ? 'sound.on' : 'sound.enable');
+}
+syncSoundLabel();
+
+function setStatus(key, values, fallback) {
+  renderStatus = () => { status.textContent = text(key, values?.(), fallback); };
+  renderStatus();
+}
+renderStatus();
+
+window.addEventListener('site:localechange', () => {
+  syncMotion();
+  syncSoundLabel();
+  renderStatus();
+  app?.syncStudyLabels();
+});
 
 async function toggleSound() {
   soundButton.disabled = true;
   try {
     if (audio.enabled) {
       audio.mute();
-      status.textContent = 'Sound resting. Garden awake.';
+      setStatus('status.muted');
     } else {
-      soundLabel.textContent = 'Tuning…';
+      soundTuning = true;
+      syncSoundLabel();
       await audio.enable();
-      status.textContent = 'Wander over a flower';
+      setStatus('status.ready');
       if (app && document.body.dataset.page === 'garden') app.playFlower(app.selectedId, 0.35);
       audio.setVisibility(document.body.dataset.page === 'garden');
     }
   } catch (error) {
     console.error(error);
-    status.textContent = 'Sound unavailable. Try again.';
+    setStatus('status.unavailable');
     audio.mute();
   } finally {
     soundButton.setAttribute('aria-pressed', String(audio.enabled));
-    soundLabel.textContent = audio.enabled ? 'Sound on' : 'Enable sound';
+    soundTuning = false;
+    syncSoundLabel();
     soundButton.disabled = false;
   }
 }
@@ -242,7 +265,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'flower-distortion';
+    document.body.dataset.gardenRevision = 'languages';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }
@@ -335,29 +358,50 @@ class Garden {
     this.clearResponses();
     cursor.classList.remove('visible');
     $('#specimen-id').textContent = '001';
-    $('#note-name').textContent = this.study.noteLabel;
+    this.specimenNoteId = null;
     this.syncStudyLabels();
     document.body.dataset.seed = String(this.seed);
   }
 
+  studyCaption() {
+    const season = text(`season.${this.study.season}`, {}, this.study.season);
+    const heading = this.selection.automatic ? season : text('season.preview', { season });
+    return `${heading} · ${text(`species.${this.study.id}`, {}, this.study.name)}`;
+  }
+
+  syncSpecimenNote() {
+    const species = this.study.id;
+    let label = text(`scale.${species}`, {}, this.study.noteLabel);
+    if (this.specimenNoteId !== null) {
+      const note = flowerNote(this.specimenNoteId, species).name;
+      const timbre = flowerCharacter(this.specimenNoteId, species).name;
+      label = `${note} / ${text(`timbre.${timbre}`, {}, timbre.toUpperCase())}`;
+    }
+    $('#note-name').textContent = label;
+  }
+
   syncStudyLabels() {
+    const name = text(`species.${this.study.id}`, {}, this.study.name);
+    const flower = name.toLowerCase();
     document.body.dataset.study = this.study.id;
     document.body.dataset.studyMode = this.selection.mode;
     document.body.dataset.season = this.selection.season.toLowerCase();
     document.body.dataset.gardenMonth = this.selection.month;
-    document.body.dataset.studyLabel = `${this.study.index} — ${this.study.name.toUpperCase()}`;
+    document.body.dataset.studyLabel = `${this.study.index} — ${name.toUpperCase()}`;
     $('#flower-genus').textContent = this.study.genus;
     $('#garden-study-index').textContent = this.study.index.padStart(3, '0');
-    $('#garden-month').textContent = this.selection.month.toUpperCase();
-    $('#study-caption').textContent = this.selection.caption;
-    garden.setAttribute('aria-label', `Interactive chrome ${this.study.name.toLowerCase()} garden`);
+    const month = new Date(2020, this.selection.monthIndex, 1);
+    $('#garden-month').textContent = month.toLocaleDateString(currentLanguage(), { month: 'long' }).toUpperCase();
+    $('#study-caption').textContent = this.studyCaption();
+    garden.setAttribute('aria-label', text('garden.region', { flower }));
     for (const button of document.querySelectorAll('button[data-study-mode]')) {
       button.setAttribute('aria-pressed', String(button.dataset.studyMode === this.selection.mode));
     }
     if (!this.contentOpen) $('.footer-index').textContent = document.body.dataset.studyLabel;
-    $('.pointer-instruction').textContent = `Wander over the ${this.study.name.toLowerCase()}.`;
-    $('.touch-instruction').textContent = `Tap the ${this.study.name.toLowerCase()}.`;
-    $('.touch-instruction:last-child').textContent = 'Each flower has its own voice.';
+    $('.pointer-instruction').textContent = text('garden.hover', { flower });
+    $('.touch-instruction').textContent = text('garden.tap', { flower });
+    $('.touch-instruction:last-child').textContent = text('garden.voice');
+    this.syncSpecimenNote();
   }
 
   applySeasonPalette() {
@@ -383,7 +427,8 @@ class Garden {
       this.gestureStrength = 0.35;
       this.replant();
     } else this.syncStudyLabels();
-    status.textContent = selection.automatic ? `Following the season. ${selection.caption}.` : `${selection.caption}. ${audio.enabled ? 'Wander to listen.' : 'Enable sound to listen.'}`;
+    const message = selection.automatic ? 'following' : audio.enabled ? 'previewAudible' : 'previewMuted';
+    setStatus(`status.${message}`, () => ({ caption: this.studyCaption() }));
   }
 
   refreshCalendar() { this.changeStudy(this.selection.mode, false); }
@@ -499,7 +544,7 @@ class Garden {
     $('#reseed').addEventListener('click', () => {
       this.seed += 127;
       this.replant();
-      status.textContent = 'A new arrangement, same roots';
+      setStatus('status.replant');
     });
     for (const button of document.querySelectorAll('button[data-study-mode]')) {
       button.addEventListener('click', () => this.changeStudy(button.dataset.studyMode));
@@ -508,7 +553,7 @@ class Garden {
       event.preventDefault();
       audio.mute();
       soundButton.setAttribute('aria-pressed', 'false');
-      soundLabel.textContent = 'Enable sound';
+      syncSoundLabel();
       $('#fallback').hidden = false;
       document.body.dataset.gardenState = 'context-lost';
     });
@@ -575,9 +620,10 @@ class Garden {
       this.post.uniforms.focus.value.set(pan, this.projected.y * 0.5 + 0.5);
     }
     $('#specimen-id').textContent = String(id + 1).padStart(3, '0');
-    $('#note-name').textContent = `${flowerNote(id, this.study.id).name} / ${flowerCharacter(id, this.study.id).name.toUpperCase()}`;
-    const bloomStatus = this.study.id === 'lily' ? strength > 0.65 ? 'A bright, ringing bloom' : 'A gentle, synthetic bloom' : this.study.sound;
-    status.textContent = note ? bloomStatus : audio.enabled ? 'Listening to the last bloom' : 'Enable sound to hear this bloom';
+    this.specimenNoteId = id;
+    this.syncSpecimenNote();
+    const bloom = this.study.id === 'lily' ? strength > 0.65 ? 'brightLily' : 'softLily' : this.study.id;
+    setStatus(`status.${note ? bloom : audio.enabled ? 'listening' : 'enableBloom'}`, undefined, this.study.sound);
     document.body.dataset.selectedFlower = String(id);
     if (note) {
       notesPlayed++;

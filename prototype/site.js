@@ -1,16 +1,30 @@
 import { setupProjectPreviews } from './project-previews.js?v=project-previews-1';
+import { initializeLocale, text } from './i18n.js?v=languages-1';
 
 const pages = ['garden', 'work', 'about', 'contact'];
-const labels = { garden: '01 — LILIES', work: '02 — WORK', about: '03 — ABOUT', contact: '04 — CONTACT' };
 const views = [...document.querySelectorAll('[data-page-view]')];
 const links = [...document.querySelectorAll('[data-page-link]')];
 const garden = document.getElementById('garden');
 let currentPage;
 
+function syncPageLabels() {
+  const page = currentPage ?? 'garden';
+  const title = page === 'garden' ? text('site.title') : text(`page.${page}`);
+  const name = text('site.name');
+  const index = String(pages.indexOf(page) + 1).padStart(2, '0');
+  document.querySelector('.footer-index').textContent = page === 'garden'
+    ? document.body.dataset.studyLabel || `01 — ${text('species.lily', {}, 'Lilies').toUpperCase()}`
+    : `${index} — ${title.toUpperCase()}`;
+  document.querySelector('.footer-caption span:last-child').textContent = page === 'garden'
+    ? text('footer.garden')
+    : text('site.copyright', { year: new Date().getFullYear(), name });
+  document.title = `${title} — ${name}`;
+}
+
 function showPage({ focus = true } = {}) {
   const requested = window.location.hash.slice(1);
   // Leave the skip-link's target to native anchor behavior.
-  if (requested === 'page-content') return;
+  if (requested === 'page-content' && currentPage) return;
   const page = pages.includes(requested) ? requested : 'garden';
   if (page === currentPage) return;
   currentPage = page;
@@ -27,10 +41,7 @@ function showPage({ focus = true } = {}) {
   garden.setAttribute('aria-hidden', String(page !== 'garden'));
   document.querySelector('.specimen-card').hidden = page !== 'garden';
   document.querySelector('.controls').hidden = page !== 'garden';
-  document.querySelector('.footer-index').textContent = page === 'garden' ? document.body.dataset.studyLabel || labels.garden : labels[page];
-  const caption = document.querySelector('.footer-caption span:last-child');
-  caption.textContent = page === 'garden' ? 'BOTANICAL FORM. SYNTHETIC SOUL.' : `© ${new Date().getFullYear()} EVELYN WU`;
-  document.title = page === 'garden' ? 'Unlikely Garden — Evelyn Wu' : `${page[0].toUpperCase() + page.slice(1)} — Evelyn Wu`;
+  syncPageLabels();
   window.dispatchEvent(new CustomEvent('garden:pagechange', { detail: { page } }));
   if (focus) {
     if (page === 'garden') garden.focus({ preventScroll: true });
@@ -39,6 +50,8 @@ function showPage({ focus = true } = {}) {
 }
 
 // Native hash links support direct URLs, reloads, browser history, and keyboard use.
+initializeLocale();
+window.addEventListener('site:localechange', syncPageLabels);
 window.addEventListener('hashchange', () => showPage());
 showPage({ focus: false });
 

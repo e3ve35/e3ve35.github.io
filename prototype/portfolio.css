@@ -8,7 +8,7 @@
   display: flex; justify-content: space-between; gap: 8px; margin: 0 0 12px;
   font-size: 8px; letter-spacing: .1em; color: #c7bbd0;
 }
-.study-label span { color: #95859f; letter-spacing: .04em; }
+#garden-month { color: #95859f; letter-spacing: .04em; }
 .study-switch {
   display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border: 1px solid var(--line); background: #100c18b8;
   backdrop-filter: blur(12px);
@@ -34,7 +34,7 @@ body[data-season="winter"] .vignette::after {
 }
 body[data-season="winter"] .season-preview { background: #151928e8; }
 body[data-season="winter"] .study-label { padding-inline: 8px; }
-body[data-season="winter"] .study-label span { color: #bdb4c6; }
+body[data-season="winter"] #garden-month { color: #bdb4c6; }
 body[data-season="winter"] .specimen-card { background: #151928db; }
 .skip-link {
   position: fixed; left: 24px; top: -80px; z-index: 100;
@@ -50,6 +50,39 @@ body[data-season="winter"] .specimen-card { background: #151928db; }
 .page-nav a[aria-current="page"]::after {
   content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--acid);
 }
+.header-tools { display: grid; justify-items: end; gap: 4px; }
+.language-switch {
+  display: flex; align-items: center; padding: 0 2px; border: 1px solid var(--line);
+  background: #100c18b8; font-size: 10px; line-height: 1;
+}
+.language-switch[hidden] { display: none; }
+.language-switch a { display: grid; place-items: center; min-height: 24px; padding-inline: 8px; color: #d2c6dc; }
+.language-switch a + a { border-left: 1px solid var(--line); }
+.language-switch a:hover, .language-switch a[aria-current="true"] { color: var(--acid); }
+.language-switch a[aria-current="true"] { background: #d2fb8310; }
+.language-switch [lang="zh-Hans"] { font-family: "Noto Sans CJK SC", "Microsoft YaHei", "PingFang SC", sans-serif; }
+.language-switch [lang="ja"] { font-family: "Noto Sans CJK JP", "Yu Gothic", "Hiragino Sans", sans-serif; }
+.garden-title-line { display: inline-block; position: relative; }
+.garden-title-line .title-flower { left: 100%; }
+html:lang(zh-Hans) {
+  --local-sans: "Noto Sans CJK SC", "Microsoft YaHei", "PingFang SC", sans-serif;
+  --local-serif: "Noto Serif CJK SC", "Songti SC", SimSun, serif;
+}
+html:lang(ja) {
+  --local-sans: "Noto Sans CJK JP", "Yu Gothic", "Hiragino Sans", sans-serif;
+  --local-serif: "Noto Serif CJK JP", "Yu Mincho", "Hiragino Mincho ProN", serif;
+}
+html:is(:lang(zh-Hans), :lang(ja)) { font-family: ShareTech, var(--local-sans); }
+html:is(:lang(zh-Hans), :lang(ja)) :is(.intro h1, .portfolio-view h2, .project-title, .about-copy .large-copy) {
+  font-family: Georgia, var(--local-serif);
+  letter-spacing: 0;
+}
+html:is(:lang(zh-Hans), :lang(ja)) :is(.intro h1, .portfolio-view h2) {
+  font-size: clamp(52px, 6.2vw, 92px);
+  line-height: 1.12;
+}
+html:is(:lang(zh-Hans), :lang(ja)) :is(h1, h2, .large-copy) em { font-style: normal; }
+html:is(:lang(zh-Hans), :lang(ja)) #about-title { font-size: clamp(41px, 4.4vw, 76px); }
 .content-shade {
   position: fixed; inset: 0; pointer-events: none; opacity: 0;
   background: linear-gradient(90deg, #09070df5 0%, #09070de8 50%, #09070d7a 100%);
@@ -99,7 +132,7 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
 .project-description p { font-size: 11px; line-height: 1.95; color: #c0b4c8; margin: 0 0 14px; }
 .project-links { display: flex; flex-wrap: wrap; gap: 14px 25px; }
 .project-links a { font-size: 10px; color: #dbd4e1; }
-.project-links a span { color: var(--acid); margin-left: 8px; }
+.project-links a > [aria-hidden="true"] { color: var(--acid); margin-left: 8px; }
 .project-links a:hover { color: var(--acid); }
 .work-preview { display: none; }
 .project-preview { margin: 0 0 19px; min-width: 0; }
@@ -153,7 +186,7 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
 .resume-link span:last-child { color: var(--acid); }
 .resume-link:hover, .quiet-link:hover, .contact-links a:hover { color: var(--acid); }
 .quiet-link { display: inline-block; font-size: 10px; color: var(--muted); padding: 21px 0 8px; }
-.quiet-link span { margin-left: 8px; }
+.quiet-link > [aria-hidden="true"] { margin-left: 8px; }
 .contact-view { padding-top: 24px; }
 .contact-view h2 { font-size: clamp(80px, 9vw, 146px); }
 .contact-star { display: inline-block; font-size: .45em; color: var(--acid); vertical-align: top; margin: .17em 0 0 .45em; }
@@ -166,9 +199,9 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
 .email-link span { color: var(--acid); font-family: ShareTech, monospace; font-size: .6em; }
 .email-link:hover { color: var(--acid); }
 .contact-links { display: flex; gap: 32px; margin-top: 34px; font-size: 11px; color: #b9a9c2; }
-.contact-links span { margin-left: 7px; color: var(--acid); }
+.contact-links [aria-hidden="true"] { margin-left: 7px; color: var(--acid); }
 .return-to-garden { display: none; font-size: 10px; color: #c0b1cd; padding: 12px 0; }
-.return-to-garden span { color: var(--acid); margin-left: 13px; }
+.return-to-garden > [aria-hidden="true"] { color: var(--acid); margin-left: 13px; }
 .return-to-garden:hover { color: var(--acid); }
 body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
 
@@ -202,7 +235,7 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   .study-caption { font-size: 8px; }
   body[data-study="chrysanthemum"] .specimen-name { font-size: 15px; }
   .page-nav {
-    top: 64px; left: 0; right: 0; transform: none; justify-content: space-between;
+    top: 76px; left: 0; right: 0; transform: none; justify-content: space-between;
     border-top: 1px solid var(--line); padding-top: 10px;
   }
   .page-nav a { font-size: 10px; padding: 6px 0 9px; min-width: 44px; }
@@ -235,7 +268,9 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   body:not([data-page="garden"]) .garden-footer { min-height: 78px; display: flex; flex-wrap: wrap; padding: 13px 0; gap: 8px; }
   body:not([data-page="garden"]) .footer-caption { order: 0; font-size: 8px; }
   .return-to-garden { font-size: 9px; }
-  .return-to-garden span { margin-left: 8px; }
+  .return-to-garden > [aria-hidden="true"] { margin-left: 8px; }
+  html:is(:lang(zh-Hans), :lang(ja)) :is(.intro h1, .portfolio-view h2) { font-size: 48px; }
+  html:lang(ja) #about-title { font-size: clamp(36px, 10.5vw, 46px); }
 }
 @media (max-width: 360px) {
   .portfolio-view h2 { font-size: 53px; }
@@ -252,4 +287,25 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
 }
 @media (prefers-reduced-motion: reduce) {
   #scene, .content-shade, .page-nav a, .project-title { transition: none; }
+}
+
+html:is(:lang(zh-Hans), :lang(ja)) :is(.view-intro, .about-copy p:not(.large-copy), .contact-intro, .project-description p) { font-size: 13px; }
+html:is(:lang(zh-Hans), :lang(ja)) :is(.project-kind, .specimen-meta, .study-label, .footer-caption) { font-size: 10px; }
+html:is(:lang(zh-Hans), :lang(ja)) .instructions { font-size: 12px; }
+
+@media (max-width: 600px) {
+  html:is(:lang(zh-Hans), :lang(ja)) :is(.instructions, .study-caption, .keyboard-hint) { font-size: 11px; }
+  html:is(:lang(zh-Hans), :lang(ja)) .specimen-meta { font-size: 9px; }
+  html:lang(zh-Hans) #about-title { font-size: clamp(36px, 11vw, 48px); }
+}
+
+@media (max-width: 600px) and (max-height: 700px) {
+  .intro { bottom: 125px; }
+  .intro h1 { font-size: 60px; }
+  html:is(:lang(zh-Hans), :lang(ja)) .intro h1 { font-size: 44px; }
+  .study-switch { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .study-switch button { padding-inline: 3px; }
+  .study-switch button:first-child { grid-column: auto; grid-row: span 2; }
+  .study-switch button:nth-child(n+2) { border-top: 0; border-left: 1px solid var(--line); }
+  .study-switch button:nth-child(n+4) { border-top: 1px solid var(--line); }
 }
