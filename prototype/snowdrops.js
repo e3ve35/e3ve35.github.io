@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
-import { makePetalBlade, mergeSurfaces } from './flowers.js?v=chrome-finish-1';
+import { makePetalBlade, mergeSurfaces } from './flowers.js?v=four-seasons-1';
 import { createPetalSurfaces } from './petal-surfaces.js?v=chrome-finish-1';
 
 function snowdropPoint(t, u, inner = false, variant = 0) {

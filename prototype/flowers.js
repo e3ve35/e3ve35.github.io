@@ -53,9 +53,9 @@ function poppyLeafPoint(t, u) {
   return new THREE.Vector3(t * 1.8, t * 0.83 - 0.34 * t * t + Math.abs(u) * 0.07 * Math.sin(Math.PI * t), u * width);
 }
 
-function makeBlade(variant = 0, leaf = false, poppy = false, pointAt = null) {
-  const rows = leaf ? 22 : poppy ? 52 : 38;
-  const columns = leaf ? 8 : poppy ? 36 : 20;
+function makeBlade(variant = 0, leaf = false, poppy = false, pointAt = null, resolution = null) {
+  const rows = resolution?.rows ?? (leaf ? 22 : poppy ? 52 : 38);
+  const columns = resolution?.columns ?? (leaf ? 8 : poppy ? 36 : 20);
   const layers = leaf ? 1 : 2;
   const layerSize = (rows + 1) * (columns + 1);
   const positions = [];
@@ -176,8 +176,7 @@ export function createPoppy(id, assets, random) {
   return createFlower(id, assets, random, 'poppy');
 }
 
-function createFlower(id, assets, random, species) {
-  const poppy = species === 'poppy';
+function createFlowerStem(id, assets, random, poppy) {
   const root = new THREE.Group();
   const height = (poppy ? 2.45 : 2.65) + random() * 0.65;
   const bend = (random() - 0.5) * 0.4;
@@ -206,6 +205,13 @@ function createFlower(id, assets, random, species) {
     root.add(blade);
     leaves.push({ mesh: blade, position: blade.position.clone(), rotation: blade.rotation.clone(), phase: random() * Math.PI * 2 });
   }
+  return { root, height, bend, stemGeometry, stemPositions, stemNormals, privateGeometries, leaves };
+}
+
+function createFlower(id, assets, random, species) {
+  const poppy = species === 'poppy';
+  const stem = createFlowerStem(id, assets, random, poppy);
+  const { root, height, bend, privateGeometries } = stem;
   const head = new THREE.Group();
   head.position.set(bend, height, 0);
   head.rotation.set(poppy ? 0.38 + random() * 0.6 : 0.54 + random() * 0.3, random() * 0.4, (random() - 0.5) * (poppy ? 0.5 : 0.28));
@@ -268,9 +274,73 @@ function createFlower(id, assets, random, species) {
   hit.userData.flowerId = id;
   head.add(hit);
   return {
-    id, species, pollenHeight: poppy ? 0.43 : 0.85, root, head, petals, leaves, stamens, anthers, hit, height, bend,
-    phase: random() * Math.PI * 2, baseRotation: head.rotation.clone(), privateGeometries,
-    stemGeometry, stemPositions, stemNormals, lastBend: [Infinity, Infinity],
+    ...stem, id, species, pollenHeight: poppy ? 0.43 : 0.85, head, petals, stamens, anthers, hit,
+    phase: random() * Math.PI * 2, baseRotation: head.rotation.clone(), lastBend: [Infinity, Infinity],
+    response: { value: 0, velocity: 0 }, gesture: null, lastGesture: -Infinity,
+  };
+}
+
+export function makeChrysanthemumAssets(assets) {
+  const random = seededRandom(410);
+  // Shorter, more upright tiers fill the center above the long curled rays.
+  const tiers = [
+    { count: 15, base: 0.28, length: 1.36, lift: 0.30, width: 0.18, color: '#e6a372' },
+    { count: 13, base: 0.22, length: 1.10, lift: 0.48, width: 0.165, color: '#efb879' },
+    { count: 10, base: 0.14, length: 0.79, lift: 0.65, width: 0.135, color: '#f5ca8d' },
+    { count: 8, base: 0.06, length: 0.48, lift: 0.73, width: 0.108, color: '#e6a15c' },
+  ];
+  return tiers.map(({ count, base, length, lift, width, color }, tier) => {
+    const petals = Array.from({ length: count }, (_, i) => {
+      const reach = length * (0.92 + random() * 0.16);
+      const rise = lift * (0.9 + random() * 0.20);
+      const curl = (tier < 2 ? 0.33 : 0.21) * (0.85 + random() * 0.30);
+      const yaw = (i + tier * 0.42) * Math.PI * 2 / count + (random() - 0.5) * 0.09;
+      const sweep = (random() - 0.4) * 0.17;
+      const petal = makeBlade(0, false, false, (t, u) => {
+        const profile = Math.sin(Math.PI * t);
+        const spread = (0.24 + 0.76 * Math.sqrt(profile)) * (1 - THREE.MathUtils.smoothstep(t, 0.88, 1) * 0.98);
+        return new THREE.Vector3(
+          base + reach * t - reach * 0.17 * t ** 6,
+          0.05 + rise * Math.sin(t * 1.65) - curl * t ** 5 + u * u * profile * 0.085,
+          u * width * spread + sweep * t * t,
+        );
+      }, { rows: 18, columns: 8 });
+      return petal.rotateY(yaw);
+    });
+    const material = assets.petalMaterials[0].clone();
+    material.color.set(color);
+    material.roughness = 0.34;
+    material.bumpScale = 0.004;
+    return { geometry: mergeSurfaces(petals), material };
+  });
+}
+
+export function createChrysanthemum(id, assets, random) {
+  const stem = createFlowerStem(id, assets, random, true);
+  const { root, height, bend } = stem;
+  const head = new THREE.Group();
+  head.position.set(bend, height, 0);
+  head.rotation.set(0.67 + random() * 0.33, random() * 2 * Math.PI, (random() - 0.5) * 0.36);
+  root.add(head);
+  const petals = assets.chrysanthemum.map(({ geometry, material }) => {
+    const pivot = new THREE.Mesh(geometry, material);
+    pivot.rotation.y = random() * 0.25;
+    pivot.scale.setScalar(0.94 + random() * 0.12);
+    head.add(pivot);
+    return { pivot, rotation: pivot.rotation.clone(), phase: random() * Math.PI * 2 };
+  });
+  const stamens = new THREE.Mesh(assets.antherGeometry, assets.poppyAnther);
+  stamens.position.y = 0.24;
+  stamens.scale.set(0.18, 0.13, 0.18);
+  head.add(stamens);
+  const hit = new THREE.Mesh(assets.hitGeometry, assets.hitMaterial);
+  hit.scale.set(1.08, 0.54, 1.08);
+  hit.position.y = 0.32;
+  hit.userData.flowerId = id;
+  head.add(hit);
+  return {
+    ...stem, id, species: 'chrysanthemum', pollenHeight: 0.72, head, petals, stamens, hit,
+    phase: random() * Math.PI * 2, baseRotation: head.rotation.clone(), lastBend: [Infinity, Infinity],
     response: { value: 0, velocity: 0 }, gesture: null, lastGesture: -Infinity,
   };
 }

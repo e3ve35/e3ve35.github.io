@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js';
-import { createLily, createPoppy, makeFlowerAssets, seededRandom, updateLilyMotion, updateFlowerMotion } from './flowers.js';
+import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateLilyMotion, updateFlowerMotion } from './flowers.js';
 import { AsciiPollen, PollenPool } from './pollen.js';
 import * as THREE from './vendor/three.module.min.js';
 import { flowerNote } from './audio.js';
@@ -183,7 +183,8 @@ test('clustered planting preserves the lead bloom and separation across replant 
 test('the lead flower stays visible and pickable on desktop and phone in every study', () => {
   const assets = makeFlowerAssets();
   assets.snowdrop = makeSnowdropAssets(assets);
-  for (const seed of [821, 922, 1337]) for (const createFlower of [createLily, createPoppy, createSnowdrop]) {
+  assets.chrysanthemum = makeChrysanthemumAssets(assets);
+  for (const seed of [821, 922, 1337]) for (const createFlower of [createLily, createPoppy, createSnowdrop, createChrysanthemum]) {
     const random = seededRandom(seed);
     const flowers = gardenPlanting(seed).map(({ x, z, scale, yaw }, id) => {
       const flower = createFlower(id, assets, random);
@@ -207,7 +208,7 @@ test('the lead flower stays visible and pickable on desktop and phone in every s
       assert.equal(hits[0]?.object.userData.flowerId, 0, 'Other flowers should not block the focal hover target');
     }
     for (const flower of flowers) {
-      flower.anthers.dispose();
+      flower.anthers?.dispose();
       flower.privateGeometries.forEach((geometry) => geometry.dispose());
     }
   }
@@ -457,11 +458,11 @@ test('garden studies have independent pollen modes and unknown studies use the l
 
 test('the art calendar changes at season boundaries using the local month', () => {
   const dates = [
-    [2026, 0, 'Winter', 'lily'], [2026, 1, 'Winter', 'lily'],
+    [2026, 0, 'Winter', 'snowdrop'], [2026, 1, 'Winter', 'snowdrop'],
     [2026, 2, 'Spring', 'poppy'], [2026, 4, 'Spring', 'poppy'],
     [2026, 5, 'Summer', 'lily'], [2026, 7, 'Summer', 'lily'],
-    [2026, 8, 'Autumn', 'poppy'], [2026, 10, 'Autumn', 'poppy'],
-    [2026, 11, 'Winter', 'lily'], [2027, 0, 'Winter', 'lily'],
+    [2026, 8, 'Autumn', 'chrysanthemum'], [2026, 10, 'Autumn', 'chrysanthemum'],
+    [2026, 11, 'Winter', 'snowdrop'], [2027, 0, 'Winter', 'snowdrop'],
   ];
   for (const [year, month, season, species] of dates) {
     const choice = gardenSelection('calendar', new Date(year, month, 1, 0, 0, 0));
@@ -472,21 +473,24 @@ test('the art calendar changes at season boundaries using the local month', () =
   }
   assert.equal(gardenSelection('calendar', new Date(2026, 1, 28, 23, 59, 59)).season, 'Winter');
   assert.equal(gardenSelection('calendar', new Date(2026, 2, 1, 0, 0, 0)).season, 'Spring');
+  assert.equal(new Set(dates.map(([, , , species]) => gardenStudy(species).sky.horizon)).size, 4);
 });
 
 test('manual flowers survive calendar changes and Now restores the seasonal choice', () => {
   for (const month of [0, 3, 6, 9]) {
     const date = new Date(2026, month, 21);
-    for (const id of ['lily', 'poppy']) {
+    for (const id of ['lily', 'poppy', 'chrysanthemum', 'snowdrop']) {
       const choice = gardenSelection(id, date);
       assert.equal(choice.study, gardenStudy(id));
       assert.equal(choice.keyLight, gardenStudy(id).keyLight);
       assert.equal(choice.automatic, false);
+      assert.equal(choice.season, choice.study.season);
+      assert.equal(choice.caption, `${choice.study.season} preview · ${choice.study.name}`);
     }
   }
   const october = new Date(2026, 9, 21);
   assert.equal(gardenSelection('lily', october).study.id, 'lily');
-  assert.equal(gardenSelection('calendar', october).study.id, 'poppy');
+  assert.equal(gardenSelection('calendar', october).study.id, 'chrysanthemum');
   assert.equal(gardenSelection('unknown', october).mode, 'calendar');
 });
 
@@ -540,7 +544,7 @@ test('snowdrop glass tones are higher, quieter, and longer than the lilies', () 
   }
 });
 
-test('snowdrops emit sparser pollen and remain a manual preview in the calendar', () => {
+test('winter snowdrops emit sparser pollen and can also be previewed', () => {
   const origin = { x: 0, y: 2, z: 0 };
   const normal = new PollenPool(384, seededRandom(12));
   const winter = new PollenPool(384, seededRandom(12));
@@ -552,5 +556,5 @@ test('snowdrops emit sparser pollen and remain a manual preview in the calendar'
   const winterDate = new Date(2026, 11, 21);
   assert.equal(gardenSelection('snowdrop', winterDate).study.id, 'snowdrop');
   assert.equal(gardenSelection('snowdrop', winterDate).automatic, false);
-  assert.equal(gardenSelection('calendar', winterDate).study.id, 'lily');
+  assert.equal(gardenSelection('calendar', winterDate).study.id, 'snowdrop');
 });

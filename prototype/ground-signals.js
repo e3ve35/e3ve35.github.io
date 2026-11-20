@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three.module.min.js';
-import { seededRandom } from './flowers.js?v=chrome-finish-1';
-import { gardenAtmosphere } from './composition.js?v=chrome-finish-1';
+import { seededRandom } from './flowers.js?v=four-seasons-1';
+import { gardenAtmosphere } from './composition.js?v=four-seasons-1';
 
 const TRACE_COUNT = 260;
 const GLYPH_COUNT = 110;

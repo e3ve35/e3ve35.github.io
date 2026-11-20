@@ -1,11 +1,13 @@
-import { bloomProfile } from './expressions.js?v=snowdrop-study-1';
+import { bloomProfile } from './expressions.js?v=four-seasons-1';
 
 const MIDI = [50, 53, 55, 57, 60, 62, 65, 67, 69, 72, 74, 77];
 const POPPY_MIDI = [45, 48, 50, 52, 55, 57, 60, 62, 64, 67, 69, 72];
+const CHRYSANTHEMUM_MIDI = [43, 45, 47, 50, 52, 55, 57, 59, 62, 64, 67, 69];
+const scales = { poppy: POPPY_MIDI, chrysanthemum: CHRYSANTHEMUM_MIDI };
 const NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
 
 export function flowerNote(id, species = 'lily') {
-  const scale = species === 'poppy' ? POPPY_MIDI : MIDI;
+  const scale = Object.hasOwn(scales, species) ? scales[species] : MIDI;
   const midi = scale[(id * 7 + 5) % scale.length] + (species === 'snowdrop' ? 12 : 0);
   return { midi, frequency: 440 * 2 ** ((midi - 69) / 12), name: `${NAMES[midi % 12]}${Math.floor(midi / 12) - 1}` };
 }

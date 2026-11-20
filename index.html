@@ -9,9 +9,9 @@
     <link rel="icon" type="image/svg+xml" href="./prototype/flower-mark.svg?v=flower-logo-2" />
     <link rel="canonical" href="https://e3ve35.github.io/" />
     <link rel="stylesheet" href="./prototype/style.css?v=flower-logo-1" />
-    <link rel="stylesheet" href="./prototype/portfolio.css?v=project-previews-1" />
+    <link rel="stylesheet" href="./prototype/portfolio.css?v=four-seasons-1" />
     <script src="./prototype/vendor/Tone.js" defer></script>
-    <script type="module" src="./prototype/main.js?v=chrome-finish-1"></script>
+    <script type="module" src="./prototype/main.js?v=four-seasons-1"></script>
   </head>
   <body data-page="garden">
     <a class="skip-link" href="#page-content">Skip to content</a>
@@ -191,13 +191,14 @@
 
     <aside class="season-preview" aria-label="Seasonal garden">
       <p class="study-label">SEASONAL GARDEN <span id="garden-month"></span></p>
-      <div class="study-switch" role="group" aria-label="Follow the season or choose a flower">
+      <div class="study-switch" role="group" aria-label="Follow the current season or preview another">
         <button type="button" data-study-mode="calendar" aria-pressed="true" aria-label="Now — follow the current season">Now</button>
-        <button type="button" data-study-mode="lily" aria-pressed="false">Lilies</button>
-        <button type="button" data-study-mode="poppy" aria-pressed="false">Poppies</button>
-        <button type="button" data-study-mode="snowdrop" aria-pressed="false">Snowdrops</button>
+        <button type="button" data-study-mode="poppy" aria-pressed="false">Spring</button>
+        <button type="button" data-study-mode="lily" aria-pressed="false">Summer</button>
+        <button type="button" data-study-mode="chrysanthemum" aria-pressed="false">Autumn</button>
+        <button type="button" data-study-mode="snowdrop" aria-pressed="false">Winter</button>
       </div>
-      <p id="study-caption" class="study-caption">Bell tones · rising pollen</p>
+      <p id="study-caption" class="study-caption"></p>
     </aside>
 
     <aside class="specimen-card" aria-label="Current flower">

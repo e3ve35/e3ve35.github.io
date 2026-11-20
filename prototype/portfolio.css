@@ -10,7 +10,7 @@
 }
 .study-label span { color: #95859f; letter-spacing: .04em; }
 .study-switch {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); background: #100c1855;
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border: 1px solid var(--line); background: #100c1855;
   backdrop-filter: blur(12px);
 }
 .study-switch button {
@@ -186,9 +186,11 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   .study-label { font-size: 6px; letter-spacing: .03em; gap: 5px; margin-bottom: 9px; }
   .study-switch button { min-height: 44px; font-size: 9px; padding: 5px; }
   .study-switch { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .study-switch button:nth-child(3) { border-left: 0; }
-  .study-switch button:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .study-switch button:first-child { grid-column: 1 / -1; }
+  .study-switch button:nth-child(even) { border-left: 0; }
+  .study-switch button:nth-child(n+2) { border-top: 1px solid var(--line); }
   .study-caption { font-size: 8px; }
+  body[data-study="chrysanthemum"] .specimen-name { font-size: 15px; }
   .page-nav {
     top: 64px; left: 0; right: 0; transform: none; justify-content: space-between;
     border-top: 1px solid var(--line); padding-top: 10px;

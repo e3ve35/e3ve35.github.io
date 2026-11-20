@@ -1,15 +1,15 @@
 import './site.js?v=project-previews-1';
 import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=snowdrop-study-1';
-import { createLily, createPoppy, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=chrome-finish-1';
-import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=chrome-finish-1';
-import { GardenAudio, flowerNote } from './audio.js?v=snowdrop-study-1';
-import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=snowdrop-study-1';
-import { gardenSelection } from './studies.js?v=snowdrop-study-1';
-import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=chrome-finish-1';
-import { GroundSignals } from './ground-signals.js?v=chrome-finish-1';
+import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=four-seasons-1';
+import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=four-seasons-1';
+import { GardenAudio, flowerNote } from './audio.js?v=four-seasons-1';
+import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
+import { gardenSelection } from './studies.js?v=four-seasons-1';
+import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=four-seasons-1';
+import { GroundSignals } from './ground-signals.js?v=four-seasons-1';
 
-const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop };
+const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop, chrysanthemum: createChrysanthemum };
 
 const $ = (selector) => document.querySelector(selector);
 const garden = $('#garden');
@@ -27,7 +27,7 @@ let intensity = 0.55;
 let notesPlayed = 0;
 let app;
 
-const studyPreferenceKey = 'evelyn-garden-study';
+const studyPreferenceKey = 'evelyn-garden-season';
 function savedStudyMode() {
   try { return sessionStorage.getItem(studyPreferenceKey) || 'calendar'; }
   catch { return 'calendar'; }
@@ -133,19 +133,27 @@ function environmentTexture(renderer) {
 }
 
 function setupBackground(scene) {
+  const sky = {
+    night: { value: new THREE.Color() },
+    horizonColor: { value: new THREE.Color() },
+    glowColor: { value: new THREE.Color() },
+    accentColor: { value: new THREE.Color() },
+  };
   const material = new THREE.ShaderMaterial({
     side: THREE.BackSide,
     depthWrite: false,
+    uniforms: sky,
     vertexShader: `varying vec3 vPosition;
       void main(){vPosition=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
     fragmentShader: `varying vec3 vPosition;
+      uniform vec3 night, horizonColor, glowColor, accentColor;
       void main(){
         vec3 d=normalize(vPosition);
         float horizon=pow(max(0.,1.-abs(d.y+.025)*2.5),7.);
-        vec3 color=mix(vec3(.019,.012,.029),vec3(.12,.027,.18),horizon);
-        float pink=exp(-pow((d.x-.38)*2.6,2.)-pow((d.y-.05)*5.,2.));
-        float green=exp(-pow((d.x+.6)*4.,2.)-pow((d.y+.03)*8.,2.));
-        color+=vec3(.15,.008,.10)*pink+vec3(.018,.055,.026)*green;
+        vec3 color=mix(night,horizonColor,horizon);
+        vec2 glowOffset=vec2((d.x-.38)*2.6,(d.y-.05)*5.);
+        vec2 accentOffset=vec2((d.x+.6)*4.,(d.y+.03)*8.);
+        color+=glowColor*exp(-dot(glowOffset,glowOffset))+accentColor*exp(-dot(accentOffset,accentOffset));
         gl_FragColor=vec4(color,1.);
       }`,
   });
@@ -178,6 +186,15 @@ function setupBackground(scene) {
   dustGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   const dust = new THREE.Points(dustGeometry, new THREE.PointsMaterial({ color: '#c8a9de', size: 0.016, transparent: true, opacity: 0.38, sizeAttenuation: true }));
   scene.add(dust);
+
+  return (palette) => {
+    sky.night.value.set(palette.night);
+    sky.horizonColor.value.set(palette.horizon);
+    sky.glowColor.value.set(palette.glow);
+    sky.accentColor.value.set(palette.accent);
+    scene.fog.color.set(palette.fog);
+    floorMaterial.color.set(palette.ground);
+  };
 }
 
 class Garden {
@@ -191,7 +208,7 @@ class Garden {
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 150);
     this.environment = environmentTexture(this.renderer);
     this.scene.environment = this.environment.texture;
-    setupBackground(this.scene);
+    this.setBackgroundPalette = setupBackground(this.scene);
     this.scene.add(new THREE.HemisphereLight('#e4cee7', '#2d243b', 1.2));
     const white = new THREE.DirectionalLight('#f0eaf4', 2.7);
     white.position.set(-3, 9, 5);
@@ -206,8 +223,7 @@ class Garden {
     this.fillLight = lime;
     this.selection = gardenSelection(savedStudyMode());
     this.study = this.selection.study;
-    this.keyLight.color.set(this.selection.keyLight);
-    this.fillLight.color.set(this.selection.fillLight);
+    this.applySeasonPalette();
     this.nextCalendarCheck = 0;
 
     this.assets = makeFlowerAssets();
@@ -240,7 +256,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'chrome-finish';
+    document.body.dataset.gardenRevision = 'four-seasons';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }
@@ -301,12 +317,15 @@ class Garden {
   replant() {
     for (const flower of this.flowers) {
       this.scene.remove(flower.root);
-      flower.anthers.dispose();
+      flower.anthers?.dispose();
       flower.privateGeometries.forEach((geometry) => geometry.dispose());
     }
     const random = seededRandom(this.seed);
     this.flowers = [];
     const placements = gardenPlanting(this.seed);
+    if (this.study.id === 'chrysanthemum' && !this.assets.chrysanthemum) {
+      this.assets.chrysanthemum = makeChrysanthemumAssets(this.assets);
+    }
     placements.forEach(({ x, z, scale, yaw }, id) => {
       const flower = flowerFactories[this.study.id](id, this.assets, random);
       flower.root.position.set(x, 0, z);
@@ -337,6 +356,7 @@ class Garden {
   syncStudyLabels() {
     document.body.dataset.study = this.study.id;
     document.body.dataset.studyMode = this.selection.mode;
+    document.body.dataset.season = this.selection.season.toLowerCase();
     document.body.dataset.gardenMonth = this.selection.month;
     document.body.dataset.studyLabel = `${this.study.index} — ${this.study.name.toUpperCase()}`;
     $('#flower-genus').textContent = this.study.genus;
@@ -353,6 +373,12 @@ class Garden {
     $('.touch-instruction:last-child').textContent = 'Each flower has its own voice.';
   }
 
+  applySeasonPalette() {
+    this.keyLight.color.set(this.selection.keyLight);
+    this.fillLight.color.set(this.selection.fillLight);
+    this.setBackgroundPalette(this.selection.study.sky);
+  }
+
   changeStudy(mode, remember = true) {
     const selection = gardenSelection(mode);
     if (selection.mode === this.selection.mode && selection.monthKey === this.selection.monthKey) return;
@@ -360,8 +386,7 @@ class Garden {
     if (remember) {
       try { sessionStorage.setItem(studyPreferenceKey, selection.mode); } catch { /* Storage can be disabled. */ }
     }
-    this.keyLight.color.set(selection.keyLight);
-    this.fillLight.color.set(selection.fillLight);
+    this.applySeasonPalette();
     this.contentNeedsRender = true;
     if (selection.study !== this.study) {
       audio.changeStudy();
@@ -370,7 +395,7 @@ class Garden {
       this.gestureStrength = 0.35;
       this.replant();
     } else this.syncStudyLabels();
-    status.textContent = selection.automatic ? `${selection.month} garden. Following the season.` : `${this.study.name} selected. ${audio.enabled ? 'Wander to listen.' : 'Enable sound to listen.'}`;
+    status.textContent = selection.automatic ? `Following the season. ${selection.caption}.` : `${selection.caption}. ${audio.enabled ? 'Wander to listen.' : 'Enable sound to listen.'}`;
   }
 
   refreshCalendar() { this.changeStudy(this.selection.mode, false); }

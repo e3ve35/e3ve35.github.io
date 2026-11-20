@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
-import { seededRandom } from './flowers.js?v=chrome-finish-1';
+import { seededRandom } from './flowers.js?v=four-seasons-1';
 
 // The lead bloom and foreground edges frame a few loose, receding drifts.
 // Local jitter preserves the clearings instead of scattering every stem uniformly.
