@@ -6,7 +6,7 @@ import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=four-season
 import { GardenAudio, flowerNote } from './audio.js?v=four-seasons-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
 import { gardenSelection } from './studies.js?v=seasonal-weather-1';
-import { createSeasonParticles } from './season-particles.js?v=ascii-weather-1';
+import { createSnowfall } from './snowfall.js?v=ascii-weather-1';
 import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=four-seasons-1';
 import { GroundSignals } from './ground-signals.js?v=four-seasons-1';
 
@@ -176,18 +176,6 @@ function setupBackground(scene) {
   floor.position.y = -0.15;
   scene.add(floor);
 
-  const dustRandom = seededRandom(508);
-  const positions = new Float32Array(190 * 3);
-  for (let i = 0; i < 190; i++) {
-    positions[i * 3] = (dustRandom() - 0.5) * 25;
-    positions[i * 3 + 1] = dustRandom() * 8;
-    positions[i * 3 + 2] = (dustRandom() - 0.6) * 20;
-  }
-  const dustGeometry = new THREE.BufferGeometry();
-  dustGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  const dust = new THREE.Points(dustGeometry, new THREE.PointsMaterial({ color: '#c8a9de', size: 0.016, transparent: true, opacity: 0.38, sizeAttenuation: true }));
-  scene.add(dust);
-
   return (palette) => {
     sky.night.value.set(palette.night);
     sky.horizonColor.value.set(palette.horizon);
@@ -210,7 +198,8 @@ class Garden {
     this.environment = environmentTexture(this.renderer);
     this.scene.environment = this.environment.texture;
     this.setBackgroundPalette = setupBackground(this.scene);
-    this.particleFields = new Map();
+    this.snowfall = createSnowfall();
+    this.scene.add(this.snowfall);
     this.scene.add(new THREE.HemisphereLight('#e4cee7', '#2d243b', 1.2));
     const white = new THREE.DirectionalLight('#f0eaf4', 2.7);
     white.position.set(-3, 9, 5);
@@ -258,7 +247,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'ascii-weather';
+    document.body.dataset.gardenRevision = 'winter-only';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }
@@ -379,15 +368,7 @@ class Garden {
     this.keyLight.color.set(this.selection.keyLight);
     this.fillLight.color.set(this.selection.fillLight);
     this.setBackgroundPalette(this.selection.study.sky);
-    const { season } = this.selection;
-    if (!this.particleFields.has(season)) {
-      const field = createSeasonParticles(season);
-      this.particleFields.set(season, field);
-      this.scene.add(field);
-    }
-    for (const [name, field] of this.particleFields) field.visible = name === season;
-    this.activeParticles = this.particleFields.get(season);
-    if (this.renderTarget) this.activeParticles.material.uniforms.viewportHeight.value = this.renderTarget.height;
+    this.snowfall.visible = this.selection.season === 'Winter';
   }
 
   changeStudy(mode, remember = true) {
@@ -447,7 +428,7 @@ class Garden {
     this.renderer.setPixelRatio(this.pixelRatio);
     this.renderer.setSize(this.width, this.height, false);
     this.renderTarget.setSize(Math.round(this.width * this.pixelRatio), Math.round(this.height * this.pixelRatio));
-    this.activeParticles.material.uniforms.viewportHeight.value = this.renderTarget.height;
+    this.snowfall.material.uniforms.viewportHeight.value = this.renderTarget.height;
     this.post.uniforms.resolution.value.set(this.width * this.pixelRatio, this.height * this.pixelRatio);
     this.camera.aspect = this.width / this.height;
     this.camera.fov = this.mobile ? 49 : 40;
@@ -665,7 +646,7 @@ class Garden {
     this.post.uniforms.distortion.value = intensity;
     this.post.uniforms.motion.value = paused ? 0 : 1;
     this.groundSignals.update(this.elapsed, intensity, paused);
-    this.activeParticles.material.uniforms.time.value = this.elapsed;
+    if (this.snowfall.visible) this.snowfall.material.uniforms.time.value = this.elapsed;
     this.renderer.setRenderTarget(this.renderTarget);
     this.renderer.render(this.scene, this.camera);
     this.renderer.setRenderTarget(null);
