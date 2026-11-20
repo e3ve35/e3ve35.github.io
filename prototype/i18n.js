@@ -1,4 +1,4 @@
-import { translations } from './translations.js?v=work-zh-1';
+import { translations } from './translations.js?v=contact-zh-2';
 
 const languages = ['en', 'zh-Hans', 'ja'];
 const preferenceKey = 'evelyn-site-language';
