@@ -41,6 +41,9 @@ body[data-season="winter"] .specimen-card { background: #151928db; }
   padding: 12px 18px; background: var(--acid); color: #09070d; font-size: 12px;
 }
 .skip-link:focus { top: 16px; }
+.identity { min-width: 0; max-width: 34vw; }
+.name-part { white-space: nowrap; }
+.header-right { flex-shrink: 0; }
 .page-nav {
   position: absolute; left: 50%; top: 14px; transform: translateX(-50%);
   display: flex; align-items: center; gap: 28px; pointer-events: auto;
@@ -60,8 +63,8 @@ body[data-season="winter"] .specimen-card { background: #151928db; }
 .language-switch a + a { border-left: 1px solid var(--line); }
 .language-switch a:hover, .language-switch a[aria-current="true"] { color: var(--acid); }
 .language-switch a[aria-current="true"] { background: #d2fb8310; }
-.language-switch [lang="zh-Hans"] { font-family: "Noto Sans CJK SC", "Microsoft YaHei", "PingFang SC", sans-serif; }
-.language-switch [lang="ja"] { font-family: "Noto Sans CJK JP", "Yu Gothic", "Hiragino Sans", sans-serif; }
+:is(.language-switch, .name) [lang="zh-Hans"] { font-family: "Noto Sans CJK SC", "Microsoft YaHei", "PingFang SC", sans-serif; }
+:is(.language-switch, .name) [lang="ja"] { font-family: "Noto Sans CJK JP", "Yu Gothic", "Hiragino Sans", sans-serif; }
 .garden-title-line { display: inline-block; position: relative; }
 .garden-title-line .title-flower { left: 100%; }
 html:lang(zh-Hans) {
@@ -83,6 +86,7 @@ html:is(:lang(zh-Hans), :lang(ja)) :is(.intro h1, .portfolio-view h2) {
 }
 html:is(:lang(zh-Hans), :lang(ja)) :is(h1, h2, .large-copy) em { font-style: normal; }
 html:is(:lang(zh-Hans), :lang(ja)) #about-title { font-size: clamp(41px, 4.4vw, 76px); }
+html:lang(ja) #about-title { font-size: clamp(24px, 3.9vw, 68px); }
 .content-shade {
   position: fixed; inset: 0; pointer-events: none; opacity: 0;
   background: linear-gradient(90deg, #09070df5 0%, #09070de8 50%, #09070d7a 100%);
@@ -112,6 +116,7 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
 .portfolio-view h2:focus { outline: none; }
 .portfolio-view h2 em { color: var(--acid); font-weight: normal; }
 .view-intro { max-width: 265px; margin: 27px 0 0; font-size: 12px; line-height: 1.9; color: var(--muted); }
+.about-aliases:empty { display: none; }
 .view-footnote { font-size: 8px; letter-spacing: .08em; margin: 49px 0 0; color: #85758f; }
 .project-list { border-top: 1px solid var(--line); }
 .project { border-bottom: 1px solid var(--line); }
@@ -224,6 +229,7 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
 }
 @media (max-width: 600px) {
   body[data-season="winter"] .vignette::after { height: 215px; }
+  .identity { max-width: 58%; }
   .language-switch a { padding-inline: 8px; }
   .season-preview { top: 149px; left: 23px; right: auto; width: calc(100% - 189px); padding-top: 10px; }
   .study-label { font-size: 6px; letter-spacing: .03em; gap: 5px; margin-bottom: 9px; }
@@ -269,9 +275,12 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   .return-to-garden { font-size: 9px; }
   .return-to-garden > [aria-hidden="true"] { margin-left: 8px; }
   html:is(:lang(zh-Hans), :lang(ja)) :is(.intro h1, .portfolio-view h2) { font-size: 48px; }
+  html:lang(ja) #about-title { font-size: clamp(32px, 10.5vw, 47px); }
   html:lang(ja) #about-title { font-size: clamp(36px, 10.5vw, 46px); }
 }
 @media (max-width: 360px) {
+  .name { font-size: 12px; letter-spacing: .02em; line-height: 1.15; }
+  .page-nav { top: 70px; padding-top: 8px; }
   .portfolio-view h2 { font-size: 53px; }
   .project-title { font-size: 20px; }
   .contact-view h2 { font-size: 59px; }
