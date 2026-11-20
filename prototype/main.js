@@ -6,7 +6,7 @@ import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=four-season
 import { GardenAudio, flowerNote } from './audio.js?v=four-seasons-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
 import { gardenSelection } from './studies.js?v=seasonal-weather-1';
-import { createSeasonParticles } from './season-particles.js?v=seasonal-weather-1';
+import { createSeasonParticles } from './season-particles.js?v=ascii-weather-1';
 import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=four-seasons-1';
 import { GroundSignals } from './ground-signals.js?v=four-seasons-1';
 
@@ -258,7 +258,7 @@ class Garden {
     this.render = this.render.bind(this);
     requestAnimationFrame(this.render);
     document.body.dataset.gardenState = 'ready';
-    document.body.dataset.gardenRevision = 'seasonal-weather';
+    document.body.dataset.gardenRevision = 'ascii-weather';
     $('#loading').classList.add('loaded');
     $('#loading').setAttribute('aria-hidden', 'true');
   }

@@ -1,29 +1,26 @@
 import * as THREE from './vendor/three.module.min.js';
 import { seededRandom } from './flowers.js?v=four-seasons-1';
 
-function snowflakeTexture() {
+export function createAsciiParticles({ glyphs, colors, ...motion }) {
   const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = 64;
+  const cell = 64;
+  canvas.width = cell * glyphs.length;
+  canvas.height = cell;
   const context = canvas.getContext('2d');
-  context.translate(32, 32);
-  context.strokeStyle = '#fff';
-  context.lineWidth = 3;
-  context.lineCap = 'round';
-  for (let arm = 0; arm < 6; arm++) {
-    context.rotate(Math.PI / 3);
-    context.beginPath();
-    context.moveTo(0, 0);
-    context.lineTo(0, -26);
-    context.moveTo(-7, -17);
-    context.lineTo(0, -11);
-    context.lineTo(7, -17);
-    context.stroke();
-  }
-  return new THREE.CanvasTexture(canvas);
+  context.font = '54px monospace';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  glyphs.forEach((glyph, i) => {
+    context.fillStyle = colors[i];
+    context.fillText(glyph, (i + 0.5) * cell, cell / 2);
+  });
+  return createDriftingParticles({
+    ...motion, texture: new THREE.CanvasTexture(canvas), columns: glyphs.length,
+  });
 }
 
 export function createDriftingParticles({
-  texture, count, seed, height, speed, size, sway, spin, shimmer,
+  texture, columns = 1, count, seed, height, speed, size, sway, spin, shimmer,
 }) {
   const random = seededRandom(seed);
   const positions = new Float32Array(count * 3);
@@ -45,6 +42,7 @@ export function createDriftingParticles({
     depthWrite: false,
     uniforms: {
       spriteMap: { value: texture },
+      columns: { value: columns },
       time: { value: 0 },
       viewportHeight: { value: 1 },
       fieldHeight: { value: height },
@@ -54,8 +52,8 @@ export function createDriftingParticles({
     },
     vertexShader: `
       attribute vec4 particle;
-      uniform float time, viewportHeight, fieldHeight, sway, spin, shimmer;
-      varying float opacity, angle;
+      uniform float time, viewportHeight, fieldHeight, sway, spin, shimmer, columns;
+      varying float opacity, angle, glyph;
       void main() {
         vec3 point = position;
         point.x += sway * sin(time * .46 + particle.x);
@@ -67,19 +65,21 @@ export function createDriftingParticles({
         float edge = smoothstep(.12, .65, point.y) * (1. - smoothstep(fieldHeight - 1., fieldHeight, point.y));
         float pulse = mix(1., .62 + .38 * sin(time * 1.7 + particle.x), shimmer);
         opacity = particle.w * edge * pulse * (1. - smoothstep(18., 37., depth));
-        angle = particle.x + time * (spin + abs(particle.y) * .35);
+        angle = sin(particle.x + time * (spin + abs(particle.y) * .35)) * mix(.54, .14, shimmer);
+        glyph = floor(particle.x / 6.28319 * columns);
         gl_PointSize = clamp(particle.z * viewportHeight * projectionMatrix[1][1] / (2. * max(depth, .1)), 2., 30.);
         gl_Position = projectionMatrix * view;
       }
     `,
     fragmentShader: `
       uniform sampler2D spriteMap;
-      varying float opacity, angle;
+      uniform float columns;
+      varying float opacity, angle, glyph;
       void main() {
         float c = cos(angle), s = sin(angle);
         vec2 uv = mat2(c, -s, s, c) * (gl_PointCoord - .5) + .5;
         if (any(lessThan(uv, vec2(0.))) || any(greaterThan(uv, vec2(1.)))) discard;
-        vec4 sprite = texture2D(spriteMap, uv);
+        vec4 sprite = texture2D(spriteMap, vec2((uv.x + glyph) / columns, uv.y));
         float alpha = sprite.a * opacity;
         if (alpha < .025) discard;
         gl_FragColor = vec4(sprite.rgb, alpha);
@@ -93,8 +93,9 @@ export function createDriftingParticles({
 }
 
 export function createSnowfall() {
-  return createDriftingParticles({
-    texture: snowflakeTexture(), count: 170, seed: 153, height: 9,
-    speed: [0.17, 0.24], size: [0.045, 0.14], sway: 0.55, spin: 0.15, shimmer: 0,
+  return createAsciiParticles({
+    glyphs: ['*', '+', 'x', '.'], colors: ['#fff8ee', '#d9edff', '#e9f4ff', '#ffffff'],
+    count: 170, seed: 153, height: 9,
+    speed: [0.17, 0.24], size: [0.085, 0.19], sway: 0.55, spin: 0.15, shimmer: 0,
   });
 }
