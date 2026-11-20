@@ -241,8 +241,8 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   .study-caption { font-size: 8px; }
   body[data-study="chrysanthemum"] .specimen-name { font-size: 15px; }
   .page-nav {
-    top: 64px; left: 0; right: 0; transform: none; justify-content: space-between;
-    border-top: 1px solid var(--line); padding-top: 10px;
+    top: 72px; left: 0; right: 0; transform: none; justify-content: space-between;
+    border-top: 1px solid var(--line); padding-top: 6px;
   }
   .page-nav a { font-size: 10px; padding: 6px 0 9px; min-width: 44px; }
   .page-nav a:last-child { text-align: right; }
@@ -280,7 +280,6 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
 }
 @media (max-width: 360px) {
   .name { font-size: 12px; letter-spacing: .02em; line-height: 1.15; }
-  .page-nav { top: 70px; padding-top: 8px; }
   .portfolio-view h2 { font-size: 53px; }
   .project-title { font-size: 20px; }
   .contact-view h2 { font-size: 59px; }

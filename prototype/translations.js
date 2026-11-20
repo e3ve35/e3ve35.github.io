@@ -47,7 +47,7 @@ const zh = {
   'garden.study': '花园实验 /',
   'garden.titleFirst': '异想',
   'garden.titleLast': '花园。',
-  'garden.keyboard': '将焦点移到花园，用 ← 或 → 选花，按空格键演奏。',
+  'garden.keyboard': '选中花园后，用 ← / → 键选择花朵，按空格键演奏。',
   'garden.region': '种着{flower}的互动镀铬花园',
   'garden.replant': '重新种植',
   'garden.pause': '暂停动画',
