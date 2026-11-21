@@ -45,7 +45,10 @@ function showPage({ focus = true } = {}) {
   window.dispatchEvent(new CustomEvent('garden:pagechange', { detail: { page } }));
   if (focus) {
     if (page === 'garden') garden.focus({ preventScroll: true });
-    else document.querySelector(`[data-page-view="${page}"] h2`).focus({ preventScroll: true });
+    else {
+      const headingId = document.getElementById(page).getAttribute('aria-labelledby');
+      document.getElementById(headingId).focus({ preventScroll: true });
+    }
   }
 }
 

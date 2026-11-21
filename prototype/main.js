@@ -5,7 +5,7 @@ import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, 
 import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=pearl-blooms-1';
 import { GardenAudio, flowerNote } from './audio.js?v=master-gain-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
-import { gardenSelection } from './studies.js?v=pearl-blooms-1';
+import { gardenSelection } from './studies.js?v=seasonal-skies-1';
 import { createSnowfall } from './snowfall.js?v=pearl-blooms-1';
 import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=pearl-blooms-1';
 import { GroundSignals } from './ground-signals.js?v=pearl-blooms-1';

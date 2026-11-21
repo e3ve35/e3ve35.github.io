@@ -16,7 +16,7 @@ const studies = {
     sound: 'A soft, floating bloom', pollenMode: 1,
     ...bloomLights,
     grass: ['#428b31', '#b6ea55'],
-    sky: { night: '#344429', horizon: '#85953a', glow: '#94a640', accent: '#405929', fog: '#394b32', ground: '#261822' },
+    sky: { night: '#352a47', horizon: '#8b76a7', glow: '#c28eb9', accent: '#554c7c', fog: '#4d405e', ground: '#251e33' },
   },
   snowdrop: {
     id: 'snowdrop', index: '03', season: 'Winter', name: 'Snowdrops', genus: 'Galanthus',
@@ -32,7 +32,7 @@ const studies = {
     sound: 'A warm, coppery pluck', pollenMode: 0,
     ...bloomLights,
     grass: ['#755335', '#c59b55'],
-    sky: { night: '#422a34', horizon: '#985637', glow: '#995735', accent: '#5f3a4b', fog: '#443038', ground: '#26191b' },
+    sky: { night: '#392839', horizon: '#98677b', glow: '#c78983', accent: '#624968', fog: '#513d50', ground: '#291f2b' },
   },
 };
 

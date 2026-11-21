@@ -32,11 +32,9 @@ body[data-season="winter"] .vignette::after {
   position: absolute; inset: 0 0 auto; height: 155px;
   background: linear-gradient(#09070d94, transparent);
 }
-body[data-season="winter"] .season-preview { background: #151928e8; }
-body[data-season="spring"] .season-preview { background: #1a2116d9; }
+body:is([data-season="winter"], [data-season="spring"]) .season-preview { background: #151928e8; }
 body:is([data-season="winter"], [data-season="spring"]) .study-label { padding-inline: 8px; }
-body[data-season="winter"] #garden-month { color: #bdb4c6; }
-body[data-season="spring"] #garden-month { color: #c8c0d0; }
+body:is([data-season="winter"], [data-season="spring"]) #garden-month { color: #bdb4c6; }
 body[data-season="winter"] .specimen-card { background: #151928db; }
 .skip-link {
   position: fixed; left: 24px; top: -80px; z-index: 100;
