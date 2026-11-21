@@ -192,7 +192,7 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
 .quiet-link > [aria-hidden="true"] { margin-left: 8px; }
 /* Sit About and Contact in the middle of the view rather than against its top edge. */
 .about-view, .contact-view { display: flex; flex-direction: column; padding-bottom: 5vh; }
-.about-view > .view-grid { width: 100%; margin-block: auto; }
+.about-view > .view-grid { width: 100%; margin-block: clamp(0px, 30vh - 174px, 100px) 0; }
 .contact-view { align-items: flex-start; }
 .contact-view > :first-child { margin-top: auto; }
 .contact-view > :last-child { margin-bottom: auto; }
@@ -259,6 +259,7 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   .specimen-card { top: 149px; left: 23px; right: auto; }
   .portfolio-view { top: 155px; left: 23px; right: 18px; bottom: 100px; padding-right: 5px; }
   .view-grid { display: block; }
+  .about-view > .view-grid { margin-block: 0; }
   .view-heading { position: static; }
   .portfolio-view .eyebrow { margin-bottom: 17px; letter-spacing: .06em; }
   .portfolio-view h2 { font-size: 68px; }
