@@ -1,4 +1,10 @@
 /* The portfolio lives in HTML; the garden remains a separate, playable scene. */
+.specimen-card {
+  background: none;
+  backdrop-filter: none;
+  text-shadow: 0 1px 2px #09070de6, 0 0 6px #09070da8;
+}
+.specimen-meta, .specimen-footer { color: #e0d4e4; }
 .specimen-card.playing .signal i { transform: scaleY(var(--signal-strength, 1)); transition: height .1s, transform .08s; }
 body[data-page="garden"] .garden-footer { display: grid; grid-template-columns: 1fr auto 1fr; }
 body[data-page="garden"] .controls { grid-area: 1 / 3; justify-self: end; }
@@ -16,12 +22,15 @@ body[data-page="garden"] .controls { grid-area: 1 / 3; justify-self: end; }
 .study-switch button:not([aria-pressed="true"]):hover { color: var(--paper); }
 .study-switch button:focus-visible { outline-offset: 2px; }
 body:not([data-page="garden"]) :is(.season-preview, .hint-line) { display: none; }
-body[data-season="winter"] .vignette::after {
-  content: '';
-  position: absolute; inset: 0 0 auto; height: 155px;
-  background: linear-gradient(#09070d94, transparent);
+body[data-page="garden"] .vignette {
+  --specimen-corner: radial-gradient(ellipse clamp(475px, 49vw, 930px) clamp(310px, 49vh, 560px) at right top, #09070dc4, #09070d70 56%, transparent);
 }
-body[data-season="winter"] .specimen-card { background: #151928db; }
+body[data-season="winter"] .vignette { --winter-haze: linear-gradient(#09070d94, transparent 155px); }
+body:is([data-page="garden"], [data-season="winter"]) .vignette::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--specimen-corner, none), var(--winter-haze, none);
+}
 .skip-link {
   position: fixed; left: 24px; top: -80px; z-index: 100;
   padding: 12px 18px; background: var(--acid); color: #09070d; font-size: 12px;
@@ -226,7 +235,10 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   .study-switch button:last-child { text-align: right; }
 }
 @media (max-width: 600px) {
-  body[data-season="winter"] .vignette::after { height: 215px; }
+  body[data-page="garden"] .vignette {
+    --specimen-corner: radial-gradient(ellipse 90% clamp(315px, 45vh, 440px) at left top, #09070db8, #09070d66 58%, transparent);
+  }
+  body[data-season="winter"] .vignette { --winter-haze: linear-gradient(#09070d94, transparent 215px); }
   .identity { max-width: 58%; }
   .language-switch { gap: 14px; }
   .study-switch button { min-width: 44px; min-height: 44px; }
