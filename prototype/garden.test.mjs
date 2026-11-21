@@ -211,19 +211,30 @@ test('all petal variants share bounded PBR maps without extra render objects', (
   const assets = makeFlowerAssets();
   assets.snowdrop = makeSnowdropAssets(assets);
   const families = [
-    [assets.petalMaterials, assets.surfaces.lily, 0.8, 0.43],
-    [assets.poppyMaterials, assets.surfaces.poppy, 0.8, 0.43],
-    [[assets.snowdrop.material, assets.snowdrop.innerMaterial], assets.snowdrop.surface, 0.65, 0.45],
+    [assets.petalMaterials, assets.surfaces.lily, 0.8, 0.04, 0.24],
+    [assets.poppyMaterials, assets.surfaces.poppy, 0.8, 0.08, 0.43],
+    [[assets.snowdrop.material, assets.snowdrop.innerMaterial], assets.snowdrop.surface, 0.65, 0.08, 0.45],
   ];
   const winterPetal = assets.snowdrop.material;
-  for (const material of [...assets.petalMaterials, ...assets.poppyMaterials, ...makeChrysanthemumAssets(assets).tiers.map(({ material }) => material)]) {
+  assert.deepEqual(assets.petalMaterials.map(({ color }) => color.getHexString()), ['e0dce9', 'c7b6dd', 'dbb8d4']);
+  assert.deepEqual(assets.poppyMaterials.map(({ color }) => color.getHexString()), ['e3dce7', 'dfc4cb', 'c9bddb']);
+  assert.equal(assets.poppyCenterMaterial.color.getHexString(), '302434');
+  for (const material of assets.petalMaterials) {
+    assert.equal(material.metalness, 1);
+    assert.equal(material.envMapIntensity, 2.1);
+  }
+  for (const material of assets.poppyMaterials) {
+    assert.equal(material.metalness, 0.97);
+    assert.equal(material.envMapIntensity, 1.65);
+  }
+  for (const { material } of makeChrysanthemumAssets(assets).tiers) {
     assert.equal(material.metalness, winterPetal.metalness);
     assert.equal(material.roughness, winterPetal.roughness);
     assert.equal(material.envMapIntensity, winterPetal.envMapIntensity);
-    assert.ok(material.color.r > 0.7 && material.color.r <= material.color.g && material.color.g <= material.color.b);
+    assert.ok(material.color.equals(winterPetal.color));
   }
   let bytes = 0;
-  for (const [materials, surface, minMetalness, maxRoughness] of families) {
+  for (const [materials, surface, minMetalness, minRoughness, maxRoughness] of families) {
     for (const map of Object.values(surface)) bytes += map.image.data.byteLength;
     for (const material of materials) {
       assert.ok(material.isMeshStandardMaterial);
@@ -233,7 +244,7 @@ test('all petal variants share bounded PBR maps without extra render objects', (
       const data = surface.roughnessMap.image.data;
       for (let i = 1; i < data.length; i += 4) {
         const roughness = material.roughness * data[i] / 255;
-        assert.ok(roughness > 0.08 && roughness < maxRoughness, 'Reflections need contrast without a perfect-mirror surface');
+        assert.ok(roughness > minRoughness && roughness < maxRoughness, 'Reflections need contrast without a perfect-mirror surface');
       }
     }
   }
@@ -678,7 +689,7 @@ test('upright chrysanthemums have a clustered center and batched moving petal ti
   const { tiers, center, leaf } = assets.chrysanthemum;
   const flower = createChrysanthemum(0, assets, seededRandom(821));
   assert.equal(flower.petals.length, 4);
-  assert.deepEqual(flower.head.scale.toArray(), [1.25, 1.25, 1.25]);
+  assert.deepEqual(flower.head.scale.toArray(), [1.4, 1.4, 1.4]);
   assert.ok(flower.head.rotation.x >= 0.42 && flower.head.rotation.x <= 0.69);
   assert.equal(flower.stamens.geometry, center);
   center.computeBoundingBox();
@@ -719,28 +730,25 @@ test('autumn clusters mix tall stems with low, upward-facing chrysanthemums', ()
   }
 });
 
-test('seasonal petals use the opacity and depth settings for their species', () => {
+test('autumn petals are translucent and the other seasons are opaque', () => {
   const assets = makeFlowerAssets();
   const snowdrop = makeSnowdropAssets(assets);
   const { tiers, centerMaterial } = makeChrysanthemumAssets(assets);
-  const translucentMaterials = [
-    [0.70, [...assets.petalMaterials, ...tiers.map(({ material }) => material)]],
-    [0.92, [snowdrop.material, snowdrop.innerMaterial]],
-  ];
-  for (const [opacity, materials] of translucentMaterials) {
-    for (const material of materials) {
-      assert.equal(material.opacity, opacity);
-      assert.ok(material.transparent && material.depthTest && !material.depthWrite);
-      assert.equal(material.side, THREE.FrontSide);
-    }
+  for (const { material } of tiers) {
+    assert.equal(material.opacity, 0.70);
+    assert.ok(material.transparent && material.depthTest && !material.depthWrite);
+    assert.equal(material.side, THREE.FrontSide);
   }
-  for (const material of [...assets.poppyMaterials, centerMaterial]) {
+  const opaqueMaterials = [
+    ...assets.petalMaterials, ...assets.poppyMaterials, snowdrop.material, snowdrop.innerMaterial, centerMaterial,
+  ];
+  for (const material of opaqueMaterials) {
     assert.equal(material.opacity, 1);
     assert.ok(!material.transparent && material.depthTest && material.depthWrite);
   }
 });
 
-test('summer lily petals arch outward to a visible rounded tip', () => {
+test('summer lily petals arch outward to a visible tapered tip', () => {
   const { petals } = makeFlowerAssets();
   for (const geometry of petals) {
     const { uv, position } = geometry.attributes;
@@ -766,7 +774,7 @@ test('summer lily petals arch outward to a visible rounded tip', () => {
     }
     assert.ok(tipX > furthest + 0.06);
     assert.ok(shoulderHeight > 0.55 && tipHeight < shoulderHeight - 0.33);
-    assert.ok(rightEdge - leftEdge > 0.10);
+    assert.ok(rightEdge - leftEdge < 0.05);
   }
 });
 

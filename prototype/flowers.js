@@ -3,12 +3,11 @@ import { createPetalSurfaces } from './petal-surfaces.js?v=chrome-finish-1';
 
 export const pearlFinish = Object.freeze({
   color: '#e6edf1', metalness: 0.82, roughness: 0.41, envMapIntensity: 1.35,
-  side: THREE.FrontSide, transparent: true, opacity: 0.92, depthWrite: false,
+  side: THREE.DoubleSide,
 });
 export const bloomColors = Object.freeze({
   innerPearl: '#dce5e7', jade: '#56876c', sage: '#91aa9e', pollenGold: '#dfc477',
 });
-const pearlShades = [pearlFinish.color, '#e1e9eb', bloomColors.innerPearl];
 
 export function seededRandom(seed) {
   return function () {
@@ -27,19 +26,13 @@ function petalPoint(t, u, variant = 0, leaf = false) {
     0.85 * t - 0.42 * t * t + Math.abs(u) * 0.07 * edge,
     u * Math.pow(edge, 0.95) * 0.22 + 0.04 * edge * t,
   );
-  const length = [1.68, 1.8, 1.72][variant];
-  const tip = THREE.MathUtils.smoothstep(t, 0.78, 1);
-  const progress = t - 0.047 * u * u * tip;
-  const width = (Math.max(0, edge) ** 0.82 + 0.15 * tip) * [0.46, 0.48, 0.43][variant];
-  const fold = -0.056 * Math.exp(-u * u * 18) * edge;
-  const veins = 0.006 * Math.cos(u * Math.PI * 3) * edge * (1 - Math.abs(u) * 0.6);
-  const waves = Math.sin(t * 24 + variant + u) + 0.4 * Math.sin(t * 39 - variant + u * 2);
-  const ruffle = 0.022 * waves * Math.abs(u) ** 3 * edge;
+  const length = [1.65, 1.72, 1.60][variant];
+  const width = Math.max(0, edge) ** 0.74 * [0.49, 0.47, 0.46][variant];
   return new THREE.Vector3(
-    length * progress,
-    0.1 + [0.7, 0.63, 0.75][variant] * Math.sin(progress * Math.PI * 0.88)
-      - [0.56, 0.64, 0.57][variant] * progress ** 3 + u * u * 0.19 * edge + fold + veins + ruffle,
-    u * width * (1 + 0.1 * Math.sin(t * 6 + variant)) + 0.045 * edge * t,
+    length * t,
+    0.12 + 0.78 * Math.sin(t * Math.PI * 0.86) - 0.75 * t ** 4
+      + u * u * 0.18 * edge - 0.065 * (1 - Math.abs(u)) * edge,
+    u * width,
   );
 }
 
@@ -123,13 +116,13 @@ function makeBlade(variant = 0, leaf = false, poppy = false, pointAt = null, opt
   geometry.computeVertexNormals();
   if (poppy) {
     const colors = [];
-    const sage = new THREE.Color(bloomColors.sage);
+    const ink = new THREE.Color('#211522');
     const white = new THREE.Color('#ffffff');
     for (let i = 0; i < geometry.attributes.uv.count; i++) {
       const t = geometry.attributes.uv.getY(i);
       const u = geometry.attributes.uv.getX(i) * 2 - 1;
       const edge = 0.29 + 0.035 * Math.cos(u * 6 + variant);
-      const color = sage.clone().lerp(white, THREE.MathUtils.smoothstep(t, 0.07, edge));
+      const color = ink.clone().lerp(white, THREE.MathUtils.smoothstep(t, 0.07, edge));
       colors.push(color.r, color.g, color.b);
     }
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
@@ -162,22 +155,26 @@ export function makeFlowerAssets() {
   const leaf = makeBlade(0, true);
   const lilySurface = createPetalSurfaces('lily');
   const poppySurface = createPetalSurfaces('poppy');
-  const petalMaterials = pearlShades.map((color) => new THREE.MeshStandardMaterial({
-    ...pearlFinish, ...lilySurface, color, opacity: 0.70, bumpScale: 0.003, aoMapIntensity: 0.5,
+  const petalMaterials = [['#e0dce9', 0.19], ['#c7b6dd', 0.23], ['#dbb8d4', 0.17]].map(([color, roughness]) => new THREE.MeshStandardMaterial({
+    ...lilySurface, color, roughness, metalness: 1, envMapIntensity: 2.1,
+    side: THREE.DoubleSide, bumpScale: 0.003, aoMapIntensity: 0.5,
   }));
   const green = new THREE.MeshStandardMaterial({ color: '#8b9b82', metalness: 0.84, roughness: 0.36, envMapIntensity: 1.55, side: THREE.DoubleSide });
   const stem = new THREE.MeshStandardMaterial({ color: '#839379', metalness: 0.88, roughness: 0.32, envMapIntensity: 1.45 });
   const anther = new THREE.MeshStandardMaterial({ color: bloomColors.pollenGold, metalness: 0.7, roughness: 0.33 });
+  const lilyAnther = new THREE.MeshStandardMaterial({ color: '#dcfa7e', emissive: '#8ea51f', emissiveIntensity: 0.12, metalness: 0.65, roughness: 0.27 });
+  const lilyFilament = new THREE.MeshStandardMaterial({ color: '#c6a3e1', metalness: 0.84, roughness: 0.18 });
   const pistil = new THREE.MeshStandardMaterial({ color: '#cfb6df', metalness: 0.8, roughness: 0.25 });
   const antherGeometry = new THREE.SphereGeometry(1, 12, 8);
   const hitGeometry = new THREE.SphereGeometry(1.38, 12, 8);
   const hitMaterial = new THREE.MeshBasicMaterial({ visible: false });
-  const poppyMaterials = pearlShades.map((color) => new THREE.MeshStandardMaterial({
-    ...pearlFinish, ...poppySurface, color, vertexColors: true, bumpScale: 0.003, aoMapIntensity: 0.4,
-    side: THREE.DoubleSide, transparent: false, opacity: 1, depthWrite: true,
+  const poppyMaterials = ['#e3dce7', '#dfc4cb', '#c9bddb'].map((color) => new THREE.MeshStandardMaterial({
+    ...poppySurface, color, metalness: 0.97, roughness: 0.41, envMapIntensity: 1.65,
+    side: THREE.DoubleSide, vertexColors: true, bumpScale: 0.003, aoMapIntensity: 0.4,
   }));
-  const poppyCenterMaterial = new THREE.MeshStandardMaterial({ color: bloomColors.jade, metalness: 0.65, roughness: 0.54, envMapIntensity: 1.1 });
-  const filament = new THREE.MeshStandardMaterial({ color: bloomColors.innerPearl, metalness: 0.65, roughness: 0.42 });
+  const poppyCenterMaterial = new THREE.MeshStandardMaterial({ color: '#302434', metalness: 0.65, roughness: 0.54, envMapIntensity: 1.1 });
+  const poppyAnther = new THREE.MeshStandardMaterial({ color: '#e4ba80', metalness: 0.76, roughness: 0.34 });
+  const poppyFilament = new THREE.MeshStandardMaterial({ color: '#77635f', metalness: 0.85, roughness: 0.34 });
   const pod = new THREE.CylinderGeometry(0.21, 0.16, 0.18, 16);
   pod.translate(0, 0.23, 0);
   const crown = [pod];
@@ -190,7 +187,7 @@ export function makeFlowerAssets() {
   }
   const poppyCenter = mergeSurfaces(crown);
   return { petals, poppyPetals, poppyLeaf, leaf, surfaces: { lily: lilySurface, poppy: poppySurface }, petalMaterials, poppyMaterials, poppyCenter,
-    poppyCenterMaterial, filament, green, stem, anther, pistil, antherGeometry, hitGeometry, hitMaterial };
+    poppyCenterMaterial, poppyAnther, poppyFilament, green, stem, anther, lilyAnther, lilyFilament, pistil, antherGeometry, hitGeometry, hitMaterial };
 }
 
 export function createLily(id, assets, random) {
@@ -261,7 +258,7 @@ function createFlower(id, assets, random, species) {
   const stamens = new THREE.Group();
   const filaments = [];
   const stamenCount = poppy ? 56 : 6;
-  const anthers = new THREE.InstancedMesh(assets.antherGeometry, assets.anther, poppy ? stamenCount : 7);
+  const anthers = new THREE.InstancedMesh(assets.antherGeometry, poppy ? assets.poppyAnther : assets.lilyAnther, poppy ? stamenCount : 7);
   const dummy = new THREE.Object3D();
   for (let i = 0; i < stamenCount; i++) {
     const angle = i / stamenCount * Math.PI * 2 + 0.2 + (poppy ? (random() - 0.5) * 0.08 : 0);
@@ -283,7 +280,7 @@ function createFlower(id, assets, random, species) {
   }
   const filamentGeometry = mergeSurfaces(filaments);
   privateGeometries.push(filamentGeometry);
-  stamens.add(new THREE.Mesh(filamentGeometry, assets.filament));
+  stamens.add(new THREE.Mesh(filamentGeometry, poppy ? assets.poppyFilament : assets.lilyFilament));
   if (poppy) stamens.add(new THREE.Mesh(assets.poppyCenter, assets.poppyCenterMaterial));
   else {
     dummy.position.set(0, 1.14, 0);
@@ -309,8 +306,7 @@ function createFlower(id, assets, random, species) {
 export function makeChrysanthemumAssets(assets) {
   const random = seededRandom(410);
   const material = assets.petalMaterials[0].clone();
-  material.bumpMap = null;
-  material.opacity = 0.70;
+  material.setValues({ ...pearlFinish, bumpMap: null, side: THREE.FrontSide, transparent: true, opacity: 0.70, depthWrite: false });
   const layers = [
     { count: 11, base: 0.11, level: 0.10, length: 0.96, lift: 0.30, curl: 2.03, droop: 0.20, width: 0.178 },
     { count: 10, base: 0.10, level: 0.21, length: 0.74, lift: 0.34, curl: 2.16, droop: 0.11, width: 0.150 },
@@ -379,7 +375,7 @@ export function createChrysanthemum(id, assets, random) {
   const { root, height, bend } = stem;
   const head = new THREE.Group();
   head.position.set(bend, height, 0);
-  head.scale.setScalar(1.25);
+  head.scale.setScalar(1.4);
   const tilt = 0.42 + random() * 0.27;
   head.rotation.set(tilt * (lowBloom ? 0.48 : 1), random() * 2 * Math.PI, (random() - 0.5) * 0.27);
   root.add(head);

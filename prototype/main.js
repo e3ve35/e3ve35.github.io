@@ -1,8 +1,8 @@
 import './site.js?v=ja-intro-1';
 import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=seasonal-pollen-1';
-import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=autumn-low-blooms-1';
-import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=seasonal-blooms-1';
+import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=flower-finishes-1';
+import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=flower-finishes-1';
 import { GardenAudio, flowerNote } from './audio.js?v=seasonal-recordings-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
 import { gardenSelection } from './studies.js?v=autumn-gusts-1';
