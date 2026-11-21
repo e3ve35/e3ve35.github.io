@@ -1030,7 +1030,9 @@ test('snowdrop glass tones are higher, quieter, and longer than the lilies', () 
   for (let id = 0; id < 18; id++) {
     const lily = bloomProfile(id, 0.7);
     const snowdrop = bloomProfile(id, 0.7, 'snowdrop');
-    assert.equal(flowerNote(id, 'snowdrop').frequency, flowerNote(id).frequency * 2);
+    // An octave up. Exponentiation can differ in its last digit between
+    // JavaScript engine versions, so compare within a billionth of a hertz.
+    assert.ok(Math.abs(flowerNote(id, 'snowdrop').frequency - flowerNote(id).frequency * 2) < 1e-9);
     assert.ok(snowdrop.velocity < lily.velocity);
     assert.ok(snowdrop.decay > lily.decay);
     assert.ok(snowdrop.release > lily.release);
