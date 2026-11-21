@@ -175,7 +175,7 @@ const ja = {
   'site.name': 'ゴ・カヤ',
   'site.home': '{name}のホーム',
   'site.description': '{name}の個人サイト。ゲーム開発、コンピューター音楽、インタラクティブな作品と、演奏できる庭。',
-  'site.copyright': '© {year} {name}',
+  'site.copyright': '© {year} 伍 芷萱',
   'site.skip': '本文へ移動',
   'site.nav': 'メインナビゲーション',
   'site.language': 'サイトの言語',
