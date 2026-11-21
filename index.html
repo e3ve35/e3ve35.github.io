@@ -12,10 +12,12 @@
     <link rel="alternate" hreflang="zh-Hans" href="https://e3ve35.github.io/?lang=zh-Hans" />
     <link rel="alternate" hreflang="ja" href="https://e3ve35.github.io/?lang=ja" />
     <link rel="alternate" hreflang="x-default" href="https://e3ve35.github.io/" />
-    <link rel="stylesheet" href="./prototype/style.css?v=seasonal-particles-1" />
-    <link rel="stylesheet" href="./prototype/portfolio.css?v=work-preview-2" />
+    <link rel="preload" href="./Instrument_Serif/InstrumentSerif-Regular.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="preload" href="./Instrument_Serif/InstrumentSerif-Italic.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="stylesheet" href="./prototype/style.css?v=quiet-chrome-3" />
+    <link rel="stylesheet" href="./prototype/portfolio.css?v=quiet-chrome-3" />
     <script src="./prototype/vendor/Tone.js" defer></script>
-    <script type="module" src="./prototype/main.js?v=garden-hint-1"></script>
+    <script type="module" src="./prototype/main.js?v=quiet-chrome-1"></script>
   </head>
   <body data-page="garden">
     <a class="skip-link" data-i18n="site.skip" href="#page-content">Skip to content</a>
@@ -54,11 +56,6 @@
     <main id="page-content" tabindex="-1">
     <section class="intro" data-page-view="garden" aria-labelledby="garden-title">
       <h1 id="garden-title"><span data-i18n="garden.titleFirst">Unlikely</span><br /><em data-i18n="garden.titleLast">garden.</em></h1>
-      <button id="sound-toggle" class="sound-toggle" type="button" aria-pressed="false">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path class="sound-waves" d="M15 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14"/><path class="sound-slash" d="m16 9 6 6m0-6-6 6"/></svg>
-        <span id="sound-label">Enable sound</span>
-      </button>
-      <p id="keyboard-hint" class="keyboard-hint" data-i18n="garden.keyboard">Click the garden, then use ← or → to play a flower. Press Space to replay.</p>
     </section>
 
     <section id="work" class="portfolio-view work-view" data-page-view="work" aria-labelledby="work-title" hidden>
@@ -189,20 +186,8 @@
     </section>
     </main>
 
-    <aside class="season-preview" data-i18n-aria="season.label" aria-label="Seasonal garden">
-      <p class="study-label"><span data-i18n="season.label">SEASONAL GARDEN</span> <span id="garden-month"></span></p>
-      <div class="study-switch" data-i18n-aria="season.controls" role="group" aria-label="Follow the current season or preview another">
-        <button type="button" data-study-mode="calendar" data-i18n="season.now" data-i18n-aria="season.nowLabel" aria-pressed="true" aria-label="Now — follow the current season">Now</button>
-        <button type="button" data-study-mode="poppy" data-i18n="season.Spring" aria-pressed="false">Spring</button>
-        <button type="button" data-study-mode="lily" data-i18n="season.Summer" aria-pressed="false">Summer</button>
-        <button type="button" data-study-mode="chrysanthemum" data-i18n="season.Autumn" aria-pressed="false">Autumn</button>
-        <button type="button" data-study-mode="snowdrop" data-i18n="season.Winter" aria-pressed="false">Winter</button>
-      </div>
-      <p id="study-caption" class="study-caption"></p>
-    </aside>
-
     <aside class="specimen-card" data-i18n-aria="specimen.label" aria-label="Current flower">
-      <div class="specimen-heading"><span class="tiny-cross">+</span><span><span data-i18n="specimen.number">SPECIMEN /</span> <span id="specimen-id">001</span></span><span class="specimen-symbol" aria-hidden="true">↗</span></div>
+      <div class="specimen-heading"><span class="tiny-cross">+</span><span><span data-i18n="specimen.number">SPECIMEN /</span> <span id="specimen-id">001</span></span></div>
       <div class="specimen-name" lang="la"><span id="flower-genus">Lilium</span> <em>synthetica</em></div>
       <div class="specimen-meta"><span data-i18n="specimen.petals">CHROME PETALS</span><span id="note-name">D PENTATONIC</span></div>
       <div class="signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
@@ -214,10 +199,26 @@
     <footer class="garden-footer">
       <div class="footer-caption"><span class="live-dot"></span><span>© EVELYN WU</span></div>
       <div class="controls">
+        <button id="sound-toggle" class="sound-toggle" type="button" aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path class="sound-waves" d="M15 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14"/><path class="sound-slash" d="m16 9 6 6m0-6-6 6"/></svg>
+          <span id="sound-label">Enable sound</span>
+        </button>
         <button id="reseed" class="text-button" type="button"><span aria-hidden="true">↻</span> <span data-i18n="garden.replant">Replant</span></button>
         <button id="motion-toggle" class="text-button motion-toggle" type="button" aria-pressed="false">Pause motion</button>
       </div>
+      <div class="hint-line"><p id="keyboard-hint" class="keyboard-hint" data-i18n="garden.keyboard">Click the garden, then use ← or → to play a flower. Press Space to replay.</p></div>
       <a class="return-to-garden" href="#garden"><span data-i18n="footer.return">Return to the garden</span> <span aria-hidden="true">↗</span></a>
+      <aside class="season-preview" data-i18n-aria="season.label" aria-label="Seasonal garden">
+        <p class="study-label"><span data-i18n="season.label">SEASONAL GARDEN</span> <span id="garden-month"></span></p>
+        <div class="study-switch" data-i18n-aria="season.controls" role="group" aria-label="Follow the current season or preview another">
+          <button type="button" data-study-mode="calendar" data-i18n="season.now" data-i18n-aria="season.nowLabel" aria-pressed="true" aria-label="Now — follow the current season">Now</button>
+          <button type="button" data-study-mode="poppy" data-i18n="season.Spring" aria-pressed="false">Spring</button>
+          <button type="button" data-study-mode="lily" data-i18n="season.Summer" aria-pressed="false">Summer</button>
+          <button type="button" data-study-mode="chrysanthemum" data-i18n="season.Autumn" aria-pressed="false">Autumn</button>
+          <button type="button" data-study-mode="snowdrop" data-i18n="season.Winter" aria-pressed="false">Winter</button>
+        </div>
+        <p id="study-caption" class="study-caption"></p>
+      </aside>
       <span class="footer-index">01 — LILIES</span>
     </footer>
     <noscript><div class="noscript">Enable JavaScript to explore the musical garden. <a href="./archive/">Visit Evelyn’s previous portfolio</a>.</div></noscript>

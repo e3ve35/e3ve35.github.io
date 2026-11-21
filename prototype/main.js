@@ -514,6 +514,7 @@ class Garden {
       this.pointer.set((event.clientX / this.width) * 2 - 1, -(event.clientY / this.height) * 2 + 1);
       this.pointerInside = true;
       this.pick(true);
+      document.body.dataset.gardenTouched = 'true';
       if (event.pointerType === 'touch') {
         this.pointerInside = false;
         this.hoveredId = -1;
@@ -527,6 +528,7 @@ class Garden {
         const direction = ['ArrowLeft', 'ArrowDown'].includes(event.key) ? -1 : 1;
         this.selectedId = (this.selectedId + direction + this.flowers.length) % this.flowers.length;
         this.playFlower(this.selectedId, 0.45);
+        document.body.dataset.gardenTouched = 'true';
       } else if (event.code === 'Space' || event.key === 'Enter') {
         event.preventDefault();
         if (event.repeat) return;

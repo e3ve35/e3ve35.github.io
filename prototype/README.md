@@ -10,7 +10,7 @@ From the repository root, run:
 node prototype/serve.mjs
 ```
 
-Open http://127.0.0.1:4173/. No package installation or build is needed. Pinned browser libraries are vendored locally: Three.js 0.180.0 and Tone.js 15.1.22. The font is reused from the existing portfolio.
+Open http://127.0.0.1:4173/. No package installation or build is needed. Pinned browser libraries are vendored locally: Three.js 0.180.0 and Tone.js 15.1.22. The monospace font is reused from the existing portfolio; headings use the locally hosted Instrument Serif.
 
 ## Interact
 
