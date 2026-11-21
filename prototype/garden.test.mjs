@@ -100,7 +100,7 @@ test('flower pollen recolors the existing pool for each season', (context) => {
   assert.equal(scene.children.length, 1);
 });
 
-test('autumn rain uses fewer drops with a wide range of streak lengths and depths', (context) => {
+test('autumn rain fits 160 varied drops in the shared particle pool', (context) => {
   const { scene, particles } = particleScene(context);
   particles.select('Autumn');
   const { geometry } = scene.children[0];
@@ -109,7 +109,8 @@ test('autumn rain uses fewer drops with a wide range of streak lengths and depth
   const depth = Array.from({ length: count }, (_, index) => position.getZ(index));
   const lengths = Array.from({ length: count }, (_, index) => particle.getZ(index));
   const foreground = depth.filter((z) => z > 6);
-  assert.ok(count >= 85 && count <= 120);
+  assert.equal(count, 160);
+  assert.ok(count <= position.count);
   assert.ok(Math.min(...lengths) < 0.18);
   assert.ok(Math.max(...lengths) > 0.85);
   assert.ok(foreground.length >= 4 && foreground.length < depth.length / 3);

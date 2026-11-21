@@ -29,9 +29,9 @@ const presets = {
   },
   Autumn: {
     mode: 3, glyphs: ['|', '|', '|', ':'], colors: ['#c5d2ec', '#e1e6f5', '#b6cced', '#d0c8e4'],
-    count: 106, seed: 919, height: 11, speed: [4.6, 3.2], size: [0.13, 0.96], sway: 0.22,
+    count: 160, seed: 919, height: 11, speed: [4.6, 3.2], size: [0.13, 0.96], sway: 0.22,
     place(positions, index, random, height) {
-      const foreground = index < 16;
+      const foreground = index < 24;
       const width = foreground ? 24 : 52;
       positions.setXYZ(index, (random() - 0.5) * width, random() * height,
         foreground ? 2 + random() * 7 : -19 + random() * 21);
