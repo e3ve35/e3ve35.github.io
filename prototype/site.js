@@ -11,9 +11,9 @@ function syncPageLabels() {
   const page = currentPage ?? 'garden';
   const name = text('site.name');
   const index = String(pages.indexOf(page) + 1).padStart(2, '0');
-  document.querySelector('.footer-index').textContent = page === 'garden'
-    ? document.body.dataset.studyLabel || `01 — ${text('species.lily', {}, 'Lilies').toUpperCase()}`
-    : `${index} — ${text(`page.${page}`).toUpperCase()}`;
+  const footerIndex = document.querySelector('.footer-index');
+  footerIndex.hidden = page === 'garden';
+  footerIndex.textContent = page === 'garden' ? '' : `${index} — ${text(`page.${page}`).toUpperCase()}`;
   document.querySelector('.footer-caption span:last-child').textContent = text('site.copyright', { year: new Date().getFullYear(), name });
 }
 

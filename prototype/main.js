@@ -1,4 +1,4 @@
-import './site.js?v=garden-hint-1';
+import './site.js?v=garden-footer-1';
 import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=seasonal-pollen-1';
 import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=flower-finishes-1';
@@ -383,17 +383,21 @@ class Garden {
     document.body.dataset.studyMode = this.selection.mode;
     document.body.dataset.season = this.selection.season.toLowerCase();
     document.body.dataset.gardenMonth = this.selection.month;
-    document.body.dataset.studyLabel = `${this.study.index} — ${name.toUpperCase()}`;
     $('#flower-genus').textContent = this.study.genus;
     $('#garden-study-index').textContent = this.study.index.padStart(3, '0');
     const month = new Date(2020, this.selection.monthIndex, 1);
+    const currentFlower = gardenSelection('calendar', month).study;
+    const currentName = text(`species.${currentFlower.id}`, {}, currentFlower.name);
+    const calendarButton = $('button[data-study-mode="calendar"]');
+    const calendarLabel = `${text('season.now', {}, 'Now')} - ${currentName}`;
+    calendarButton.textContent = calendarLabel;
+    calendarButton.setAttribute('aria-label', `${calendarLabel} — ${text('season.nowLabel', {}, 'Follow the current season')}`);
     $('#garden-month').textContent = month.toLocaleDateString(currentLanguage(), { month: 'long' }).toUpperCase();
     $('#study-caption').textContent = this.studyCaption();
     garden.setAttribute('aria-label', text('garden.region', { flower }));
     for (const button of document.querySelectorAll('button[data-study-mode]')) {
       button.setAttribute('aria-pressed', String(button.dataset.studyMode === this.selection.mode));
     }
-    if (!this.contentOpen) $('.footer-index').textContent = document.body.dataset.studyLabel;
     this.syncSpecimenNote();
   }
 
