@@ -1,14 +1,14 @@
 import './site.js?v=garden-controls-1';
 import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=seasonal-pollen-1';
-import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=autumn-bloom-4';
-import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=autumn-bloom-4';
+import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=autumn-accents-2';
+import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=autumn-accents-2';
 import { GardenAudio, flowerNote } from './audio.js?v=seasonal-recordings-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
-import { gardenSelection } from './studies.js?v=autumn-rose-1';
-import { SeasonalParticles } from './snowfall.js?v=autumn-rain-density-1';
-import { gardenPlanting, placeFlower, flowerDetail, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=scene-depth-1';
-import { GroundSignals } from './ground-signals.js?v=garden-controls-1';
+import { gardenSelection } from './studies.js?v=autumn-accents-2';
+import { SeasonalParticles } from './snowfall.js?v=autumn-petals-2';
+import { gardenPlanting, placeFlower, flowerDetail, groundHeight, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=rolling-meadow-1';
+import { GroundSignals } from './ground-signals.js?v=season-traces-1';
 import { currentLanguage, text } from './i18n.js?v=garden-controls-1';
 
 const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop, chrysanthemum: createChrysanthemum };
@@ -210,13 +210,42 @@ function setupBackground(scene) {
     shader.fragmentShader = shader.fragmentShader.replace('#include <dithering_fragment>', '#include <dithering_fragment>\ngl_FragColor.a*=1.-smoothstep(10.,48.,vGroundDistance);');
   };
   const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(150, 150),
+    new THREE.PlaneGeometry(150, 150, 120, 120),
     floorMaterial,
   );
+  // The plane lies in local x/y; after the rotation below, local -y is world z.
+  const floorPosition = floor.geometry.attributes.position;
+  for (let i = 0; i < floorPosition.count; i++) floorPosition.setZ(i, groundHeight(floorPosition.getX(i), -floorPosition.getY(i)));
+  // Normals stay vertical on purpose: tilted ones mirror the bright horizon and
+  // turn the slope grey, while flat shading keeps the season's ground color.
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -0.15;
   scene.add(floor);
 
+  // Two soft ridges give the eye somewhere to land between meadow and sky.
+  const ridge = (radius, low, high, seed) => {
+    const geometry = new THREE.CylinderGeometry(radius, radius, 1, 180, 1, true, Math.PI - 1.25, 2.5);
+    const position = geometry.attributes.position;
+    const colors = new Float32Array(position.count * 4).fill(1);
+    for (let i = 0; i < position.count; i++) {
+      const crest = position.getY(i) > 0;
+      const angle = Math.atan2(position.getX(i), position.getZ(i));
+      const noise = 0.5 + 0.25 * Math.sin(angle * 7 + seed) + 0.15 * Math.sin(angle * 17 + seed * 2.3) + 0.1 * Math.sin(angle * 31 + seed * 0.7);
+      // Only the crest is drawn; each ridge fades out below it like mist.
+      position.setY(i, low + (high - low) * noise - (crest ? 0 : 2.4));
+      colors[i * 4 + 3] = crest ? 0.6 : 0;
+    }
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 4));
+    const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+      side: THREE.BackSide, fog: false, vertexColors: true, transparent: true, depthWrite: false,
+    }));
+    mesh.renderOrder = -1; // Behind the translucent floor and everything on it.
+    scene.add(mesh);
+    return mesh.material.color;
+  };
+  // Heights sit just around eye level, so the ridges only graze the horizon glow.
+  const farRidge = ridge(58, 4.6, 6.7, 1.7);
+  const nearRidge = ridge(46, 3.4, 5.3, 4.1);
   const horizonTint = new THREE.Color();
   return (palette) => {
     sky.night.value.set(palette.night);
@@ -226,6 +255,8 @@ function setupBackground(scene) {
     // Distant flowers dissolve toward the sky behind them, not a darker haze.
     scene.fog.color.set(palette.fog).lerp(horizonTint.set(palette.horizon), 0.7);
     floorMaterial.color.set(palette.ground);
+    nearRidge.set(palette.ground).lerp(horizonTint, 0.58);
+    farRidge.set(palette.ground).lerp(horizonTint, 0.82);
   };
 }
 
@@ -241,6 +272,8 @@ class Garden {
     this.environments = new Map();
     this.setBackgroundPalette = setupBackground(this.scene);
     this.seasonalParticles = new SeasonalParticles(this.scene);
+    this.fallingPetals = new SeasonalParticles(this.scene);
+    this.fallingPetals.select('Petals');
     this.scene.add(new THREE.HemisphereLight('#e4cee7', '#2d243b', 1.2));
     const white = new THREE.DirectionalLight('#f0eaf4', 2.7);
     white.position.set(-3, 9, 5);
@@ -253,6 +286,7 @@ class Garden {
     this.scene.add(lime);
     this.keyLight = pink;
     this.fillLight = lime;
+    this.glowScale = 1;
     this.selection = gardenSelection(savedStudyMode());
     this.study = this.selection.study;
     this.nextCalendarCheck = 0;
@@ -304,6 +338,7 @@ class Garden {
   buildPost() {
     const hdr = this.renderer.extensions.has('EXT_color_buffer_float');
     const type = hdr ? THREE.HalfFloatType : THREE.UnsignedByteType;
+    this.baseGlow = hdr ? 0.4 : 0.3;
     this.renderTarget = new THREE.WebGLRenderTarget(1, 1, {
       depthBuffer: true, samples: 4, type, depthTexture: new THREE.DepthTexture(1, 1),
     });
@@ -411,6 +446,7 @@ class Garden {
     placements.forEach((placement, id) => {
       const flower = flowerFactories[this.study.id](id, this.assets, random, flowerDetail(placement));
       placeFlower(flower, placement);
+      flower.root.position.y = groundHeight(placement.x, placement.z);
       this.scene.add(flower.root);
       this.flowers.push(flower);
     });
@@ -420,8 +456,8 @@ class Garden {
       this.contactShadows = createContactShadows(placements.length);
       this.scene.add(this.contactShadows);
     }
-    updateContactShadows(this.contactShadows, placements);
-    this.groundSignals.replant(placements, this.seed);
+    updateContactShadows(this.contactShadows, placements, groundHeight);
+    this.groundSignals.replant(placements, this.seed, groundHeight);
     this.selectedId = 0;
     this.hoveredId = -1;
     this.needsPicking = true;
@@ -484,6 +520,9 @@ class Garden {
     if (!this.environments.has(study.id)) this.environments.set(study.id, environmentTexture(this.renderer, study.sky));
     this.scene.environment = this.environments.get(study.id).texture;
     this.seasonalParticles.select(this.selection.season);
+    this.fallingPetals.points.visible = this.selection.season === 'Autumn';
+    this.groundSignals.setPalette(study.signals);
+    this.glowScale = study.bloom || 1;
     this.pollen.setSeason(this.selection.season);
   }
 
@@ -551,7 +590,7 @@ class Garden {
     const greyTint = new THREE.Color();
     const variation = seededRandom(this.seed + 371);
     meadowGrass(placements, this.seed, this.grass.count).forEach(({ x, z, yaw, lean, scale }, i) => {
-      dummy.position.set(x, -0.1, z);
+      dummy.position.set(x, -0.1 + groundHeight(x, z), z);
       dummy.rotation.set(0, yaw, lean);
       dummy.scale.set(scale, scale, scale * 0.65);
       dummy.updateMatrix();
@@ -852,6 +891,8 @@ class Garden {
     this.post.uniforms.motion.value = paused ? 0 : 1;
     this.groundSignals.update(this.elapsed, paused);
     this.seasonalParticles.update(this.elapsed, this.renderTarget.height);
+    this.fallingPetals.update(this.elapsed, this.renderTarget.height);
+    this.post.uniforms.glowStrength.value = this.baseGlow * this.glowScale;
     this.post.uniforms.focusDistance.value = this.focusDistance;
     this.grassWind.value = this.elapsed;
     this.renderer.setRenderTarget(this.renderTarget);

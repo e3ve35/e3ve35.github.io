@@ -364,9 +364,20 @@ export function makeChrysanthemumAssets(assets) {
   material.onBeforeCompile = (shader) => {
     shader.vertexShader = 'varying float vPetalLength;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvPetalLength=uv.y;');
     shader.fragmentShader = 'varying float vPetalLength;\n' + shader.fragmentShader.replace('#include <dithering_fragment>', '#include <dithering_fragment>\ngl_FragColor.a*=1.-.62*smoothstep(.42,1.,vPetalLength);')
+      // Thin tips and grazing edges carry a warm light of their own, as if the
+      // bloom were lit from behind. A real backlight would also flare the floor.
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\nfloat petalRim=pow(1.-abs(dot(normal,normalize(vViewPosition))),3.);\ntotalEmissiveRadiance+=vec3(1.,.76,.82)*(.2*smoothstep(.55,1.,vPetalLength)+.3*petalRim);')
       // A lilac-rose blush gathers at each petal's base and fades by mid-length.
       .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb*=mix(vec3(.74,.60,.84),vec3(1.),smoothstep(.02,.5,vPetalLength));');
   };
+  // Pearl, blush, and pale lilac blooms share the field.
+  const materials = [null, '#f4d6e4', '#dbd0f2'].map((color) => {
+    if (!color) return material;
+    const tint = material.clone();
+    tint.color.set(color);
+    tint.onBeforeCompile = material.onBeforeCompile;
+    return tint;
+  });
   const layers = [
     { count: 11, base: 0.11, level: 0.10, length: 0.96, lift: 0.30, curl: 2.03, droop: 0.20, width: 0.178 },
     { count: 10, base: 0.10, level: 0.21, length: 0.74, lift: 0.34, curl: 2.16, droop: 0.11, width: 0.150 },
@@ -427,12 +438,14 @@ export function makeChrysanthemumAssets(assets) {
   const center = mergeSurfaces(florets);
   const centerMaterial = assets.anther.clone();
   centerMaterial.roughness = 0.52;
+  centerMaterial.emissive.set('#8a6414');
+  centerMaterial.emissiveIntensity = 0.35;
   const leaf = makeBlade(0, true, false, (t, u) => {
     const outline = Math.sin(Math.PI * t) ** 0.75;
     const lobes = 0.82 + 0.18 * Math.cos(t * Math.PI * 10);
     return new THREE.Vector3(t * 1.42, t * 0.76 - t * t * 0.44 + u * u * outline * 0.13, u * outline * lobes * 0.43);
   }, { rows: 28, columns: 10 });
-  return { tiers, distantTiers, center, centerMaterial, leaf, surface };
+  return { tiers, distantTiers, materials, center, centerMaterial, leaf, surface };
 }
 
 export function createChrysanthemum(id, assets, random, detail = 0) {
@@ -448,7 +461,8 @@ export function createChrysanthemum(id, assets, random, detail = 0) {
   head.rotation.set(tilt * (lowBloom ? 0.48 : 1), random() * 2 * Math.PI, (random() - 0.5) * 0.27);
   root.add(head);
   addCalyx(head, assets, -0.03, 1.75);
-  const petals = (detail ? chrysanthemum.distantTiers : chrysanthemum.tiers).map(({ geometry, material }) => {
+  const material = chrysanthemum.materials[id % chrysanthemum.materials.length];
+  const petals = (detail ? chrysanthemum.distantTiers : chrysanthemum.tiers).map(({ geometry }) => {
     const pivot = new THREE.Mesh(geometry, material);
     pivot.rotation.y = random() * 0.12;
     pivot.rotation.z = (random() - 0.5) * 0.065;

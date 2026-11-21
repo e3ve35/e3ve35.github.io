@@ -81,6 +81,7 @@ export class GroundSignals {
         atlas: { value: groundGlyphAtlas() }, time: { value: 0 }, motion: { value: 1 },
         fogNear: { value: gardenAtmosphere.near }, fogFar: { value: gardenAtmosphere.far },
         pulseRoot: { value: -1 }, pulseTime: { value: 0 }, pulseStrength: { value: 0 },
+        colorA: { value: new THREE.Vector3(0.65, 1.1, 0.28) }, colorB: { value: new THREE.Vector3(0.56, 0.20, 1.05) },
       },
       vertexShader: `
         attribute vec3 origin; attribute vec4 shape; attribute vec4 signal;
@@ -105,6 +106,7 @@ export class GroundSignals {
         uniform sampler2D atlas; uniform float time; uniform float motion;
         uniform float fogNear; uniform float fogFar;
         uniform float pulseRoot; uniform float pulseTime; uniform float pulseStrength;
+        uniform vec3 colorA; uniform vec3 colorB;
         varying vec2 vUv; varying float vKind; varying float vSeed;
         varying float vGlyph; varying float vRoot; varying float vDepth; varying float vDistortion;
         float hash(float n){return fract(sin(n*127.1)*43758.5453);}
@@ -145,7 +147,7 @@ export class GroundSignals {
           float haze=1.-smoothstep(fogNear,fogFar,vDepth);
           float alpha=mask*opacity*flicker*haze;
           if(alpha<.004)discard;
-          vec3 color=mix(vec3(.65,1.1,.28),vec3(.56,.20,1.05),step(.7,vSeed));
+          vec3 color=mix(colorA,colorB,step(.7,vSeed));
           color=mix(color,vec3(.95,.24,.8),glitch*.45);
           gl_FragColor=vec4(color,alpha);
         }`,
@@ -157,11 +159,17 @@ export class GroundSignals {
     scene.add(this.mesh);
   }
 
-  replant(planting, seed) {
+  // Each season supplies its own pair of trace colors.
+  setPalette([a, b] = [[0.65, 1.1, 0.28], [0.56, 0.20, 1.05]]) {
+    this.material.uniforms.colorA.value.fromArray(a);
+    this.material.uniforms.colorB.value.fromArray(b);
+  }
+
+  replant(planting, seed, heightAt = () => 0) {
     const marks = groundMarks(planting, seed);
     const { origin, shape, signal } = this.geometry.attributes;
     marks.forEach((mark, i) => {
-      origin.setXYZ(i, mark.x, -0.12, mark.z);
+      origin.setXYZ(i, mark.x, -0.12 + heightAt(mark.x, mark.z), mark.z);
       shape.setXYZW(i, mark.width, mark.height, mark.angle, mark.kind);
       signal.setXYZW(i, mark.seed, mark.distortion, mark.glyph, mark.root);
     });

@@ -57,6 +57,13 @@ Open http://127.0.0.1:4173/. No package installation or build is needed. Pinned 
 - Atmosphere: each season gets its own prefiltered environment, washed with its sky, glow, and ground colors; fog is tinted toward the horizon color.
 - Lens: a half-resolution blur feeds depth of field focused on the selected flower, and a quarter-resolution bloom spreads highlights. The camera drifts slowly and leans toward a played flower. Pause and reduced motion hold the camera still.
 
+### Autumn and horizon pass
+
+- Chrysanthemums: the head is 1.5x scale; blooms rotate through pearl, blush, and pale lilac; petals have veins, a lilac-rose blush at the base, and a warm glow on the translucent tips and grazing edges; the gold centre has 34 florets and a slight glow. Autumn bloom strength is 0.72 of the other seasons.
+- Falling petals: a second `SeasonalParticles` layer (the `Petals` preset, shown only in autumn) drifts 84 pink, gold, and lilac glyphs beside the rain. It uses the snow motion and a fifth row of the glyph atlas.
+- Ground marks take two colors from each study (`signals`): lime and violet in spring and summer, gold and rose in autumn, ice blue and lilac in winter.
+- Horizon: two translucent ridge crests sit beyond the field and fade out downward. `groundHeight` in `composition.js` keeps the foreground level and rolls the ground upward behind z = -5; flowers, grass, shadows, and ground marks follow it. Floor normals stay vertical so the slope keeps the season's ground color.
+
 The scene requires WebGL 2. Initialization failure presents a readable fallback; the HTML portfolio remains usable. No tracking, microphone access, or backend is involved.
 
 ## Verification

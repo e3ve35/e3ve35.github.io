@@ -27,6 +27,13 @@ const presets = {
     count: 64, seed: 741, speed: [0.76, 0.78], size: [0.14, 0.23], sway: 0.73,
     place: (positions, index, random) => positions.setXYZ(index, (random() - 0.5) * 25, 1.25 + random() * 4.6, -16 + random() * 22),
   },
+  // Loose petals drift down beside the autumn rain. Mode 0 reuses the snow
+  // motion; row 4 is this preset's own strip of the glyph atlas.
+  Petals: {
+    mode: 0, row: 4, glyphs: ['(', ')', 'o', '~'], colors: ['#f7cfe0', '#f2deea', '#f2d48c', '#dccbff'],
+    count: 84, seed: 277, height: 9, speed: [0.3, 0.32], size: [0.2, 0.3], sway: 0.95, spin: 0.7,
+    place: (positions, index, random, height) => positions.setXYZ(index, (random() - 0.5) * 26, random() * height, -18 + random() * 27),
+  },
   Autumn: {
     mode: 3, glyphs: ['|', '|', '|', ':'], colors: ['#c5d2ec', '#e1e6f5', '#b6cced', '#d0c8e4'],
     count: 160, seed: 919, height: 11, speed: [4.6, 3.2], size: [0.13, 0.96], sway: 0.22,
@@ -41,20 +48,23 @@ const presets = {
 
 const capacity = Math.max(...Object.values(presets).map(({ count }) => count));
 
+const atlasRows = 5;
+
 function createGlyphAtlas() {
   const cell = 64;
   const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = cell * 4;
+  canvas.width = cell * 4;
+  canvas.height = cell * atlasRows;
   const context = canvas.getContext('2d');
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.font = '54px monospace';
-  for (const { mode, glyphs, colors, halo = 0 } of Object.values(presets)) {
+  for (const { mode, row = mode, glyphs, colors, halo = 0 } of Object.values(presets)) {
     context.shadowBlur = halo;
     glyphs.forEach((glyph, i) => {
       context.fillStyle = colors[i];
       if (halo) context.shadowColor = colors[i];
-      context.fillText(glyph, (i + 0.5) * cell, (mode + 0.5) * cell);
+      context.fillText(glyph, (i + 0.5) * cell, (row + 0.5) * cell);
     });
   }
   const texture = new THREE.CanvasTexture(canvas);
@@ -73,6 +83,7 @@ export class SeasonalParticles {
     this.uniforms = {
       spriteMap: { value: createGlyphAtlas() },
       mode: { value: 0 },
+      atlasRow: { value: 0 },
       time: { value: 0 },
       viewportHeight: { value: 1 },
       fieldHeight: { value: 1 },
@@ -167,6 +178,7 @@ export class SeasonalParticles {
       fragmentShader: `
         uniform sampler2D spriteMap;
         uniform int mode;
+        uniform float atlasRow;
         varying float opacity, angle, glyph;
         varying float ripple, rippleSquash, streakWidth;
         void main() {
@@ -185,8 +197,8 @@ export class SeasonalParticles {
           if (mode != 0) uv.y = 1. - uv.y;
           uv.x = (uv.x - .5) / streakWidth + .5;
           if (any(lessThan(uv, vec2(0.))) || any(greaterThan(uv, vec2(1.)))) discard;
-          vec2 tile = vec2(glyph, 3. - float(mode));
-          vec4 sprite = texture2D(spriteMap, (tile + uv) / 4.);
+          vec2 tile = vec2(glyph, 5. - 1. - atlasRow);
+          vec4 sprite = texture2D(spriteMap, (tile + uv) / vec2(4., 5.));
           float alpha = sprite.a * opacity;
           if (alpha < (mode == 3 ? .012 : .025)) discard;
           gl_FragColor = vec4(sprite.rgb, alpha);
@@ -202,7 +214,7 @@ export class SeasonalParticles {
   select(season) {
     if (this.season === season) return;
     this.season = season;
-    const { mode, count, seed, height = 1, speed, size, sway, spin = 0, place } = presets[season];
+    const { mode, row = mode, count, seed, height = 1, speed, size, sway, spin = 0, place } = presets[season];
     const random = seededRandom(seed);
     for (let i = 0; i < count; i++) {
       place(this.positions, i, random, height);
@@ -219,6 +231,7 @@ export class SeasonalParticles {
     }
     this.geometry.setDrawRange(0, count);
     this.uniforms.mode.value = mode;
+    this.uniforms.atlasRow.value = row;
     this.uniforms.fieldHeight.value = height;
     this.uniforms.sway.value = sway;
     this.uniforms.spin.value = spin;

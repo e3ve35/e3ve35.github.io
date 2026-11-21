@@ -24,6 +24,7 @@ const studies = {
     sound: 'A quiet, glassy bloom', pollenMode: 2,
     ...bloomLights,
     grass: ['#576c70', '#afc0b9'],
+    signals: [[0.55, 0.95, 1.1], [0.68, 0.5, 1.05]],
     sky: { night: '#3d354a', horizon: '#ae929e', glow: '#dfa98d', accent: '#68637d', fog: '#594f65', ground: '#292634' },
   },
   chrysanthemum: {
@@ -34,6 +35,9 @@ const studies = {
     // fill tint the pearl petals so sky, grass, and blooms share one range.
     ...bloomLights, keyLight: '#ffd3e2', fillLight: '#d8c6ff',
     grass: ['#6b5566', '#bba4b4'],
+    // Gold and rose traces, and a gentler bloom so the white tiers keep their shading.
+    signals: [[1.15, 0.78, 0.3], [0.95, 0.42, 0.8]],
+    bloom: 0.72,
     sky: { night: '#3a2b45', horizon: '#b78aa8', glow: '#e3a9c6', accent: '#6f5689', fog: '#5e4a66', ground: '#2a2031' },
   },
 };

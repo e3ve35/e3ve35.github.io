@@ -48,6 +48,13 @@ export function gardenPlanting(seed) {
 // Flowers past the middle drifts are small on screen and use the coarser meshes.
 export function flowerDetail({ z }) { return z < -6 ? 1 : 0; }
 
+// The meadow is level where the flowers are played and rolls upward behind
+// them, so the far drifts stack into the view instead of flattening out.
+export function groundHeight(x, z) {
+  const far = THREE.MathUtils.smoothstep(-z, 5, 24);
+  return far * (0.3 + 0.55 * Math.sin(x * 0.16 + 1.3) + 0.35 * Math.sin(x * 0.07 - z * 0.11));
+}
+
 export function placeFlower(flower, { x, z, scale, yaw, pitch, roll, distortion }) {
   flower.distortion = distortion;
   flower.root.position.set(x, 0, z);
@@ -96,11 +103,11 @@ export function createContactShadows(count) {
   return shadows;
 }
 
-export function updateContactShadows(shadows, planting) {
+export function updateContactShadows(shadows, planting, heightAt = () => 0) {
   const dummy = new THREE.Object3D();
   for (let i = 0; i < planting.length; i++) {
     const { x, z, scale, yaw } = planting[i];
-    dummy.position.set(x, -0.14, z);
+    dummy.position.set(x, -0.14 + heightAt(x, z), z);
     dummy.rotation.set(-Math.PI / 2, 0, yaw);
     dummy.scale.set(scale * 2.5, scale * 1.9, 1);
     dummy.updateMatrix();
