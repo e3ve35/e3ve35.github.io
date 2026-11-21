@@ -690,13 +690,13 @@ test('upright chrysanthemums have a clustered center and batched moving petal ti
   const { tiers, center, leaf } = assets.chrysanthemum;
   const flower = createChrysanthemum(0, assets, seededRandom(821));
   assert.equal(flower.petals.length, 4);
-  assert.deepEqual(flower.head.scale.toArray(), [1.4, 1.4, 1.4]);
+  assert.deepEqual(flower.head.scale.toArray(), [1.5, 1.5, 1.5]);
   assert.ok(flower.head.rotation.x >= 0.42 && flower.head.rotation.x <= 0.69);
   assert.equal(flower.stamens.geometry, center);
   center.computeBoundingBox();
   const centerSize = center.boundingBox.getSize(new THREE.Vector3());
   assert.ok(centerSize.x > 0.32 && centerSize.x < 0.44 && centerSize.y < 0.2);
-  assert.equal(center.attributes.position.count / 3, 1920);
+  assert.equal(center.attributes.position.count / 3, 2720);
   assert.ok(flower.stamens.material.color.equals(assets.anther.color));
   assert.ok(flower.head.children.includes(flower.hit));
   updateFlowerMotion(flower, 0.5, 0.03, -0.02, 0.4);

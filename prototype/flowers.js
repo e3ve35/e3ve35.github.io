@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
-import { createPetalSurfaces } from './petal-surfaces.js?v=chrome-finish-1';
+import { createPetalSurfaces } from './petal-surfaces.js?v=autumn-veins-1';
 
 export const pearlFinish = Object.freeze({
   color: '#e6edf1', metalness: 0.82, roughness: 0.41, envMapIntensity: 1.35,
@@ -359,10 +359,13 @@ export function makeChrysanthemumAssets(assets) {
   const material = assets.petalMaterials[0].clone();
   // Petal bodies stay solid and write depth, so tiers and the stem occlude each
   // other correctly; only the curled tips thin out toward glass.
-  material.setValues({ ...pearlFinish, bumpMap: null, side: THREE.FrontSide, transparent: true });
+  const surface = createPetalSurfaces('chrysanthemum');
+  material.setValues({ ...pearlFinish, ...surface, bumpScale: 0.0045, aoMapIntensity: 0.6, side: THREE.FrontSide, transparent: true });
   material.onBeforeCompile = (shader) => {
     shader.vertexShader = 'varying float vPetalLength;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvPetalLength=uv.y;');
-    shader.fragmentShader = 'varying float vPetalLength;\n' + shader.fragmentShader.replace('#include <dithering_fragment>', '#include <dithering_fragment>\ngl_FragColor.a*=1.-.62*smoothstep(.42,1.,vPetalLength);');
+    shader.fragmentShader = 'varying float vPetalLength;\n' + shader.fragmentShader.replace('#include <dithering_fragment>', '#include <dithering_fragment>\ngl_FragColor.a*=1.-.62*smoothstep(.42,1.,vPetalLength);')
+      // A lilac-rose blush gathers at each petal's base and fades by mid-length.
+      .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb*=mix(vec3(.74,.60,.84),vec3(1.),smoothstep(.02,.5,vPetalLength));');
   };
   const layers = [
     { count: 11, base: 0.11, level: 0.10, length: 0.96, lift: 0.30, curl: 2.03, droop: 0.20, width: 0.178 },
@@ -412,11 +415,13 @@ export function makeChrysanthemumAssets(assets) {
   };
   const tiers = buildTiers(20, 7);
   const distantTiers = buildTiers(8, 3);
-  const florets = Array.from({ length: 24 }, (_, i) => {
+  const florets = Array.from({ length: 34 }, (_, i) => {
     const angle = i * Math.PI * (3 - Math.sqrt(5));
-    const radius = 0.20 * Math.sqrt(i / 24);
+    const radius = 0.20 * Math.sqrt(i / 34);
+    // Alternating sizes break up the disc into a tighter, seedier cluster.
+    const size = i % 3 ? 0.82 : 1.08;
     return new THREE.SphereGeometry(1, 8, 6)
-      .scale(0.026, 0.046, 0.026)
+      .scale(0.024 * size, 0.046 * size, 0.024 * size)
       .translate(Math.cos(angle) * radius, 0.49 + (1 - radius / 0.20) * 0.08, Math.sin(angle) * radius);
   });
   const center = mergeSurfaces(florets);
@@ -427,7 +432,7 @@ export function makeChrysanthemumAssets(assets) {
     const lobes = 0.82 + 0.18 * Math.cos(t * Math.PI * 10);
     return new THREE.Vector3(t * 1.42, t * 0.76 - t * t * 0.44 + u * u * outline * 0.13, u * outline * lobes * 0.43);
   }, { rows: 28, columns: 10 });
-  return { tiers, distantTiers, center, centerMaterial, leaf };
+  return { tiers, distantTiers, center, centerMaterial, leaf, surface };
 }
 
 export function createChrysanthemum(id, assets, random, detail = 0) {
@@ -438,7 +443,7 @@ export function createChrysanthemum(id, assets, random, detail = 0) {
   const { root, height, bend } = stem;
   const head = new THREE.Group();
   head.position.set(bend, height, 0);
-  head.scale.setScalar(1.4);
+  head.scale.setScalar(1.5);
   const tilt = 0.42 + random() * 0.27;
   head.rotation.set(tilt * (lowBloom ? 0.48 : 1), random() * 2 * Math.PI, (random() - 0.5) * 0.27);
   root.add(head);

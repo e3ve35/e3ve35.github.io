@@ -7,6 +7,8 @@ export function createPetalSurfaces(species = 'lily') {
     lily: { frequency: 84, grain: 0.13, rootShade: 0.34, crease: 0.18, seed: 744 },
     poppy: { frequency: 34, grain: 0.17, rootShade: 0.22, crease: 0.08, seed: 931 },
     snowdrop: { frequency: 65, grain: 0.085, rootShade: 0.30, crease: 0.12, seed: 1208 },
+    // Pronounced lengthwise veins and a deeper central crease for the ray florets.
+    chrysanthemum: { frequency: 46, grain: 0.24, rootShade: 0.34, crease: 0.22, seed: 577 },
   };
   const style = styles[species] || styles.lily;
   const width = 128, height = 256;

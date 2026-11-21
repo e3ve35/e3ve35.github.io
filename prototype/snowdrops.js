@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three.module.min.js';
-import { bloomColors, distantDetail, makePetalBlade, mergeSurfaces, pearlFinish, taperStem } from './flowers.js?v=scene-depth-2';
-import { createPetalSurfaces } from './petal-surfaces.js?v=chrome-finish-1';
+import { bloomColors, distantDetail, makePetalBlade, mergeSurfaces, pearlFinish, taperStem } from './flowers.js?v=autumn-bloom-4';
+import { createPetalSurfaces } from './petal-surfaces.js?v=autumn-veins-1';
 
 function snowdropPoint(t, u, inner = false, variant = 0) {
   if (!inner) {
