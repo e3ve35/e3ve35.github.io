@@ -1,30 +1,27 @@
 /* The portfolio lives in HTML; the garden remains a separate, playable scene. */
 .specimen-card.playing .signal i { transform: scaleY(var(--signal-strength, 1)); transition: height .1s, transform .08s; }
 .season-preview {
-  position: fixed; top: 112px; right: 3.2vw; width: 320px;
-  padding-top: 12px; border-top: 1px solid var(--line);
+  position: fixed; top: 112px; right: 3.2vw; width: 112px;
+  border: 1px solid var(--line); background: #100c18b8; backdrop-filter: blur(10px);
 }
 .study-label {
-  display: flex; justify-content: space-between; gap: 8px; margin: 0 0 12px;
-  font-size: 8px; letter-spacing: .1em; color: #c7bbd0;
+  display: flex; flex-direction: column; gap: 3px; margin: 0; padding: 7px 9px;
+  font-size: 8px; letter-spacing: .075em; color: #c7bbd0;
 }
 #garden-month { color: #95859f; letter-spacing: .04em; }
 .study-switch {
-  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border: 1px solid var(--line); background: #100c18b8;
-  backdrop-filter: blur(12px);
+  display: grid; border-block: 1px solid var(--line);
 }
 .study-switch button {
-  min-width: 0; min-height: 40px; padding: 6px; border: 0;
-  background: transparent; color: #b9adc3; font-size: 11px; text-align: center; white-space: nowrap;
+  min-width: 0; min-height: 32px; padding: 5px 9px; border: 0;
+  background: transparent; color: #b9adc3; font-size: 11px; text-align: left;
 }
-.study-switch button + button { border-left: 1px solid var(--line); }
+.study-switch button + button { border-top: 1px solid var(--line); }
 .study-switch button[aria-pressed="true"] { background: #d2fb8310; color: var(--acid); }
 .study-switch button:hover { color: var(--paper); }
-.study-switch button:focus-visible { outline-offset: 3px; position: relative; }
+.study-switch button:focus-visible { outline-offset: -2px; }
 .study-caption {
-  font-size: 9px; line-height: 1.6; margin: 0; padding: 6px 8px; color: #bfb1c9;
-  background: #100c18b8; backdrop-filter: blur(10px);
-  border: 1px solid var(--line); border-top: 0;
+  font-size: 9px; line-height: 1.45; margin: 0; padding: 6px 9px; color: #bfb1c9; overflow-wrap: anywhere;
 }
 body:not([data-page="garden"]) .season-preview { display: none; }
 body[data-season="winter"] .vignette::after {
@@ -32,8 +29,7 @@ body[data-season="winter"] .vignette::after {
   position: absolute; inset: 0 0 auto; height: 155px;
   background: linear-gradient(#09070d94, transparent);
 }
-body:is([data-season="winter"], [data-season="spring"]) .season-preview { background: #151928e8; }
-body:is([data-season="winter"], [data-season="spring"]) .study-label { padding-inline: 8px; }
+body:is([data-season="winter"], [data-season="spring"]) .season-preview { background: #151928d6; }
 body:is([data-season="winter"], [data-season="spring"]) #garden-month { color: #bdb4c6; }
 body[data-season="winter"] .specimen-card { background: #151928db; }
 .skip-link {
@@ -227,14 +223,9 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   body[data-season="winter"] .vignette::after { height: 215px; }
   .identity { max-width: 58%; }
   .language-switch a { padding-inline: 8px; }
-  .season-preview { top: 149px; left: 23px; right: auto; width: calc(100% - 189px); padding-top: 10px; }
-  .study-label { font-size: 6px; letter-spacing: .03em; gap: 5px; margin-bottom: 9px; }
-  .study-switch button { min-height: 44px; font-size: 9px; padding: 5px; }
-  .study-switch { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .study-switch button:first-child { grid-column: 1 / -1; }
-  .study-switch button:nth-child(even) { border-left: 0; }
-  .study-switch button:nth-child(n+2) { border-top: 1px solid var(--line); }
-  .study-caption { font-size: 8px; }
+  .season-preview { top: 149px; right: 23px; width: 100px; }
+  .study-label { font-size: 7px; letter-spacing: .04em; }
+  .study-switch button { min-height: 44px; font-size: 10px; }
   body[data-study="chrysanthemum"] .specimen-name { font-size: 15px; }
   .page-nav {
     top: 72px; left: 0; right: 0; transform: none; justify-content: space-between;
@@ -242,7 +233,7 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   }
   .page-nav a { font-size: 10px; padding: 6px 0 9px; min-width: 44px; }
   .page-nav a:last-child { text-align: right; }
-  .specimen-card { top: 149px; }
+  .specimen-card { top: 149px; left: 23px; right: auto; }
   .portfolio-view { top: 155px; left: 23px; right: 18px; bottom: 100px; padding-right: 5px; }
   .view-grid { display: block; }
   .view-heading { position: static; }
@@ -275,16 +266,26 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
 }
 @media (max-width: 360px) {
   .name { font-size: 12px; letter-spacing: .02em; line-height: 1.15; }
+  .season-preview { right: 18px; width: 86px; }
+  .study-label, .study-switch button, .study-caption { padding-inline: 6px; }
+  .keyboard-hint { max-width: calc(100vw - 132px); }
   .portfolio-view h2 { font-size: 53px; }
   .project-title { font-size: 20px; }
   .contact-view h2 { font-size: 59px; }
   .email-link { font-size: 25px; gap: 10px; }
   .return-to-garden { font-size: 8px; }
 }
+@media (max-height: 660px) and (min-width: 601px) {
+  .season-preview { top: 80px; }
+  .study-switch button { min-height: 28px; }
+}
 @media (max-height: 600px) and (min-width: 601px) {
   .portfolio-view { top: 110px; bottom: 85px; }
   .portfolio-view h2 { font-size: 65px; }
   .contact-view h2 { font-size: 85px; }
+}
+@media (max-height: 620px) and (min-width: 601px) {
+  .specimen-card { right: calc(3.2vw + 124px); }
 }
 @media (prefers-reduced-motion: reduce) {
   #scene, .content-shade, .page-nav a, .project-title { transition: none; }
@@ -294,7 +295,7 @@ html:is(:lang(zh-Hans), :lang(ja)) :is(.view-intro, .about-copy p:not(.large-cop
 html:is(:lang(zh-Hans), :lang(ja)) :is(.project-kind, .specimen-meta, .study-label, .footer-caption) { font-size: 10px; }
 
 @media (max-width: 600px) {
-  html:is(:lang(zh-Hans), :lang(ja)) :is(.study-caption, .keyboard-hint) { font-size: 11px; }
+  html:is(:lang(zh-Hans), :lang(ja)) .keyboard-hint { font-size: 11px; }
   html:is(:lang(zh-Hans), :lang(ja)) .specimen-meta { font-size: 9px; }
   html:lang(zh-Hans) #about-title { font-size: clamp(36px, 11vw, 48px); }
 }
@@ -305,9 +306,8 @@ html:is(:lang(zh-Hans), :lang(ja)) :is(.project-kind, .specimen-meta, .study-lab
   .sound-toggle { margin-top: 12px; }
   .season-preview, .specimen-card { top: 135px; }
   html:is(:lang(zh-Hans), :lang(ja)) .intro h1 { font-size: 44px; }
-  .study-switch { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .study-switch button { padding-inline: 3px; }
-  .study-switch button:first-child { grid-column: auto; grid-row: span 2; }
-  .study-switch button:nth-child(n+2) { border-top: 0; border-left: 1px solid var(--line); }
-  .study-switch button:nth-child(n+4) { border-top: 1px solid var(--line); }
+}
+
+@media (max-width: 360px) and (max-height: 700px) {
+  .intro h1:lang(en) { font-size: 56px; }
 }
