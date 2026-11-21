@@ -34,6 +34,18 @@ const presets = {
     count: 84, seed: 277, height: 9, speed: [0.3, 0.32], size: [0.2, 0.3], sway: 0.95, spin: 0.7,
     place: (positions, index, random, height) => positions.setXYZ(index, (random() - 0.5) * 26, random() * height, -18 + random() * 27),
   },
+  // Spring fluff rises instead of falling: the snow motion with a negative rate.
+  Seeds: {
+    mode: 0, row: 5, glyphs: ['*', '.', "'", '+'], colors: ['#f4ffd8', '#ffffff', '#ffe3f1', '#eaffc0'],
+    count: 54, seed: 461, height: 8, speed: [-0.14, -0.16], size: [0.1, 0.16], sway: 1.25, spin: 0.5, opacity: 0.8,
+    place: (positions, index, random, height) => positions.setXYZ(index, (random() - 0.5) * 24, random() * height, -14 + random() * 23),
+  },
+  // Larger fireflies drift between the camera and the lead bloom.
+  NearFireflies: {
+    mode: 2, row: 2, glyphs: ['.', '+', '*', ':'], colors: ['#e9ff84', '#f5ffab', '#ffdf76', '#fff7a1'],
+    count: 16, seed: 523, speed: [0.6, 0.7], size: [0.3, 0.26], sway: 0.9, maxSize: 64,
+    place: (positions, index, random) => positions.setXYZ(index, (random() - 0.5) * 16, 1 + random() * 3.6, 3 + random() * 7),
+  },
   // A few large, soft flakes close to the lens give the snowfall depth.
   NearSnow: {
     mode: 0, row: 0, glyphs: ['*', '+', 'x', '.'], colors: ['#fff8ee', '#d9edff', '#e9f4ff', '#ffffff'],
@@ -54,7 +66,7 @@ const presets = {
 
 const capacity = Math.max(...Object.values(presets).map(({ count }) => count));
 
-const atlasRows = 5;
+const atlasRows = 6;
 
 function createGlyphAtlas() {
   const cell = 64;
@@ -204,8 +216,8 @@ export class SeasonalParticles {
           if (mode != 0) uv.y = 1. - uv.y;
           uv.x = (uv.x - .5) / streakWidth + .5;
           if (any(lessThan(uv, vec2(0.))) || any(greaterThan(uv, vec2(1.)))) discard;
-          vec2 tile = vec2(glyph, 5. - 1. - atlasRow);
-          vec4 sprite = texture2D(spriteMap, (tile + uv) / vec2(4., 5.));
+          vec2 tile = vec2(glyph, 6. - 1. - atlasRow);
+          vec4 sprite = texture2D(spriteMap, (tile + uv) / vec2(4., 6.));
           float alpha = sprite.a * opacity;
           if (alpha < (mode == 3 ? .012 : .025)) discard;
           gl_FragColor = vec4(sprite.rgb, alpha);

@@ -681,7 +681,8 @@ test('thick petal variants and flower geometry have finite vertices and valid fa
   assert.deepEqual(flower.head.scale.toArray(), [1, 1, 1]);
   let draws = 0;
   flower.root.traverse((object) => { if (object.isMesh && object.material.visible !== false) draws++; });
-  assert.ok(draws <= 14, `Unexpected draw count per flower: ${draws}`);
+  assert.equal(flower.companions.length, 2);
+  assert.ok(draws <= 18, `Unexpected draw count per flower: ${draws}`);
 });
 
 test('upright chrysanthemums have a clustered center and batched moving petal tiers', () => {
@@ -912,7 +913,8 @@ test('poppies have a distinct silhouette with finite geometry and a bounded draw
   }
   let draws = 0;
   poppy.root.traverse((object) => { if (object.isMesh && object.material.visible !== false) draws++; });
-  assert.ok(draws <= 13, `Unexpected draw count per poppy: ${draws}`);
+  assert.equal(poppy.companions.length, 2);
+  assert.ok(draws <= 16, `Unexpected draw count per poppy: ${draws}`);
 });
 
 test('poppy timbres are softer and retain consistent identity, pitch, and envelope timing', () => {

@@ -71,6 +71,14 @@ Open http://127.0.0.1:4173/. No package installation or build is needed. Pinned 
 - Clumps: each snowdrop has two smaller companions (one for distant flowers) built from three shared pieces — an arched stem, a closed bell of merged outer petals, and the cap — plus a leaf. A full plant is 20 draws.
 - Snowfall: the second particle layer shows the `NearSnow` preset in winter, 30 large soft flakes between the camera and the lead bloom.
 
+### Spring, summer, and lighting pass
+
+- Lighting: each study sets its own key and fill colors and a `keyFrom` position, so blooms are lit from the bright side of their sky — warm morning sun in spring, moonlight in summer, a low pink sun in autumn, and a peach sun against a blue fill in winter. The ground keeps only 15% of the direct specular, because a key light behind the field otherwise flares across it.
+- Light shafts (`beams` on each study): seven long additive quads at different depths lean with the light and are cut by the flowers in front of them. Color, strength, and angle are per season; autumn's lie nearly flat.
+- Spring: a paler lavender morning sky, lime new growth on the grass tips, dew glints on the ground, rising pale fluff (the `Seeds` particle preset), and a bloom strength of 0.8. Poppy petals blush pink toward the rim and glow at grazing angles.
+- Summer: an indigo night with stars in the sky shader, moonlit grass tips, and larger fireflies near the camera (`NearFireflies`). Lily tepals carry dark speckles toward the throat.
+- Buds: lilies and poppies have two unopened buds beside each plant (one for distant flowers), each a single merged stem-and-bud mesh with a small leaf. Per plant: 18 draws for a lily, 16 for a poppy.
+
 The scene requires WebGL 2. Initialization failure presents a readable fallback; the HTML portfolio remains usable. No tracking, microphone access, or backend is involved.
 
 ## Verification
