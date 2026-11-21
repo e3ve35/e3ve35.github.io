@@ -77,7 +77,12 @@ function createGlyphAtlas() {
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.font = '54px monospace';
+  const drawn = new Set();
   for (const { mode, row = mode, glyphs, colors, halo = 0 } of Object.values(presets)) {
+    // Layers that borrow a season's row reuse its glyphs; drawing them again
+    // would thicken the strokes.
+    if (drawn.has(row)) continue;
+    drawn.add(row);
     context.shadowBlur = halo;
     glyphs.forEach((glyph, i) => {
       context.fillStyle = colors[i];

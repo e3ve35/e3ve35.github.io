@@ -177,23 +177,30 @@ export function taperStem(geometry, base = 1.9, tip = 0.95) {
   return geometry;
 }
 
+// Defines a property that is built on first use and then stored. Petal meshes
+// and their textures are the slow part of startup, and only one species is on
+// screen at a time.
+function lazy(target, name, build) {
+  Object.defineProperty(target, name, {
+    configurable: true, enumerable: true,
+    get() {
+      const value = build();
+      Object.defineProperty(target, name, { value, enumerable: true, writable: true, configurable: true });
+      return value;
+    },
+  });
+}
+
 export function makeFlowerAssets() {
-  const petals = [0, 1, 2].map((variant) => makeBlade(variant, false, false, null, { normalThickness: true }));
-  const poppyPetals = [0, 1, 2].map((variant) => makeBlade(variant, false, true));
-  const distantPetals = [0, 1, 2].map((variant) => makeBlade(variant, false, false, null, { ...distantDetail.lily, normalThickness: true }));
-  const distantPoppyPetals = [0, 1, 2].map((variant) => makeBlade(variant, false, true, null, distantDetail.poppy));
   // One cheap blade, instanced a few thousand times for the meadow.
   const grassBlade = makeBlade(0, true, false, null, { rows: 5, columns: 2 });
   // A small cup of sepals joins every upright bloom to its stem.
   const calyx = new THREE.LatheGeometry([[0.03, -0.11], [0.062, -0.05], [0.108, 0.03], [0.124, 0.1], [0.1, 0.145]].map(([x, y]) => new THREE.Vector2(x, y)), 12);
   const poppyLeaf = makeBlade(0, true, false, poppyLeafPoint);
   const leaf = makeBlade(0, true);
-  const lilySurface = createPetalSurfaces('lily');
-  const poppySurface = createPetalSurfaces('poppy');
-  const petalMaterials = [['#e0dce9', 0.19], ['#c7b6dd', 0.23], ['#dbb8d4', 0.17]].map(([color, roughness]) => new THREE.MeshStandardMaterial({
-    ...lilySurface, color, roughness, metalness: 1, envMapIntensity: 2.1,
-    side: THREE.DoubleSide, bumpScale: 0.003, aoMapIntensity: 0.5,
-  }));
+  const surfaces = {};
+  lazy(surfaces, 'lily', () => createPetalSurfaces('lily'));
+  lazy(surfaces, 'poppy', () => createPetalSurfaces('poppy'));
   // Lily tepals carry dark speckles toward the throat.
   const lilySpots = (shader) => {
     shader.vertexShader = 'varying vec2 vPetalUv;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvPetalUv=uv;');
@@ -206,7 +213,6 @@ export function makeFlowerAssets() {
       float spot=step(.45,spotSeed)*(1.-smoothstep(.12,.3,length(spotOffset*vec2(1.,1.6))))*spotZone;
       diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.16,.05,.22),spot*.85);`);
   };
-  for (const material of petalMaterials) material.onBeforeCompile = lilySpots;
   const green = new THREE.MeshStandardMaterial({ color: '#8b9b82', metalness: 0.84, roughness: 0.36, envMapIntensity: 1.55, side: THREE.DoubleSide });
   const stem = new THREE.MeshStandardMaterial({ color: '#839379', metalness: 0.88, roughness: 0.32, envMapIntensity: 1.45 });
   const anther = new THREE.MeshStandardMaterial({ color: bloomColors.pollenGold, metalness: 0.7, roughness: 0.33 });
@@ -216,10 +222,6 @@ export function makeFlowerAssets() {
   const antherGeometry = new THREE.SphereGeometry(1, 12, 8);
   const hitGeometry = new THREE.SphereGeometry(1.38, 12, 8);
   const hitMaterial = new THREE.MeshBasicMaterial({ visible: false });
-  const poppyMaterials = ['#e3dce7', '#dfc4cb', '#c9bddb'].map((color) => new THREE.MeshStandardMaterial({
-    ...poppySurface, color, metalness: 0.97, roughness: 0.41, envMapIntensity: 1.65,
-    side: THREE.DoubleSide, vertexColors: true, bumpScale: 0.003, aoMapIntensity: 0.4,
-  }));
   // Poppy petals blush pink toward the rim and glow where they turn edge-on.
   const poppyBlush = (shader) => {
     shader.vertexShader = 'varying float vPetalLength;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvPetalLength=uv.y;');
@@ -227,7 +229,6 @@ export function makeFlowerAssets() {
       .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb*=mix(vec3(1.),vec3(1.,.72,.86),smoothstep(.5,1.,vPetalLength)*.8);')
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\nfloat petalRim=pow(1.-abs(dot(normal,normalize(vViewPosition))),3.);\ntotalEmissiveRadiance+=vec3(1.,.78,.9)*.2*petalRim;');
   };
-  for (const material of poppyMaterials) material.onBeforeCompile = poppyBlush;
   const poppyCenterMaterial = new THREE.MeshStandardMaterial({ color: '#302434', metalness: 0.65, roughness: 0.54, envMapIntensity: 1.1 });
   const poppyAnther = new THREE.MeshStandardMaterial({ color: '#e4ba80', metalness: 0.76, roughness: 0.34 });
   const poppyFilament = new THREE.MeshStandardMaterial({ color: '#77635f', metalness: 0.85, roughness: 0.34 });
@@ -255,8 +256,29 @@ export function makeFlowerAssets() {
     budStem([[0, -0.15], [0.04, 0.7], [-0.03, 1.4], [0.05, 2.05]]),
     new THREE.SphereGeometry(1, 12, 10).scale(0.1, 0.36, 0.1).rotateZ(-0.12).translate(0.09, 2.36, 0),
   ]);
-  return { petals, poppyPetals, distantPetals, distantPoppyPetals, grassBlade, calyx, poppyBud, lilyBud, poppyLeaf, leaf, surfaces: { lily: lilySurface, poppy: poppySurface }, petalMaterials, poppyMaterials, poppyCenter,
+  const assets = { grassBlade, calyx, poppyBud, lilyBud, poppyLeaf, leaf, surfaces, poppyCenter,
     poppyCenterMaterial, poppyAnther, poppyFilament, green, stem, anther, lilyAnther, lilyFilament, pistil, antherGeometry, hitGeometry, hitMaterial };
+  lazy(assets, 'petals', () => [0, 1, 2].map((variant) => makeBlade(variant, false, false, null, { normalThickness: true })));
+  lazy(assets, 'distantPetals', () => [0, 1, 2].map((variant) => makeBlade(variant, false, false, null, { ...distantDetail.lily, normalThickness: true })));
+  lazy(assets, 'poppyPetals', () => [0, 1, 2].map((variant) => makeBlade(variant, false, true)));
+  lazy(assets, 'distantPoppyPetals', () => [0, 1, 2].map((variant) => makeBlade(variant, false, true, null, distantDetail.poppy)));
+  lazy(assets, 'petalMaterials', () => [['#e0dce9', 0.19], ['#c7b6dd', 0.23], ['#dbb8d4', 0.17]].map(([color, roughness]) => {
+    const material = new THREE.MeshStandardMaterial({
+      ...surfaces.lily, color, roughness, metalness: 1, envMapIntensity: 2.1,
+      side: THREE.DoubleSide, bumpScale: 0.003, aoMapIntensity: 0.5,
+    });
+    material.onBeforeCompile = lilySpots;
+    return material;
+  }));
+  lazy(assets, 'poppyMaterials', () => ['#e3dce7', '#dfc4cb', '#c9bddb'].map((color) => {
+    const material = new THREE.MeshStandardMaterial({
+      ...surfaces.poppy, color, metalness: 0.97, roughness: 0.41, envMapIntensity: 1.65,
+      side: THREE.DoubleSide, vertexColors: true, bumpScale: 0.003, aoMapIntensity: 0.4,
+    });
+    material.onBeforeCompile = poppyBlush;
+    return material;
+  }));
+  return assets;
 }
 
 // detail 1 selects the coarser distant meshes; 0 is the full model.
@@ -409,11 +431,12 @@ function createFlower(id, assets, random, species, detail = 0) {
 }
 
 export function makeChrysanthemumAssets(assets) {
-  const material = assets.petalMaterials[0].clone();
   // Petal bodies stay solid and write depth, so tiers and the stem occlude each
   // other correctly; only the curled tips thin out toward glass.
   const surface = createPetalSurfaces('chrysanthemum');
-  material.setValues({ ...pearlFinish, ...surface, bumpScale: 0.0045, aoMapIntensity: 0.6, side: THREE.FrontSide, transparent: true });
+  const material = new THREE.MeshStandardMaterial({
+    ...pearlFinish, ...surface, bumpScale: 0.0045, aoMapIntensity: 0.6, side: THREE.FrontSide, transparent: true,
+  });
   material.onBeforeCompile = (shader) => {
     shader.vertexShader = 'varying float vPetalLength;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvPetalLength=uv.y;');
     shader.fragmentShader = 'varying float vPetalLength;\n' + shader.fragmentShader.replace('#include <dithering_fragment>', '#include <dithering_fragment>\ngl_FragColor.a*=1.-.62*smoothstep(.42,1.,vPetalLength);')

@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js';
-import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateLilyMotion, updateFlowerMotion } from './flowers.js';
+import { createLily, createPoppy, createChrysanthemum, distantDetail, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, taperStem, updateLilyMotion, updateFlowerMotion } from './flowers.js';
 import { AsciiPollen, PollenPool } from './pollen.js';
 import * as THREE from './vendor/three.module.min.js';
 import { flowerNote, GardenAudio } from './audio.js';
 import { gardenStudy, gardenSelection } from './studies.js';
 import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js';
-import { gardenPlanting, placeFlower, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js';
+import { gardenPlanting, placeFlower, flowerDetail, groundHeight, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js';
 import { GroundSignals, groundMarks, groundGlyphAtlas } from './ground-signals.js';
 import { createPetalSurfaces } from './petal-surfaces.js';
 import { SeasonalParticles } from './snowfall.js';
@@ -1051,4 +1051,259 @@ test('winter snowdrops emit sparser pollen and can also be previewed', () => {
   assert.equal(gardenSelection('snowdrop', winterDate).study.id, 'snowdrop');
   assert.equal(gardenSelection('snowdrop', winterDate).automatic, false);
   assert.equal(gardenSelection('calendar', winterDate).study.id, 'snowdrop');
+});
+
+const visibleDraws = (flower) => {
+  let draws = 0;
+  flower.root.traverse((object) => { if (object.isMesh && object.material.visible !== false) draws++; });
+  return draws;
+};
+const triangles = (geometry) => (geometry.index ? geometry.index.count : geometry.attributes.position.count) / 3;
+
+test('the ground is level where flowers are played and rolls gently behind them', () => {
+  for (const [x, z] of [[0, 14], [1.65, 1.1], [-9, -1.8], [6, 3.7], [12, -5]]) assert.equal(groundHeight(x, z), 0);
+  let lowest = Infinity, highest = -Infinity;
+  for (let x = -30; x <= 30; x += 1.5) for (let z = -40; z <= -5; z += 1.5) {
+    const height = groundHeight(x, z);
+    assert.ok(Number.isFinite(height));
+    lowest = Math.min(lowest, height);
+    highest = Math.max(highest, height);
+  }
+  assert.ok(lowest > -0.7 && highest < 1.25, `Unexpected ground range ${lowest}..${highest}`);
+  assert.ok(highest - lowest > 0.6, 'The back of the field should visibly roll');
+  const [lead] = gardenPlanting(821);
+  assert.equal(groundHeight(lead.x, lead.z), 0, 'The lead bloom stays on level ground');
+});
+
+test('contact shadows and ground marks follow the rolling ground', () => {
+  const planting = gardenPlanting(821);
+  const shadows = createContactShadows(planting.length);
+  updateContactShadows(shadows, planting, groundHeight);
+  const matrix = new THREE.Matrix4();
+  const position = new THREE.Vector3();
+  planting.forEach(({ x, z }, i) => {
+    shadows.getMatrixAt(i, matrix);
+    position.setFromMatrixPosition(matrix);
+    assert.ok(Math.abs(position.y - (-0.14 + groundHeight(x, z))) < 1e-6);
+  });
+  const scene = new THREE.Scene();
+  const signals = new GroundSignals(scene);
+  signals.replant(planting, 821, groundHeight);
+  const origin = signals.geometry.attributes.origin;
+  let lifted = 0;
+  for (let i = 0; i < signals.geometry.instanceCount; i++) {
+    const expected = -0.12 + groundHeight(origin.getX(i), origin.getZ(i));
+    assert.ok(Math.abs(origin.getY(i) - expected) < 1e-5);
+    if (Math.abs(origin.getY(i) + 0.12) > 0.01) lifted++;
+  }
+  assert.ok(lifted > 0, 'Some marks sit on the slope');
+  signals.dispose();
+});
+
+test('ground marks take a pair of colors per season and default to lime and violet', () => {
+  const signals = new GroundSignals(new THREE.Scene());
+  const { colorA, colorB } = signals.material.uniforms;
+  assert.deepEqual(colorA.value.toArray().map((v) => +v.toFixed(2)), [0.65, 1.1, 0.28]);
+  signals.setPalette(gardenStudy('chrysanthemum').signals);
+  assert.deepEqual(colorA.value.toArray().map((v) => +v.toFixed(2)), [1.15, 0.78, 0.3]);
+  assert.deepEqual(colorB.value.toArray().map((v) => +v.toFixed(2)), [0.95, 0.42, 0.8]);
+  signals.setPalette(gardenStudy('lily').signals);
+  assert.deepEqual(colorA.value.toArray().map((v) => +v.toFixed(2)), [0.65, 1.1, 0.28]);
+  assert.deepEqual(colorB.value.toArray().map((v) => +v.toFixed(2)), [0.56, 0.2, 1.05]);
+  signals.dispose();
+});
+
+test('distant flowers use coarser meshes with the same structure', () => {
+  const assets = makeFlowerAssets();
+  assets.snowdrop = makeSnowdropAssets(assets);
+  assets.chrysanthemum = makeChrysanthemumAssets(assets);
+  const planting = gardenPlanting(821);
+  const levels = planting.map(flowerDetail);
+  assert.ok(levels.includes(0) && levels.includes(1));
+  for (const placement of planting) assert.equal(flowerDetail(placement), placement.z < -6 ? 1 : 0);
+  assert.equal(flowerDetail(planting[0]), 0, 'The lead bloom is always the full model');
+  const pairs = [
+    [assets.petals, assets.distantPetals], [assets.poppyPetals, assets.distantPoppyPetals],
+    [assets.snowdrop.outers, assets.snowdrop.distantOuters], [[assets.snowdrop.inner], [assets.snowdrop.distantInner]],
+    [assets.chrysanthemum.tiers.map(({ geometry }) => geometry), assets.chrysanthemum.distantTiers.map(({ geometry }) => geometry)],
+  ];
+  for (const [full, distant] of pairs) {
+    assert.equal(full.length, distant.length);
+    full.forEach((geometry, i) => {
+      assert.ok(triangles(distant[i]) < triangles(geometry) * 0.4, 'Distant meshes are much lighter');
+      assert.ok(distant[i].attributes.position.array.every(Number.isFinite));
+      assert.ok(distant[i].attributes.normal.array.every(Number.isFinite));
+      geometry.computeBoundingSphere();
+      distant[i].computeBoundingSphere();
+      assert.ok(Math.abs(geometry.boundingSphere.radius - distant[i].boundingSphere.radius) < 0.05, 'The silhouette keeps its size');
+    });
+  }
+  assert.ok(assets.snowdrop.distantInner.attributes.color, 'Distant inner petals keep their jade marks');
+  assert.ok(distantDetail.lily.rows < 38 && distantDetail.poppy.rows < 52);
+  const factories = [[createLily, 6, 7], [createPoppy, 4, 22], [createSnowdrop, 6, 6], [createChrysanthemum, 4, null]];
+  for (const [create, petals, anthers] of factories) {
+    const near = create(0, assets, seededRandom(821), 0);
+    const far = create(0, assets, seededRandom(821), 1);
+    assert.equal(far.petals.length, petals);
+    if (anthers !== null) assert.equal(far.anthers.count, anthers);
+    assert.ok(visibleDraws(far) <= visibleDraws(near));
+    updateFlowerMotion(far, 0.4, 0.05, -0.03, 0.3);
+    assert.ok(far.stemGeometry.attributes.position.array.every(Number.isFinite));
+  }
+});
+
+test('stems taper from a thick base to a slender neck', () => {
+  const assets = makeFlowerAssets();
+  assets.snowdrop = makeSnowdropAssets(assets);
+  const ringRadius = (geometry, ring) => {
+    const { path, tubularSegments, radialSegments } = geometry.parameters;
+    const centre = path.getPointAt(ring / tubularSegments);
+    const position = geometry.attributes.position;
+    let total = 0;
+    for (let j = 0; j < radialSegments; j++) {
+      total += centre.distanceTo(new THREE.Vector3().fromBufferAttribute(position, ring * (radialSegments + 1) + j));
+    }
+    return total / radialSegments;
+  };
+  for (const flower of [createLily(0, assets, seededRandom(821)), createPoppy(1, assets, seededRandom(821)), createSnowdrop(2, assets, seededRandom(821))]) {
+    const { tubularSegments, radius } = flower.stemGeometry.parameters;
+    const base = ringRadius(flower.stemGeometry, 0);
+    const middle = ringRadius(flower.stemGeometry, tubularSegments >> 1);
+    const neck = ringRadius(flower.stemGeometry, tubularSegments);
+    assert.ok(base > middle && middle > neck, 'The stem narrows all the way up');
+    assert.ok(base > radius * 1.6 && neck < radius, `Unexpected taper ${base} → ${neck}`);
+  }
+  const straight = new THREE.TubeGeometry(new THREE.LineCurve3(new THREE.Vector3(), new THREE.Vector3(0, 2, 0)), 4, 0.1, 6, false);
+  taperStem(straight, 2, 0.5);
+  assert.ok(Math.abs(ringRadius(straight, 0) - 0.2) < 1e-6);
+  assert.ok(Math.abs(ringRadius(straight, 4) - 0.05) < 1e-6);
+});
+
+test('buds and companion blooms share their geometry and lean with the breeze', () => {
+  const assets = makeFlowerAssets();
+  assets.snowdrop = makeSnowdropAssets(assets);
+  const cases = [
+    [createLily, assets.lilyBud, 18], [createPoppy, assets.poppyBud, 16], [createSnowdrop, assets.snowdrop.companionBell, 20],
+  ];
+  for (const [create, shared, maxDraws] of cases) {
+    const flower = create(0, assets, seededRandom(821));
+    const neighbour = create(1, assets, seededRandom(97));
+    assert.equal(flower.companions.length, 2);
+    assert.equal(create(0, assets, seededRandom(821), 1).companions.length, 1, 'Distant plants keep a single companion');
+    assert.ok(visibleDraws(flower) <= maxDraws);
+    const meshes = [];
+    for (const { group } of [...flower.companions, ...neighbour.companions]) {
+      group.traverse((object) => { if (object.isMesh) meshes.push(object); });
+      assert.ok(group.scale.x > 0.45 && group.scale.x < 1, 'Companions stay smaller than the bloom');
+      assert.ok(Math.hypot(group.position.x, group.position.z) < 0.7, 'Companions grow from the same clump');
+    }
+    assert.ok(meshes.filter(({ geometry }) => geometry === shared).length === 4, 'Every companion reuses one shared mesh');
+    for (const { geometry } of meshes) assert.ok(!flower.privateGeometries.includes(geometry), 'Nothing extra to dispose on replant');
+    assert.ok(shared.attributes.position.array.every(Number.isFinite));
+    assert.ok(shared.attributes.normal.array.every(Number.isFinite));
+    const [{ group, rotation }] = flower.companions;
+    updateFlowerMotion(flower, 0, 0, 0, 0, true);
+    assert.ok(Math.abs(group.rotation.z - rotation.z) < 1e-12 && Math.abs(group.rotation.x - rotation.x) < 1e-12, 'Paused companions rest');
+    updateFlowerMotion(flower, 0, 0.3, -0.2, 0, true);
+    assert.ok(group.rotation.z < rotation.z && group.rotation.x < rotation.x, 'Companions lean the way the stem bends');
+  }
+});
+
+test('chrysanthemums rotate through three petal tints that share one shader', () => {
+  const assets = makeFlowerAssets();
+  assets.chrysanthemum = makeChrysanthemumAssets(assets);
+  const { materials, tiers } = assets.chrysanthemum;
+  assert.equal(materials.length, 3);
+  assert.equal(materials[0], tiers[0].material);
+  assert.equal(new Set(materials.map(({ color }) => color.getHexString())).size, 3);
+  for (const material of materials) {
+    assert.equal(material.onBeforeCompile, materials[0].onBeforeCompile);
+    assert.equal(material.roughnessMap, materials[0].roughnessMap);
+    assert.ok(material.transparent && material.depthWrite);
+    assert.equal(material.metalness, materials[0].metalness);
+  }
+  const used = [0, 1, 2, 3].map((id) => createChrysanthemum(id, assets, seededRandom(821)).petals[0].pivot.material);
+  assert.deepEqual(used, [materials[0], materials[1], materials[2], materials[0]]);
+});
+
+test('the second particle layer has a preset for every season', (context) => {
+  const { scene, particles, glyphs } = particleScene(context);
+  assert.equal(new Set(glyphs).size > 8, true);
+  assert.equal(glyphs.length, 23, 'Borrowed atlas rows are drawn once');
+  const expected = {
+    Seeds: { count: 54, row: 5, maxSize: 30, mode: 0 },
+    NearFireflies: { count: 16, row: 2, maxSize: 64, mode: 2 },
+    Petals: { count: 84, row: 4, maxSize: 30, mode: 0 },
+    NearSnow: { count: 30, row: 0, maxSize: 72, mode: 0 },
+  };
+  const { uniforms, geometry } = particles;
+  for (const [preset, { count, row, maxSize, mode }] of Object.entries(expected)) {
+    particles.select(preset);
+    assert.equal(geometry.drawRange.count, count);
+    assert.equal(uniforms.atlasRow.value, row);
+    assert.equal(uniforms.maxSize.value, maxSize);
+    assert.equal(uniforms.mode.value, mode);
+    assert.equal(scene.children.length, 1);
+    const data = geometry.getAttribute('particle');
+    for (let i = 0; i < count; i++) {
+      assert.ok(data.getW(i) > 0 && data.getW(i) <= 0.85, 'Opacity stays in range');
+      assert.ok(data.getZ(i) > 0);
+      if (preset === 'Seeds') assert.ok(data.getY(i) < 0, 'Spring fluff rises');
+      else assert.ok(data.getY(i) > 0);
+    }
+  }
+  for (const season of ['Winter', 'Spring', 'Summer', 'Autumn']) {
+    particles.select(season);
+    assert.equal(uniforms.atlasRow.value, uniforms.mode.value, 'Season layers keep their own atlas row');
+    assert.equal(uniforms.maxSize.value, 30);
+  }
+});
+
+test('every season defines its lighting, shafts, and ground treatment', () => {
+  const studies = ['lily', 'poppy', 'snowdrop', 'chrysanthemum'].map(gardenStudy);
+  const hex = /^#[0-9a-f]{6}$/;
+  for (const study of studies) {
+    assert.match(study.keyLight, hex);
+    assert.match(study.fillLight, hex);
+    assert.equal(study.keyFrom.length, 3);
+    assert.ok(study.keyFrom.every(Number.isFinite) && study.keyFrom[1] > 0, 'The key light sits above the ground');
+    assert.ok(study.keyFrom[2] < 0, 'The key light sits behind the field, toward the bright sky');
+    assert.match(study.beams.color, hex);
+    assert.ok(study.beams.strength > 0.05 && study.beams.strength < 0.25);
+    assert.ok(Math.abs(study.beams.angle) > 0.2 && Math.abs(study.beams.angle) < 1.2);
+    assert.equal(Math.sign(study.beams.angle), -Math.sign(study.keyFrom[0]), 'Shafts lean toward the light');
+    assert.ok((study.bloom ?? 1) > 0.5 && (study.bloom ?? 1) <= 1);
+    for (const color of Object.values(study.sky)) assert.match(color, hex);
+    if (study.tips) {
+      assert.match(study.tips[0], hex);
+      assert.ok(study.tips[1] > 0 && study.tips[1] <= 1);
+    }
+    for (const pair of study.signals ? [study.signals] : []) {
+      assert.equal(pair.length, 2);
+      for (const color of pair) assert.ok(color.length === 3 && color.every((channel) => channel >= 0 && channel < 1.3));
+    }
+  }
+  assert.deepEqual(studies.filter(({ frost }) => frost).map(({ id }) => id), ['snowdrop']);
+  assert.deepEqual(studies.filter(({ dew }) => dew).map(({ id }) => id), ['poppy']);
+  assert.deepEqual(studies.filter(({ stars }) => stars).map(({ id }) => id), ['lily']);
+  assert.equal(new Set(studies.map(({ keyLight }) => keyLight)).size, 4);
+});
+
+test('petal meshes and materials are built on first use and then kept', () => {
+  const assets = makeFlowerAssets();
+  const pending = (name, target = assets) => typeof Object.getOwnPropertyDescriptor(target, name).get === 'function';
+  const slow = ['petals', 'distantPetals', 'poppyPetals', 'distantPoppyPetals', 'petalMaterials', 'poppyMaterials'];
+  for (const name of slow) assert.ok(pending(name), `${name} should wait until a season needs it`);
+  assert.ok(pending('lily', assets.surfaces) && pending('poppy', assets.surfaces));
+  createPoppy(0, assets, seededRandom(821));
+  assert.ok(!pending('poppyPetals') && !pending('poppyMaterials') && !pending('poppy', assets.surfaces));
+  assert.ok(pending('distantPoppyPetals'), 'A full-detail poppy does not build the distant meshes');
+  assert.ok(pending('petals') && pending('petalMaterials') && pending('lily', assets.surfaces), 'Planting poppies leaves the lily untouched');
+  const { poppyPetals, poppyMaterials } = assets;
+  assert.equal(assets.poppyPetals, poppyPetals, 'The same meshes are returned every time');
+  assert.equal(assets.poppyMaterials, poppyMaterials);
+  assert.ok(Object.keys(assets).includes('petals'), 'Lazy assets stay enumerable');
+  // Autumn needs neither the lily meshes nor the lily textures.
+  makeChrysanthemumAssets(assets);
+  assert.ok(pending('petals') && pending('petalMaterials') && pending('lily', assets.surfaces));
 });

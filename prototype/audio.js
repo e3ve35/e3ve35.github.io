@@ -28,6 +28,25 @@ export function flowerNote(id, species = 'lily') {
 }
 
 // Eight reusable voices. Editing a free voice never recolors a ringing note.
+// Sound is opt-in, so the synthesis library stays off the startup path: the
+// garden requests it once the first frame is up, and enabling sound waits for
+// it only if the visitor gets there first.
+let soundLibrary;
+export function loadSoundLibrary() {
+  if (window.Tone) return Promise.resolve(window.Tone);
+  soundLibrary ??= new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = new URL('./vendor/Tone.js', import.meta.url).href;
+    script.onload = () => resolve(window.Tone);
+    script.onerror = () => {
+      soundLibrary = undefined;
+      reject(new Error('The sound library did not load. Please refresh and try again.'));
+    };
+    document.head.append(script);
+  });
+  return soundLibrary;
+}
+
 export class GardenAudio {
   constructor() {
     this.enabled = false;
@@ -42,7 +61,8 @@ export class GardenAudio {
   }
 
   async enable(species = this.species) {
-    const Tone = window.Tone;
+    // Normally already loaded, so nothing is awaited before Tone.start() below.
+    const Tone = window.Tone || await loadSoundLibrary();
     if (!Tone) throw new Error('The sound library did not load. Please refresh and try again.');
     this.species = species;
     // Called directly from a click/keyboard handler, including on iOS.

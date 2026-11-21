@@ -1,0 +1,12 @@
+{
+  "name": "unlikely-garden",
+  "private": true,
+  "type": "module",
+  "description": "Evelyn Wu's portfolio garden. The site is buildless; this file only gives the test suite a standard entry point.",
+  "scripts": {
+    "test": "node --test prototype/garden.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

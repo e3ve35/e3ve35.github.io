@@ -79,15 +79,27 @@ Open http://127.0.0.1:4173/. No package installation or build is needed. Pinned 
 - Summer: an indigo night with stars in the sky shader, moonlit grass tips, and larger fireflies near the camera (`NearFireflies`). Lily tepals carry dark speckles toward the throat.
 - Buds: lilies and poppies have two unopened buds beside each plant (one for distant flowers), each a single merged stem-and-bud mesh with a small leaf. Per plant: 18 draws for a lily, 16 for a poppy.
 
+### Performance pass
+
+Measured with a GPU timer query on a 2376 by 1485 buffer, the frame is GPU-bound: roughly a third of the GPU time is the 4x multisampled HDR scene target, about 16% the grass, about 15% the flowers, and about 9% the six blur passes. Script time per frame is 1.5 to 3.5 ms.
+
+- The canvas is created without its own antialiasing or depth buffer: it only receives the full-screen post quad, and the scene is antialiased in the render target.
+- The sky dome draws after the other opaque meshes, so pixels behind flowers skip its shader (about 5% of GPU time).
+- When frames stay slow, the scene first drops from 4 to 2 antialiasing samples and only then lowers resolution; the sample step saves about as much as one 20% resolution step and costs far less sharpness.
+- Petal meshes, petal textures, and petal materials are built on first use (`lazy` in `flowers.js`), and snowdrop assets are created when winter is first shown. Startup no longer builds the three species that are not on screen; on the test machine that is roughly 40 ms less geometry work.
+- Tone.js is no longer a script tag. `loadSoundLibrary` in `audio.js` requests it once the garden is idle; enabling sound waits for it only if the visitor clicks first.
+
 The scene requires WebGL 2. Initialization failure presents a readable fallback; the HTML portfolio remains usable. No tracking, microphone access, or backend is involved.
 
 ## Verification
 
 ```sh
-node --test prototype/garden.test.mjs
+npm test
 ```
 
-Thirty-four focused tests cover normalized gestures, stable timbres, envelope timing, frame-rate-independent spring motion, ripple propagation, all species' geometry and drawing complexity, anchored deformation, bounded pollen lifetimes, consistent hover emission, world-space pollen origins, distinct species timbres, the snowdrop arch and pendant, sparse winter pollen, study fallback, season boundaries, and manual calendar overrides. Surface checks cover smoother rims and tips, fold occlusion, linear texture data, repeatable grain, shared maps, bounded memory, and roughness ranges. Composition checks cover deterministic spacing across 100 seeds, camera projections and focal picking for all four species at four viewport sizes, foreground versus distant haze, clustered grass, and grounded shadow asset reuse. Ground-signal checks cover bounded seeded marks, root ring alignment, single-draw resource reuse, pause and ripple resets, and glyph atlas gutters. Earlier browser checks cover audio startup and its eight-voice limit, keyboard play, pointer expression, a fully static pause, replanting, study switching, navigation, session persistence, and the phone layout.
+This runs `node --test prototype/garden.test.mjs` with Node's built-in runner (Node 20 or later, no dependencies to install). The same command runs on every push and pull request through `.github/workflows/test.yml`.
+
+Sixty-one focused tests cover normalized gestures, stable timbres, envelope timing, frame-rate-independent spring motion, ripple propagation, all species' geometry and drawing complexity, anchored deformation, bounded pollen lifetimes, consistent hover emission, world-space pollen origins, distinct species timbres, the snowdrop arch and pendant, sparse winter pollen, study fallback, season boundaries, and manual calendar overrides. Surface checks cover smoother rims and tips, fold occlusion, linear texture data, repeatable grain, shared maps, bounded memory, and roughness ranges. Composition checks cover deterministic spacing across 100 seeds, camera projections and focal picking for all four species at four viewport sizes, foreground versus distant haze, clustered grass, and grounded shadow asset reuse. Ground-signal checks cover bounded seeded marks, root ring alignment, single-draw resource reuse, pause and ripple resets, and glyph atlas gutters. Earlier browser checks cover audio startup and its eight-voice limit, keyboard play, pointer expression, a fully static pause, replanting, study switching, navigation, session persistence, and the phone layout.
 
 The seasonal pass versions the entry point and changed garden modules with `four-seasons-1`. The portfolio stylesheet uses the same version for its updated selector.
 

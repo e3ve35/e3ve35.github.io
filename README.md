@@ -20,8 +20,8 @@ Open http://127.0.0.1:4173/. The site is buildless HTML, CSS, and JavaScript. It
 - `Instrument_Serif/`: display serif for headings (regular and italic), with its SIL Open Font License.
 - `resume.pdf`: retained original résumé file; the portfolio uses the original Google Docs résumé link.
 
-GitHub Pages publishes the repository root from `main` through its existing Pages deployment. `.nojekyll` keeps it a static site. There are no build dependencies, backend services, or runtime environment variables.
+GitHub Pages publishes the repository root from `main` through its existing Pages deployment. `.nojekyll` keeps it a static site. There are no build dependencies, backend services, or runtime environment variables. `package.json` exists only to give the tests a standard entry point.
 
 See [garden implementation notes](prototype/README.md) for controls and scene details.
 
-Run the geometry, gesture, envelope, and motion checks with `node --test prototype/garden.test.mjs`.
+Run the geometry, gesture, envelope, and motion checks with `npm test` (Node 20 or later; nothing to install). GitHub Actions runs the same command on every push and pull request.

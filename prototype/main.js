@@ -1,12 +1,12 @@
 import './site.js?v=garden-controls-1';
 import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=seasonal-pollen-1';
-import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=spring-summer-1';
-import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=spring-summer-1';
-import { GardenAudio, flowerNote } from './audio.js?v=seasonal-recordings-1';
+import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=lazy-assets-1';
+import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=lazy-assets-1';
+import { GardenAudio, flowerNote, loadSoundLibrary } from './audio.js?v=idle-sound-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
 import { gardenSelection } from './studies.js?v=spring-summer-2';
-import { SeasonalParticles } from './snowfall.js?v=spring-summer-1';
+import { SeasonalParticles } from './snowfall.js?v=lazy-assets-1';
 import { gardenPlanting, placeFlower, flowerDetail, groundHeight, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=rolling-meadow-1';
 import { GroundSignals } from './ground-signals.js?v=season-traces-1';
 import { currentLanguage, text } from './i18n.js?v=garden-controls-1';
@@ -212,6 +212,9 @@ function setupBackground(scene) {
       }`,
   });
   const sphere = new THREE.Mesh(new THREE.SphereGeometry(65, 32, 16), material);
+  // Drawn after the other opaque meshes, so pixels the flowers cover are
+  // rejected by the depth test before the sky shader runs.
+  sphere.renderOrder = 1;
   scene.add(sphere);
   const frost = { amount: { value: 0 }, time: { value: 0 }, dew: { value: 0 }, glintColor: { value: new THREE.Vector3(0.75, 0.9, 1.2) } };
   const floorMaterial = new THREE.MeshStandardMaterial({ color: '#19121f', roughness: 0.4, metalness: 0.72, envMapIntensity: 0.48, transparent: true, depthWrite: false });
@@ -346,7 +349,10 @@ function createLightBeams(scene) {
 
 class Garden {
   constructor() {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    // The canvas only ever receives the full-screen post quad, so its own
+    // multisampling and depth buffer would be paid for and never used. The
+    // scene is antialiased in the render target instead.
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, depth: false, powerPreference: 'high-performance' });
     this.renderer.setClearColor('#09070d');
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.08;
@@ -378,7 +384,6 @@ class Garden {
     this.nextCalendarCheck = 0;
 
     this.assets = makeFlowerAssets();
-    this.assets.snowdrop = makeSnowdropAssets(this.assets);
     this.groundSignals = new GroundSignals(this.scene);
     this.pollen = new AsciiPollen(this.scene);
     this.applySeasonPalette();
@@ -526,6 +531,7 @@ class Garden {
     const random = seededRandom(this.seed);
     this.flowers = [];
     const placements = gardenPlanting(this.seed);
+    if (this.study.id === 'snowdrop' && !this.assets.snowdrop) this.assets.snowdrop = makeSnowdropAssets(this.assets);
     if (this.study.id === 'chrysanthemum' && !this.assets.chrysanthemum) {
       this.assets.chrysanthemum = makeChrysanthemumAssets(this.assets);
     }
@@ -748,8 +754,14 @@ class Garden {
     if (elapsedMs > 200) return; // A throttled or just-restored tab says nothing about the GPU.
     this.frameAverage += (elapsedMs - this.frameAverage) * 0.05;
     // 40 ms sits below a 30 fps battery-saver cap, which is not a slow GPU.
-    if (++this.frameSamples < 120 || this.frameAverage < 40 || this.quality <= 0.55) return;
-    this.quality *= 0.8;
+    if (++this.frameSamples < 120 || this.frameAverage < 40) return;
+    // Halving the antialiasing samples costs far less sharpness than a
+    // resolution step and saves about as much, so it goes first.
+    if (this.renderTarget.samples > 2) {
+      this.renderTarget.samples = 2;
+      this.renderTarget.dispose();
+    } else if (this.quality > 0.55) this.quality *= 0.8;
+    else return;
     this.frameSamples = 0;
     this.frameAverage = 16;
     this.sizeBuffers();
@@ -1024,6 +1036,7 @@ class Garden {
 
 try {
   app = new Garden();
+  (window.requestIdleCallback || ((load) => setTimeout(load, 1500)))(() => loadSoundLibrary().catch(() => {}), { timeout: 4000 });
 } catch (error) {
   console.error('Garden initialization failed:', error);
   $('#loading').hidden = true;
