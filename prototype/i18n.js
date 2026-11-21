@@ -1,4 +1,4 @@
-import { translations } from './translations.js?v=garden-hint-1';
+import { translations } from './translations.js?v=garden-controls-1';
 
 const languages = ['en', 'zh-Hans', 'ja'];
 const preferenceKey = 'evelyn-site-language';

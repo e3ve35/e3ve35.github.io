@@ -1,4 +1,4 @@
-import './site.js?v=garden-footer-1';
+import './site.js?v=garden-controls-1';
 import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=seasonal-pollen-1';
 import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=flower-finishes-1';
@@ -8,8 +8,8 @@ import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEn
 import { gardenSelection } from './studies.js?v=autumn-gusts-1';
 import { SeasonalParticles } from './snowfall.js?v=autumn-rain-density-1';
 import { gardenPlanting, placeFlower, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=flower-variation-1';
-import { GroundSignals } from './ground-signals.js?v=pearl-blooms-1';
-import { currentLanguage, text } from './i18n.js?v=garden-hint-1';
+import { GroundSignals } from './ground-signals.js?v=garden-controls-1';
+import { currentLanguage, text } from './i18n.js?v=garden-controls-1';
 
 const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop, chrysanthemum: createChrysanthemum };
 const maxRenderPixels = 1_600_000;
@@ -311,7 +311,7 @@ class Garden {
             glow+=hot/(1.+hot);
           }
           col+=glow*.06;
-          float scan=sin(vUv.y*resolution.y*1.4)*.007*.55;
+          float scan=sin(vUv.y*resolution.y*1.4)*.0016;
           col-=scan;
           col+=vec3(.13,.01,.1)*tear*energy*region*.15;
           gl_FragColor=vec4(col,1.);

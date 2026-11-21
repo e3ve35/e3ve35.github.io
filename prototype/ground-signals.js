@@ -122,7 +122,7 @@ export class GroundSignals {
           if(vKind<.5){
             float dash=step(.18,fract(vUv.x*(3.+floor(vSeed*5.))));
             mask=(1.-smoothstep(.22,.5,abs(vUv.y-.5)))*dash;
-            opacity=.13+vDistortion*.15+pulse*.24;
+            opacity=.055+vDistortion*.075+pulse*.24;
           }else if(vKind<1.5){
             vec2 uv=vUv;
             uv.x+=step(.55,uv.y)*step(uv.y,.76)*glitch*.18;
@@ -130,7 +130,7 @@ export class GroundSignals {
             mask=ink(uv,glyph);
             float echo=ink(uv+vec2(.13,0.),glyph)*glitch*.6;
             mask=max(mask,echo);
-            opacity=.28+vDistortion*.18+pulse*.28;
+            opacity=.13+vDistortion*.11+pulse*.28;
           }else{
             vec2 p=vUv*2.-1.; float r=length(p);
             float angle=atan(p.y,p.x);
@@ -138,7 +138,7 @@ export class GroundSignals {
             float radius=.43+.025*sin(time*.65+vSeed*12.)*motion;
             float line=1.-smoothstep(.012,.032,abs(r-radius));
             float wave=1.-smoothstep(.016,.04,abs(r-(.16+max(0.,age)*.24)));
-            mask=(line*.12+wave*pulse*.85)*broken;
+            mask=(line*(.045+pulse*.48)+wave*pulse*.85)*broken;
             opacity=.55;
           }
           float flicker=1.-glitch*.58;
