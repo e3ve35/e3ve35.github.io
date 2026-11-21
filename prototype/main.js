@@ -27,6 +27,7 @@ const card = $('.specimen-card');
 const cursor = $('#flower-cursor');
 const motionButton = $('#motion-toggle');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const phoneLayout = matchMedia('(max-width: 600px)');
 const audio = new GardenAudio();
 let paused = reducedMotion.matches;
 let notesPlayed = 0;
@@ -379,7 +380,8 @@ class Garden {
     this.keyLight = pink;
     this.fillLight = lime;
     this.glowScale = 1;
-    this.selection = gardenSelection(savedStudyMode());
+    this.desktopStudyMode = savedStudyMode();
+    this.selection = gardenSelection(phoneLayout.matches ? 'lily' : this.desktopStudyMode);
     this.study = this.selection.study;
     this.nextCalendarCheck = 0;
 
@@ -563,7 +565,7 @@ class Garden {
 
   studyCaption() {
     const season = text(`season.${this.study.season}`, {}, this.study.season);
-    const heading = this.selection.automatic ? season : text('season.preview', { season });
+    const heading = this.selection.automatic || phoneLayout.matches ? season : text('season.preview', { season });
     return `${heading} · ${text(`species.${this.study.id}`, {}, this.study.name)}`;
   }
 
@@ -635,10 +637,12 @@ class Garden {
   }
 
   changeStudy(mode, remember = true) {
+    if (remember && phoneLayout.matches) return;
     const selection = gardenSelection(mode);
     if (selection.mode === this.selection.mode && selection.monthKey === this.selection.monthKey) return;
     this.selection = selection;
     if (remember) {
+      this.desktopStudyMode = selection.mode;
       try { sessionStorage.setItem(studyPreferenceKey, selection.mode); } catch { /* Storage can be disabled. */ }
     }
     this.applySeasonPalette();
@@ -654,7 +658,7 @@ class Garden {
     setStatus(`status.${message}`, () => ({ caption: this.studyCaption() }));
   }
 
-  refreshCalendar() { this.changeStudy(this.selection.mode, false); }
+  refreshCalendar() { this.changeStudy(phoneLayout.matches ? 'lily' : this.desktopStudyMode, false); }
 
   createGrass(placements) {
     if (!this.grass) {
@@ -722,7 +726,7 @@ class Garden {
     this.needsRender = true;
     this.width = window.innerWidth;
     this.height = window.innerHeight;
-    this.mobile = this.width < 601;
+    this.mobile = phoneLayout.matches;
     this.sizeBuffers();
     this.camera.aspect = this.width / this.height;
     this.camera.fov = this.mobile ? 49 : 40;
@@ -780,6 +784,7 @@ class Garden {
       audio.setVisibility(!this.contentOpen && !document.hidden);
     });
     window.addEventListener('resize', () => this.resize());
+    phoneLayout.addEventListener('change', () => this.refreshCalendar());
     window.addEventListener('focus', () => this.refreshCalendar());
     garden.addEventListener('pointermove', (event) => {
       if (event.pointerType === 'touch') return;

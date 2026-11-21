@@ -243,10 +243,32 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   body[data-page="garden"] .vignette {
     --specimen-corner: radial-gradient(ellipse 90% clamp(315px, 45vh, 440px) at left top, #09070db8, #09070d66 58%, transparent);
   }
+  body[data-page="garden"] { --footer-h: 64px; }
+  body[data-page="garden"] .garden-footer {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    min-height: var(--footer-h);
+    column-gap: 6px;
+  }
+  body[data-page="garden"] .footer-caption { grid-area: 1 / 1; gap: 5px; text-wrap: balance; }
+  body[data-page="garden"] .controls {
+    grid-area: 1 / 2 / 2 / -1;
+    display: grid;
+    grid-template-columns: subgrid;
+    align-items: center;
+    justify-self: stretch;
+    column-gap: inherit;
+  }
+  #motion-toggle { grid-area: 1 / 1; justify-self: center; }
+  .sound-toggle {
+    position: static; grid-area: 1 / 2; justify-self: end;
+    min-width: 0; max-width: 100%; padding: 6px 7px; gap: 5px;
+    font-size: 11px; text-align: left; white-space: normal;
+  }
+  .sound-toggle svg { flex-shrink: 0; }
+  .season-preview, #reseed { display: none; }
   body[data-season="winter"] .vignette { --winter-haze: linear-gradient(#09070d94, transparent 215px); }
   .identity { max-width: 58%; }
   .language-switch { gap: 14px; }
-  .study-switch button { min-width: 44px; min-height: 44px; }
   body[data-study="chrysanthemum"] .specimen-name { font-size: 18px; }
   .page-nav {
     top: 72px; left: 0; right: 0; transform: none; justify-content: space-between;
