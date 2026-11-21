@@ -64,6 +64,13 @@ Open http://127.0.0.1:4173/. No package installation or build is needed. Pinned 
 - Ground marks take two colors from each study (`signals`): lime and violet in spring and summer, gold and rose in autumn, ice blue and lilac in winter.
 - Horizon: two translucent ridge crests sit beyond the field and fade out downward. `groundHeight` in `composition.js` keeps the foreground level and rolls the ground upward behind z = -5; flowers, grass, shadows, and ground marks follow it. Floor normals stay vertical so the slope keeps the season's ground color.
 
+### Winter pass
+
+- Palette: a blue-violet dusk sky and dark blue ground, with the peach glow as the only warm color; bloom strength is 0.68 of the default.
+- Frost (`frost: 1` on the study): grass blades whiten toward their tips, and the floor shader adds pale drifts and small twinkling ice glints near the camera.
+- Clumps: each snowdrop has two smaller companions (one for distant flowers) built from three shared pieces — an arched stem, a closed bell of merged outer petals, and the cap — plus a leaf. A full plant is 20 draws.
+- Snowfall: the second particle layer shows the `NearSnow` preset in winter, 30 large soft flakes between the camera and the lead bloom.
+
 The scene requires WebGL 2. Initialization failure presents a readable fallback; the HTML portfolio remains usable. No tracking, microphone access, or backend is involved.
 
 ## Verification

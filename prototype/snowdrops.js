@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
-import { bloomColors, distantDetail, makePetalBlade, mergeSurfaces, pearlFinish, taperStem } from './flowers.js?v=autumn-accents-2';
+import { bloomColors, distantDetail, makePetalBlade, mergeSurfaces, pearlFinish, taperStem } from './flowers.js?v=winter-frost-1';
 import { createPetalSurfaces } from './petal-surfaces.js?v=autumn-veins-1';
 
 function snowdropPoint(t, u, inner = false, variant = 0) {
@@ -64,7 +64,14 @@ export function makeSnowdropAssets(assets) {
     t * 2.1, t * 0.9 + 0.12 * Math.sin(Math.PI * t),
     u * 0.12 * Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.6) + 0.03 * Math.sin(t * Math.PI * 2),
   ));
-  return { outer: outers[0], outers, inner, distantOuters, distantInner, leaf, surface, material, innerMaterial, cap, capMaterial };
+  // Snowdrops grow in clumps. Each companion is three shared pieces: an arched
+  // stem, a closed bell of merged outer petals, and the cap.
+  const companionBell = mergeSurfaces([0, 1, 2].map((i) => distantOuters[i].clone().rotateY(i * Math.PI * 2 / 3)));
+  const companionStem = taperStem(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, -0.15, 0), new THREE.Vector3(-0.06, 1.2, 0), new THREE.Vector3(-0.1, 2.5, 0),
+    new THREE.Vector3(-0.02, 3.12, 0), new THREE.Vector3(0.3, 3.3, 0), new THREE.Vector3(0.5, 3.05, 0), new THREE.Vector3(0.5, 2.85, 0),
+  ]), 28, 0.022, 6, false), 1.8, 0.85);
+  return { outer: outers[0], outers, inner, distantOuters, distantInner, companionBell, companionStem, leaf, surface, material, innerMaterial, cap, capMaterial };
 }
 
 export function createSnowdrop(id, assets, random, detail = 0) {
@@ -100,6 +107,31 @@ export function createSnowdrop(id, assets, random, detail = 0) {
     mesh.scale.set(1 + random() * 0.15, 0.95, 0.68);
     root.add(mesh);
     leaves.push({ mesh, position: mesh.position.clone(), rotation: mesh.rotation.clone(), phase: random() * Math.PI * 2 });
+  }
+  const companions = [];
+  for (let i = 0; i < (detail ? 1 : 2); i++) {
+    const group = new THREE.Group();
+    const angle = id * 1.9 + i * 2.6 + random() * 0.8;
+    const reach = 0.34 + random() * 0.3;
+    group.position.set(Math.cos(angle) * reach, 0, Math.sin(angle) * reach);
+    group.rotation.set(0, random() * Math.PI * 2, (random() - 0.5) * 0.2);
+    group.scale.setScalar(0.5 + random() * 0.22);
+    group.add(new THREE.Mesh(snow.companionStem, assets.stem));
+    const bell = new THREE.Mesh(snow.companionBell, snow.material);
+    bell.position.set(0.5, 2.85, 0);
+    bell.rotation.x = -0.25;
+    const bud = new THREE.Mesh(snow.cap, snow.capMaterial);
+    bud.position.set(0.5, 2.92, 0);
+    bud.scale.set(1, 1.6, 1);
+    group.add(bell, bud);
+    if (!detail) {
+      const blade = new THREE.Mesh(snow.leaf, assets.green);
+      blade.rotation.set(0, 2.2, 0.7);
+      blade.scale.set(1.1, 0.95, 0.68);
+      group.add(blade);
+    }
+    root.add(group);
+    companions.push({ group, rotation: group.rotation.clone(), phase: random() * Math.PI * 2 });
   }
   const head = new THREE.Group();
   head.position.set(bend, height, 0);
@@ -144,7 +176,7 @@ export function createSnowdrop(id, assets, random, detail = 0) {
   head.add(hit);
   return {
     id, species: 'snowdrop', pollenHeight: -1.65, pollenMode: 2,
-    root, head, petals, leaves, stamens, anthers, hit, height, bend,
+    root, head, petals, leaves, companions, stamens, anthers, hit, height, bend,
     phase: random() * Math.PI * 2, baseRotation: head.rotation.clone(),
     privateGeometries: [stemGeometry, filamentGeometry], stemGeometry, stemPositions, stemNormals,
     lastBend: [Infinity, Infinity], response: { value: 0, velocity: 0 }, gesture: null, lastGesture: -Infinity,

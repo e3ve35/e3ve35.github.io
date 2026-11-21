@@ -527,6 +527,11 @@ export function updateFlowerMotion(flower, time, swayX, swayZ, response, paused 
     petal.pivot.rotation.x = petal.rotation.x + petalResponse * Math.sin(petal.phase) * (poppy ? 0.05 : 0.025);
   }
   flower.stamens.rotation.z = -swayX / height * 0.45 + response * 0.028;
+  // Companion blooms lean with the same breeze and nod a little on their own.
+  for (const companion of flower.companions || []) {
+    companion.group.rotation.x = companion.rotation.x + swayZ / height * 0.8;
+    companion.group.rotation.z = companion.rotation.z - swayX / height * 0.8 + (paused ? 0 : Math.sin(time * 0.9 + companion.phase) * 0.02) + response * 0.03;
+  }
 }
 
 export const updateLilyMotion = updateFlowerMotion;

@@ -23,9 +23,13 @@ const studies = {
     noteLabel: 'D GLASS TONES',
     sound: 'A quiet, glassy bloom', pollenMode: 2,
     ...bloomLights,
-    grass: ['#576c70', '#afc0b9'],
+    // A cold blue-violet dusk; the peach glow is the only warm note. Frost
+    // whitens the grass tips and dusts the ground, and a gentler bloom keeps
+    // the white petals' ridges and jade marks.
+    grass: ['#6f84a0', '#dfe9f6'],
     signals: [[0.55, 0.95, 1.1], [0.68, 0.5, 1.05]],
-    sky: { night: '#3d354a', horizon: '#ae929e', glow: '#dfa98d', accent: '#68637d', fog: '#594f65', ground: '#292634' },
+    frost: 1, bloom: 0.68,
+    sky: { night: '#222a4c', horizon: '#6c78ac', glow: '#f2b08a', accent: '#3d4a80', fog: '#3b4369', ground: '#1b2038' },
   },
   chrysanthemum: {
     id: 'chrysanthemum', index: '04', season: 'Autumn', name: 'Chrysanthemums', genus: 'Chrysanthemum',

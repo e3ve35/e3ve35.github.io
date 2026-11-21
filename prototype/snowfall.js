@@ -34,6 +34,12 @@ const presets = {
     count: 84, seed: 277, height: 9, speed: [0.3, 0.32], size: [0.2, 0.3], sway: 0.95, spin: 0.7,
     place: (positions, index, random, height) => positions.setXYZ(index, (random() - 0.5) * 26, random() * height, -18 + random() * 27),
   },
+  // A few large, soft flakes close to the lens give the snowfall depth.
+  NearSnow: {
+    mode: 0, row: 0, glyphs: ['*', '+', 'x', '.'], colors: ['#fff8ee', '#d9edff', '#e9f4ff', '#ffffff'],
+    count: 30, seed: 389, height: 8, speed: [0.3, 0.2], size: [0.2, 0.22], sway: 0.7, spin: 0.2, maxSize: 72, opacity: 0.55,
+    place: (positions, index, random, height) => positions.setXYZ(index, (random() - 0.5) * 15, 1 + random() * height, 4 + random() * 7),
+  },
   Autumn: {
     mode: 3, glyphs: ['|', '|', '|', ':'], colors: ['#c5d2ec', '#e1e6f5', '#b6cced', '#d0c8e4'],
     count: 160, seed: 919, height: 11, speed: [4.6, 3.2], size: [0.13, 0.96], sway: 0.22,
@@ -84,6 +90,7 @@ export class SeasonalParticles {
       spriteMap: { value: createGlyphAtlas() },
       mode: { value: 0 },
       atlasRow: { value: 0 },
+      maxSize: { value: 30 },
       time: { value: 0 },
       viewportHeight: { value: 1 },
       fieldHeight: { value: 1 },
@@ -97,7 +104,7 @@ export class SeasonalParticles {
       vertexShader: `
         attribute vec4 particle;
         uniform int mode;
-        uniform float time, viewportHeight, fieldHeight, sway, spin;
+        uniform float time, viewportHeight, fieldHeight, sway, spin, maxSize;
         varying float opacity, angle, glyph;
         varying float ripple, rippleSquash, streakWidth;
         void main() {
@@ -107,7 +114,7 @@ export class SeasonalParticles {
           float edge = 1.;
           float pulse = 1.;
           float diameter = particle.z;
-          float sizeLimit = 30.;
+          float sizeLimit = maxSize;
           vec2 flight = vec2(0.);
           angle = 0.;
           ripple = -1.;
@@ -214,14 +221,14 @@ export class SeasonalParticles {
   select(season) {
     if (this.season === season) return;
     this.season = season;
-    const { mode, row = mode, count, seed, height = 1, speed, size, sway, spin = 0, place } = presets[season];
+    const { mode, row = mode, count, seed, height = 1, speed, size, sway, spin = 0, maxSize = 30, opacity: strength = 1, place } = presets[season];
     const random = seededRandom(seed);
     for (let i = 0; i < count; i++) {
       place(this.positions, i, random, height);
       const phase = random() * Math.PI * 2;
       const rate = speed[0] + random() * speed[1];
       const diameter = size[0] + random() ** 2 * size[1];
-      const opacity = 0.48 + random() * 0.37;
+      const opacity = (0.48 + random() * 0.37) * strength;
       this.particles.setXYZW(i, phase, rate, diameter, opacity);
     }
     for (const attribute of [this.positions, this.particles]) {
@@ -232,6 +239,7 @@ export class SeasonalParticles {
     this.geometry.setDrawRange(0, count);
     this.uniforms.mode.value = mode;
     this.uniforms.atlasRow.value = row;
+    this.uniforms.maxSize.value = maxSize;
     this.uniforms.fieldHeight.value = height;
     this.uniforms.sway.value = sway;
     this.uniforms.spin.value = spin;

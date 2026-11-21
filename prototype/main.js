@@ -1,12 +1,12 @@
 import './site.js?v=garden-controls-1';
 import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=seasonal-pollen-1';
-import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=autumn-accents-2';
-import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=autumn-accents-2';
+import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=winter-frost-1';
+import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=winter-frost-1';
 import { GardenAudio, flowerNote } from './audio.js?v=seasonal-recordings-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
-import { gardenSelection } from './studies.js?v=autumn-accents-2';
-import { SeasonalParticles } from './snowfall.js?v=autumn-petals-2';
+import { gardenSelection } from './studies.js?v=winter-frost-1';
+import { SeasonalParticles } from './snowfall.js?v=winter-frost-1';
 import { gardenPlanting, placeFlower, flowerDetail, groundHeight, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=rolling-meadow-1';
 import { GroundSignals } from './ground-signals.js?v=season-traces-1';
 import { currentLanguage, text } from './i18n.js?v=garden-controls-1';
@@ -201,12 +201,28 @@ function setupBackground(scene) {
   });
   const sphere = new THREE.Mesh(new THREE.SphereGeometry(65, 32, 16), material);
   scene.add(sphere);
+  const frost = { amount: { value: 0 }, time: { value: 0 } };
   const floorMaterial = new THREE.MeshStandardMaterial({ color: '#19121f', roughness: 0.4, metalness: 0.72, envMapIntensity: 0.48, transparent: true, depthWrite: false });
   // Fade the far edge into the atmosphere rather than exposing a hard horizon.
   floorMaterial.onBeforeCompile = (shader) => {
-    shader.vertexShader = 'varying float vGroundDistance;\n' + shader.vertexShader;
-    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvGroundDistance=length((modelMatrix*vec4(transformed,1.)).xz);');
-    shader.fragmentShader = 'varying float vGroundDistance;\n' + shader.fragmentShader;
+    shader.uniforms.frost = frost.amount;
+    shader.uniforms.frostTime = frost.time;
+    shader.vertexShader = 'varying float vGroundDistance;varying vec2 vGroundPlace;\n' + shader.vertexShader;
+    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvGroundPlace=(modelMatrix*vec4(transformed,1.)).xz;vGroundDistance=length(vGroundPlace);');
+    shader.fragmentShader = 'varying float vGroundDistance;varying vec2 vGroundPlace;uniform float frost;uniform float frostTime;\n' + shader.fragmentShader;
+    // Winter dusts the ground with pale drifts and a few ice glints that twinkle.
+    shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      if(frost>0.){
+        vec2 q=vGroundPlace;
+        float drift=sin(q.x*.33+sin(q.y*.21)*1.7)*sin(q.y*.29+1.3+sin(q.x*.17)*1.4);
+        float snow=smoothstep(-.05,.7,drift);
+        vec2 cell=floor(q*7.);
+        float seed=fract(sin(dot(cell,vec2(12.9898,78.233)))*43758.5453);
+        float glint=step(.985,seed)*(1.-smoothstep(.1,.42,length(fract(q*7.)-.5)));
+        glint*=.35+.65*pow(.5+.5*sin(frostTime*2.4+seed*90.),3.);
+        float near=1.-smoothstep(16.,34.,vGroundDistance);
+        totalEmissiveRadiance+=(vec3(.50,.58,.78)*snow*.22+vec3(.75,.9,1.2)*glint*(.4+snow)*near)*frost;
+      }`);
     shader.fragmentShader = shader.fragmentShader.replace('#include <dithering_fragment>', '#include <dithering_fragment>\ngl_FragColor.a*=1.-smoothstep(10.,48.,vGroundDistance);');
   };
   const floor = new THREE.Mesh(
@@ -247,7 +263,7 @@ function setupBackground(scene) {
   const farRidge = ridge(58, 4.6, 6.7, 1.7);
   const nearRidge = ridge(46, 3.4, 5.3, 4.1);
   const horizonTint = new THREE.Color();
-  return (palette) => {
+  const apply = (palette) => {
     sky.night.value.set(palette.night);
     sky.horizonColor.value.set(palette.horizon);
     sky.glowColor.value.set(palette.glow);
@@ -258,6 +274,8 @@ function setupBackground(scene) {
     nearRidge.set(palette.ground).lerp(horizonTint, 0.58);
     farRidge.set(palette.ground).lerp(horizonTint, 0.82);
   };
+  apply.frost = frost;
+  return apply;
 }
 
 class Garden {
@@ -272,8 +290,8 @@ class Garden {
     this.environments = new Map();
     this.setBackgroundPalette = setupBackground(this.scene);
     this.seasonalParticles = new SeasonalParticles(this.scene);
+    // A second layer: falling petals in autumn, large near flakes in winter.
     this.fallingPetals = new SeasonalParticles(this.scene);
-    this.fallingPetals.select('Petals');
     this.scene.add(new THREE.HemisphereLight('#e4cee7', '#2d243b', 1.2));
     const white = new THREE.DirectionalLight('#f0eaf4', 2.7);
     white.position.set(-3, 9, 5);
@@ -520,7 +538,12 @@ class Garden {
     if (!this.environments.has(study.id)) this.environments.set(study.id, environmentTexture(this.renderer, study.sky));
     this.scene.environment = this.environments.get(study.id).texture;
     this.seasonalParticles.select(this.selection.season);
-    this.fallingPetals.points.visible = this.selection.season === 'Autumn';
+    const extraLayer = { Autumn: 'Petals', Winter: 'NearSnow' }[this.selection.season];
+    if (extraLayer) this.fallingPetals.select(extraLayer);
+    this.fallingPetals.points.visible = Boolean(extraLayer);
+    this.frost = study.frost || 0;
+    this.setBackgroundPalette.frost.amount.value = this.frost;
+    if (this.grassFrost) this.grassFrost.value = this.frost;
     this.groundSignals.setPalette(study.signals);
     this.glowScale = study.bloom || 1;
     this.pollen.setSeason(this.selection.season);
@@ -562,13 +585,18 @@ class Garden {
       // Wind lives in the vertex shader: blades bend from the root with a
       // phase taken from where they stand, so gusts travel across the meadow.
       this.grassWind = { value: 0 };
+      this.grassFrost = { value: this.frost || 0 };
       material.onBeforeCompile = (shader) => {
         shader.uniforms.windTime = this.grassWind;
-        shader.vertexShader = 'uniform float windTime;\n' + shader.vertexShader.replace('#include <project_vertex>', `
+        shader.uniforms.frost = this.grassFrost;
+        // Frost whitens each blade toward its tip.
+        shader.fragmentShader = 'uniform float frost;varying float vBladeHeight;\n' + shader.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb=mix(diffuseColor.rgb,vec3(.93,.96,1.),smoothstep(.25,1.,vBladeHeight)*frost*.8);');
+        shader.vertexShader = 'uniform float windTime;varying float vBladeHeight;\n' + shader.vertexShader.replace('#include <project_vertex>', `
           vec4 mvPosition=vec4(transformed,1.);
+          vBladeHeight=clamp(position.x/1.85,0.,1.);
           #ifdef USE_INSTANCING
             mvPosition=instanceMatrix*mvPosition;
-            float bladeHeight=clamp(position.x/1.85,0.,1.);
+            float bladeHeight=vBladeHeight;
             float bend=bladeHeight*bladeHeight*length(instanceMatrix[0].xyz);
             vec2 root=instanceMatrix[3].xz;
             float gust=windTime*1.25+root.x*.33+root.y*.27;
@@ -895,6 +923,7 @@ class Garden {
     this.post.uniforms.glowStrength.value = this.baseGlow * this.glowScale;
     this.post.uniforms.focusDistance.value = this.focusDistance;
     this.grassWind.value = this.elapsed;
+    this.setBackgroundPalette.frost.time.value = this.elapsed;
     this.renderer.setRenderTarget(this.renderTarget);
     this.renderer.render(this.scene, this.camera);
     const [softA, soft, glowA, glow] = this.blurTargets;

@@ -1005,7 +1005,8 @@ test('snowdrops hang below an arched stem with finite geometry and few draws', (
   assert.ok(assets.snowdrop.outer.boundingBox.min.y < -1.5);
   let draws = 0;
   flower.root.traverse((object) => { if (object.isMesh && object.material.visible !== false) draws++; });
-  assert.ok(draws <= 13);
+  assert.equal(flower.companions.length, 2);
+  assert.ok(draws <= 20, 'A full bloom plus two three-piece companions and their leaves');
 });
 
 test('snowdrop motion keeps the bell attached and pollen starts beneath its hem', () => {
