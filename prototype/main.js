@@ -6,12 +6,13 @@ import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=pearl-bloom
 import { GardenAudio, flowerNote } from './audio.js?v=master-gain-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
 import { gardenSelection } from './studies.js?v=seasonal-skies-1';
-import { createSnowfall } from './snowfall.js?v=pearl-blooms-1';
+import { SeasonalParticles } from './snowfall.js?v=seasonal-particles-1';
 import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=pearl-blooms-1';
 import { GroundSignals } from './ground-signals.js?v=pearl-blooms-1';
 import { currentLanguage, text } from './i18n.js?v=pearl-blooms-1';
 
 const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop, chrysanthemum: createChrysanthemum };
+const maxRenderPixels = 1_600_000;
 
 const $ = (selector) => document.querySelector(selector);
 const garden = $('#garden');
@@ -216,8 +217,7 @@ class Garden {
     this.environment = environmentTexture(this.renderer);
     this.scene.environment = this.environment.texture;
     this.setBackgroundPalette = setupBackground(this.scene);
-    this.snowfall = createSnowfall();
-    this.scene.add(this.snowfall);
+    this.seasonalParticles = new SeasonalParticles(this.scene);
     this.scene.add(new THREE.HemisphereLight('#e4cee7', '#2d243b', 1.2));
     const white = new THREE.DirectionalLight('#f0eaf4', 2.7);
     white.position.set(-3, 9, 5);
@@ -250,7 +250,7 @@ class Garden {
     this.ripples = [];
     this.visualGesture = null;
     this.contentOpen = document.body.dataset.page !== 'garden';
-    this.contentNeedsRender = true;
+    this.needsRender = true;
     this.needsPicking = false;
     this.elapsed = 0;
     this.lastTime = 0;
@@ -405,7 +405,7 @@ class Garden {
     this.keyLight.color.set(this.selection.keyLight);
     this.fillLight.color.set(this.selection.fillLight);
     this.setBackgroundPalette(this.selection.study.sky);
-    this.snowfall.visible = this.selection.season === 'Winter';
+    this.seasonalParticles.select(this.selection.season);
   }
 
   changeStudy(mode, remember = true) {
@@ -416,7 +416,7 @@ class Garden {
       try { sessionStorage.setItem(studyPreferenceKey, selection.mode); } catch { /* Storage can be disabled. */ }
     }
     this.applySeasonPalette();
-    this.contentNeedsRender = true;
+    this.needsRender = true;
     if (selection.study !== this.study) {
       audio.changeStudy();
       this.study = selection.study;
@@ -458,20 +458,19 @@ class Garden {
   }
 
   resize() {
-    this.contentNeedsRender = true;
+    this.needsRender = true;
     this.width = window.innerWidth;
     this.height = window.innerHeight;
     this.mobile = this.width < 601;
-    this.pixelRatio = Math.min(devicePixelRatio, this.mobile ? 1.35 : 1.65);
-    this.renderer.setPixelRatio(this.pixelRatio);
-    this.renderer.setSize(this.width, this.height, false);
-    this.renderTarget.setSize(Math.round(this.width * this.pixelRatio), Math.round(this.height * this.pixelRatio));
-    this.snowfall.material.uniforms.viewportHeight.value = this.renderTarget.height;
-    this.post.uniforms.resolution.value.set(this.width * this.pixelRatio, this.height * this.pixelRatio);
+    const budgetRatio = Math.sqrt(maxRenderPixels / (this.width * this.height));
+    const pixelRatio = Math.min(devicePixelRatio, this.mobile ? 1.35 : 1.65, budgetRatio);
+    this.renderer.setDrawingBufferSize(this.width, this.height, pixelRatio);
+    this.renderTarget.setSize(canvas.width, canvas.height);
+    this.post.uniforms.resolution.value.set(canvas.width, canvas.height);
     this.camera.aspect = this.width / this.height;
     this.camera.fov = this.mobile ? 49 : 40;
     this.camera.updateProjectionMatrix();
-    this.pollen.resize(this.height, this.camera.fov, this.pixelRatio);
+    this.pollen.resize(this.height, this.camera.fov, pixelRatio);
     this.baseCamera = this.mobile ? new THREE.Vector3(1.0, 6.8, 13.6) : new THREE.Vector3(0, 5.65, 13.9);
     this.lookAt = this.mobile ? new THREE.Vector3(1, 2.0, 0) : new THREE.Vector3(0, 2.5, 0);
     this.camera.position.copy(this.baseCamera);
@@ -483,7 +482,6 @@ class Garden {
     window.addEventListener('garden:pagechange', (event) => {
       this.contentOpen = event.detail.page !== 'garden';
       this.refreshCalendar();
-      this.contentNeedsRender = true;
       this.pointerInside = false;
       this.hoveredId = -1;
       this.clearResponses();
@@ -570,7 +568,14 @@ class Garden {
     if (id >= 0) $('#cursor-label').textContent = `${this.study.genus.toUpperCase()} / ${String(id + 1).padStart(3, '0')}`;
   }
 
+  pickIfNeeded() {
+    if (!this.pointerInside || !this.needsPicking) return;
+    this.needsPicking = false;
+    this.pick();
+  }
+
   clearResponses() {
+    this.needsRender = true;
     this.pollen.clear();
     this.groundSignals.clear();
     document.body.dataset.pollenCount = '0';
@@ -635,17 +640,23 @@ class Garden {
       this.nextCalendarCheck = timestamp + 60000;
     }
     if (document.hidden) { this.lastTime = timestamp; return; }
-    if (this.contentOpen && !this.contentNeedsRender) { this.lastTime = timestamp; return; }
-    this.contentNeedsRender = false;
+    if ((paused || this.contentOpen) && !this.needsRender) {
+      this.lastTime = timestamp;
+      if (!this.contentOpen) this.pickIfNeeded();
+      return;
+    }
+    this.needsRender = false;
     const delta = Math.min((timestamp - (this.lastTime || timestamp)) / 1000, 0.05);
     this.lastTime = timestamp;
     if (!paused) this.elapsed += delta;
     const now = timestamp / 1000;
-    this.ripples = this.ripples.filter((ripple) => now - ripple.startedAt < ripple.gate + ripple.release + 9 / 4.4);
+    if (this.ripples.length) this.ripples = this.ripples.filter((ripple) => now - ripple.startedAt < ripple.gate + ripple.release + 9 / 4.4);
     this.burst = this.visualGesture ? bloomEnvelope(now - this.visualGesture.startedAt, this.visualGesture) * this.visualGesture.energy : 0;
     const parallaxX = this.pointerInside && !paused ? this.pointer.x * 0.16 : 0;
     const parallaxY = this.pointerInside && !paused ? this.pointer.y * 0.06 : 0;
-    this.targetCamera.copy(this.baseCamera).add(new THREE.Vector3(parallaxX, parallaxY, 0));
+    this.targetCamera.copy(this.baseCamera);
+    this.targetCamera.x += parallaxX;
+    this.targetCamera.y += parallaxY;
     this.camera.position.lerp(this.targetCamera, 1 - Math.exp(-delta * 3));
     this.camera.lookAt(this.lookAt);
     for (const flower of this.flowers) {
@@ -676,7 +687,7 @@ class Garden {
     }
     // Raycast only after pointer movement. Animated flowers passing a still cursor
     // should not repeatedly retrigger music.
-    if (this.pointerInside && this.needsPicking) { this.pick(); this.needsPicking = false; }
+    this.pickIfNeeded();
     const pollenFlower = !paused && !this.contentOpen && this.pointerInside && this.hoveredId >= 0 ? this.flowers[this.hoveredId] : null;
     const pollenCount = this.pollen.update(this.elapsed, paused ? 0 : delta, pollenFlower, this.gestureStrength, this.study.pollenMode);
     if (document.body.dataset.pollenCount !== String(pollenCount)) document.body.dataset.pollenCount = String(pollenCount);
@@ -685,7 +696,7 @@ class Garden {
     this.post.uniforms.distortion.value = this.visualGesture?.distortion ?? 0;
     this.post.uniforms.motion.value = paused ? 0 : 1;
     this.groundSignals.update(this.elapsed, paused);
-    if (this.snowfall.visible) this.snowfall.material.uniforms.time.value = this.elapsed;
+    this.seasonalParticles.update(this.elapsed, this.renderTarget.height);
     this.renderer.setRenderTarget(this.renderTarget);
     this.renderer.render(this.scene, this.camera);
     this.renderer.setRenderTarget(null);

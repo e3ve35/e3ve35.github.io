@@ -10,6 +10,104 @@ import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js';
 import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js';
 import { GroundSignals, groundMarks, groundGlyphAtlas } from './ground-signals.js';
 import { createPetalSurfaces } from './petal-surfaces.js';
+import { SeasonalParticles } from './snowfall.js';
+
+function particleScene(testContext) {
+  const previousDocument = globalThis.document;
+  const glyphs = [];
+  globalThis.document = {
+    createElement() {
+      return { getContext: () => ({ fillText: (glyph) => glyphs.push(glyph) }) };
+    },
+  };
+  testContext.after(() => {
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+  });
+  const scene = new THREE.Scene();
+  return { scene, particles: new SeasonalParticles(scene), glyphs };
+}
+
+test('season switches recycle the same particle buffers, shader and glyph atlas', (context) => {
+  const { scene, particles } = particleScene(context);
+  particles.select('Winter');
+  const [layer] = scene.children;
+  const { geometry, material } = layer;
+  const positions = geometry.getAttribute('position').array;
+  const winterPositions = positions.slice();
+  const atlas = material.uniforms.spriteMap.value;
+  for (const mode of ['poppy', 'lily', 'chrysanthemum', 'snowdrop']) {
+    particles.select(gardenSelection(mode).season);
+    assert.equal(scene.children.length, 1);
+    assert.ok(scene.children[0] === layer, 'The season switch keeps the same particle draw object');
+    assert.equal(layer.geometry, geometry);
+    assert.equal(layer.material, material);
+    assert.equal(geometry.getAttribute('position').array, positions);
+    assert.equal(material.uniforms.spriteMap.value, atlas);
+    assert.ok(geometry.drawRange.count > 0 && geometry.drawRange.count <= positions.length / 3);
+  }
+  assert.deepEqual(positions, winterPositions);
+});
+
+test('cached garden versions can still initialize and animate winter snowfall', async (context) => {
+  particleScene(context);
+  const { createSnowfall } = await import('./snowfall.js');
+  assert.equal(typeof createSnowfall, 'function');
+  const snow = createSnowfall();
+  assert.ok(snow.isPoints);
+  assert.equal(snow.geometry.drawRange.count, 170);
+  assert.equal(snow.material.uniforms.time.value, 0);
+  assert.equal(snow.material.uniforms.viewportHeight.value, 1);
+});
+
+test('autumn foliage uses printable ASCII marks', (context) => {
+  const { particles, glyphs } = particleScene(context);
+  particles.select('Autumn');
+  assert.ok(glyphs.some((glyph) => glyph === '<>'));
+  assert.ok(glyphs.every((glyph) => /^[\x20-\x7e]+$/.test(glyph)));
+});
+
+test('summer fireflies reach above the lilies and also float near their stems', (context) => {
+  const { scene, particles } = particleScene(context);
+  particles.select('Summer');
+  const { geometry } = scene.children[0];
+  const positions = geometry.getAttribute('position');
+  const heights = Array.from({ length: geometry.drawRange.count }, (_, index) => positions.getY(index));
+  assert.ok(Math.max(...heights) > 5);
+  assert.ok(Math.min(...heights) < 2);
+});
+
+test('ambient particles use the garden clock and current render size after a season switch', (context) => {
+  const { scene, particles } = particleScene(context);
+  particles.select('Spring');
+  particles.update(13, 720);
+  const { uniforms } = scene.children[0].material;
+  const position = scene.children[0].geometry.getAttribute('position');
+  const version = position.version;
+  assert.equal(uniforms.time.value, 13);
+  assert.equal(uniforms.viewportHeight.value, 720);
+  particles.update(13, 1080);
+  assert.equal(uniforms.time.value, 13, 'A paused clock stays frozen on resize');
+  assert.equal(uniforms.viewportHeight.value, 1080);
+  assert.equal(position.version, version, 'Motion does not upload particle buffers');
+  particles.select('Autumn');
+  particles.update(13, 1080);
+  assert.equal(scene.children[0].material.uniforms.time.value, 13);
+  assert.equal(scene.children[0].material.uniforms.viewportHeight.value, 1080);
+});
+
+test('spring flocks start along the upper sky with birds inside the center of the viewport', (context) => {
+  const { scene, particles } = particleScene(context);
+  particles.select('Spring');
+  const { geometry } = scene.children[0];
+  const positions = geometry.getAttribute('position');
+  let centeredBirds = 0;
+  for (let i = 0; i < geometry.drawRange.count; i++) {
+    assert.ok(positions.getY(i) >= 0.4 && positions.getY(i) <= 0.8);
+    if (Math.abs(positions.getX(i)) < 0.6) centeredBirds++;
+  }
+  assert.ok(centeredBirds >= 5);
+});
 
 test('petal finishes keep rims and tips smoother than the brushed body', () => {
   for (const species of ['lily', 'poppy', 'snowdrop']) {

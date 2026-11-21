@@ -12,4 +12,13 @@
 @media(max-width:600px){.specimen-card{top:112px;bottom:auto;width:129px}.specimen-name{font-size:17px}.specimen-meta{margin-bottom:0}.specimen-meta>span:first-child,.signal{display:none}.specimen-footer{display:block;position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);padding:0;border:0;margin:0;white-space:nowrap}#interaction-status{display:inline}.text-button{min-height:44px}}
 @media(max-width:360px){.controls{gap:8px}.text-button{font-size:8px}.intro h1{font-size:66px}.intro{left:23px}.eyebrow{font-size:6px}}
 @media(max-height:600px) and (min-width:601px){.site-header{top:20px}.intro{top:27%}.intro h1{font-size:76px}.eyebrow{margin-bottom:17px}.sound-toggle{margin-top:18px}.specimen-card{bottom:88px}.garden-footer{min-height:60px}}
+@media (prefers-reduced-motion: no-preference) {
+  body[data-garden-state="ready"][data-motion="running"] .intro h1 {
+    animation: garden-title-fade 6s ease-out 2s forwards;
+  }
+}
+@keyframes garden-title-fade {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
