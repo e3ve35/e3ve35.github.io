@@ -21,15 +21,20 @@ body[data-page="garden"] .controls { grid-area: 1 / 3; justify-self: end; }
 .study-switch button[aria-pressed="true"] { color: var(--acid); }
 .study-switch button:not([aria-pressed="true"]):hover { color: var(--paper); }
 .study-switch button:focus-visible { outline-offset: 2px; }
+.keyboard-hint, .touch-hint {
+  background: none;
+  text-shadow: 0 1px 2px #09070de6, 0 0 6px #09070da8;
+}
 body:not([data-page="garden"]) :is(.season-preview, .hint-line) { display: none; }
 body[data-page="garden"] .vignette {
   --specimen-corner: radial-gradient(ellipse clamp(475px, 49vw, 930px) clamp(310px, 49vh, 560px) at right top, #09070dc4, #09070d70 56%, transparent);
+  --instruction-shade: radial-gradient(ellipse 65% clamp(175px, 24vh, 280px) at center bottom, #09070d85, #09070d59 57%, transparent);
 }
 body[data-season="winter"] .vignette { --winter-haze: linear-gradient(#09070d94, transparent 155px); }
 body:is([data-page="garden"], [data-season="winter"]) .vignette::after {
   content: '';
   position: absolute; inset: 0;
-  background: var(--specimen-corner, none), var(--winter-haze, none);
+  background: var(--specimen-corner, none), var(--instruction-shade, none), var(--winter-haze, none);
 }
 .skip-link {
   position: fixed; left: 24px; top: -80px; z-index: 100;
