@@ -294,7 +294,7 @@ const ja = {
   'project.evolution.description': '世界のビデオゲームの歴史をたどるデータ可視化。3つのビューが、選択箇所のハイライトとフィルターで連動します。',
   'about.eyebrow': '03 / 自己紹介',
   'about.titleFirst': 'こんにちは、',
-  'about.titleLast': '{name}です。',
+  'about.titleLast': '伍カヤです。',
   'about.aliases': `${en['site.name']} / ${zh['site.name']}`,
   'about.leadStart': '',
   'about.algorithms': 'アルゴリズム',

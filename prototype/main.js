@@ -1,4 +1,4 @@
-import './site.js?v=about-emphasis-1';
+import './site.js?v=ja-intro-1';
 import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=seasonal-pollen-1';
 import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=autumn-low-blooms-1';
@@ -9,7 +9,7 @@ import { gardenSelection } from './studies.js?v=autumn-gusts-1';
 import { SeasonalParticles } from './snowfall.js?v=autumn-gusts-1';
 import { gardenPlanting, placeFlower, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=flower-variation-1';
 import { GroundSignals } from './ground-signals.js?v=pearl-blooms-1';
-import { currentLanguage, text } from './i18n.js?v=about-emphasis-1';
+import { currentLanguage, text } from './i18n.js?v=ja-intro-1';
 
 const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop, chrysanthemum: createChrysanthemum };
 const maxRenderPixels = 1_600_000;
