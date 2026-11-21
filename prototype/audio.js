@@ -5,8 +5,17 @@ const POPPY_MIDI = [45, 48, 50, 52, 55, 57, 60, 62, 64, 67, 69, 72];
 const CHRYSANTHEMUM_MIDI = [43, 45, 47, 50, 52, 55, 57, 59, 62, 64, 67, 69];
 const scales = { poppy: POPPY_MIDI, chrysanthemum: CHRYSANTHEMUM_MIDI };
 const MASTER_GAIN = 2.20;
-// “Rain on Window Loop” by alxl (CC0): https://opengameart.org/content/rain-on-window-loop
-const rainLoop = new URL('./rain-on-window.wav', import.meta.url).href;
+const seasonalRecordings = {
+  // CC0 excerpts from the credited recordings.
+  // Spring birds loop by steaq (from hargissssound): https://freesound.org/people/steaq/sounds/548383/
+  poppy: { file: './spring-birds.wav', volume: -39 },
+  // Soft Wind in the Trees by Borgory: https://freesound.org/people/Borgory/sounds/751473/
+  lily: { file: './summer-wind.wav', volume: -47 },
+  // Light Rain by soundrecorder7: https://freesound.org/people/soundrecorder7/sounds/167034/
+  chrysanthemum: { file: './light-rain.wav', volume: -43 },
+  // Quiet Winter Night with Light Snow & Wind by TSP-Talk: https://freesound.org/people/TSP-Talk/sounds/845502/
+  snowdrop: { file: './winter-snow.wav', volume: -43 },
+};
 const NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
 
 const scaleFor = (species) => Object.hasOwn(scales, species) ? scales[species] : MIDI;
@@ -26,6 +35,7 @@ export class GardenAudio {
     this.voices = [];
     this.ambientVoices = [];
     this.ambientActive = false;
+    this.recordingPlayers = new Map();
     this.species = 'lily';
     this.lastPlayed = -Infinity;
     this.lastByFlower = new Map();
@@ -102,7 +112,7 @@ export class GardenAudio {
       const when = window.Tone.now();
       for (const { synth } of this.ambientVoices) synth.triggerRelease(when);
     }
-    this.syncRain();
+    this.syncRecording();
   }
 
   tuneAmbient(attack) {
@@ -115,22 +125,27 @@ export class GardenAudio {
     }
   }
 
-  syncRain() {
-    const audible = this.ambientActive && this.species === 'chrysanthemum';
-    if (audible && !this.rain) {
-      const player = new window.Tone.Player({
-        loop: true, volume: -47, fadeIn: 0.85, fadeOut: 0.35,
-      }).connect(this.master);
-      this.rain = player;
-      player.load(rainLoop).then(() => this.syncRain()).catch((error) => {
-        player.dispose();
-        this.rain = null;
-        console.warn('The garden rain loop could not load.', error);
-      });
+  syncRecording() {
+    const species = this.ambientActive ? this.species : null;
+    for (const [playingSpecies, player] of this.recordingPlayers) {
+      if (playingSpecies !== species && player.state === 'started') player.stop();
     }
-    if (!this.rain?.loaded) return;
-    if (audible && this.rain.state === 'stopped') this.rain.start();
-    if (!audible && this.rain.state === 'started') this.rain.stop();
+    const recording = seasonalRecordings[species];
+    if (!recording) return;
+    const current = this.recordingPlayers.get(species);
+    if (current) {
+      if (current.loaded && current.state === 'stopped') current.start();
+      return;
+    }
+    const player = new window.Tone.Player({
+      loop: true, volume: recording.volume, fadeIn: 0.85, fadeOut: 0.35,
+    }).connect(this.master);
+    this.recordingPlayers.set(species, player);
+    player.load(new URL(recording.file, import.meta.url).href).then(() => this.syncRecording()).catch((error) => {
+      player.dispose();
+      this.recordingPlayers.delete(species);
+      console.warn(`The garden ambience could not load for ${species}.`, error);
+    });
   }
 
   releaseVoices() {
@@ -147,7 +162,7 @@ export class GardenAudio {
     this.lastPlayed = -Infinity;
     this.species = species;
     if (this.ambientActive) this.tuneAmbient(false);
-    this.syncRain();
+    this.syncRecording();
   }
 
   play(id, screenPosition = 0.5, strength = 0.45, species = 'lily') {

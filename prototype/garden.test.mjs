@@ -511,7 +511,7 @@ test('the garden restores the louder master gain when sound is enabled', () => {
   assert.deepEqual(gains, [0, 2.20]);
 });
 
-test('the quiet pad and optional autumn rain loop follow sound opt-in and garden visibility', async (context) => {
+test('the quiet pad and seasonal recordings follow sound opt-in and garden visibility', async (context) => {
   const previousWindow = globalThis.window;
   const previousDocument = globalThis.document;
   context.after(() => {
@@ -521,7 +521,9 @@ test('the quiet pad and optional autumn rain loop follow sound opt-in and garden
     else globalThis.document = previousDocument;
   });
   const events = [];
-  const rainEvents = [];
+  const recordingEvents = [];
+  const pendingRecordings = new Map();
+  const recordingVolumes = new Map();
   const volumes = [];
   class AudioNode {
     gain = { rampTo() {} };
@@ -539,33 +541,35 @@ test('the quiet pad and optional autumn rain loop follow sound opt-in and garden
     setNote(hz) { events.push(['retune', Math.round(hz)]); }
     triggerRelease() { events.push(['release']); }
   }
-  let finishRainLoad;
-  class RainVoice extends AudioNode {
+  class Recording extends AudioNode {
     state = 'stopped';
     loaded = false;
     constructor(options) {
       super();
       assert.ok(options.loop && options.volume < -25);
+      this.volume = options.volume;
     }
     load(url) {
-      rainEvents.push(['load', new URL(url).pathname.split('/').pop()]);
+      this.file = new URL(url).pathname.split('/').pop();
+      recordingVolumes.set(this.file, this.volume);
+      recordingEvents.push(['load', this.file]);
       return new Promise((resolve) => {
-        finishRainLoad = () => { this.loaded = true; resolve(); };
+        pendingRecordings.set(this.file, () => { this.loaded = true; resolve(); });
       });
     }
-    start() { this.state = 'started'; rainEvents.push(['start']); }
-    stop() { this.state = 'stopped'; rainEvents.push(['stop']); }
+    start() { this.state = 'started'; recordingEvents.push(['start', this.file]); }
+    stop() { this.state = 'stopped'; recordingEvents.push(['stop', this.file]); }
   }
   globalThis.window = { Tone: {
     start: async () => {}, now: () => 1, getContext: () => ({ state: 'running' }),
     Limiter: AudioNode, Gain: AudioNode, Filter: AudioNode, Reverb: AudioNode,
-    FeedbackDelay: AudioNode, Panner: AudioNode, FMSynth: AudioNode, Synth: PadVoice, Player: RainVoice,
+    FeedbackDelay: AudioNode, Panner: AudioNode, FMSynth: AudioNode, Synth: PadVoice, Player: Recording,
   } };
   globalThis.document = { hidden: false, body: { dataset: { page: 'garden' } } };
   const audio = new GardenAudio();
   audio.setVisibility(true);
   assert.deepEqual(events, []);
-  assert.deepEqual(rainEvents, []);
+  assert.deepEqual(recordingEvents, []);
   assert.deepEqual(volumes, []);
 
   await audio.enable('poppy');
@@ -573,19 +577,24 @@ test('the quiet pad and optional autumn rain loop follow sound opt-in and garden
   assert.deepEqual(events.splice(0), [['attack', 220], ['attack', 330]]);
   assert.equal(volumes.length, 2);
   assert.ok(volumes.every((volume) => volume <= -47));
-  assert.deepEqual(rainEvents, []);
+  assert.deepEqual(recordingEvents.splice(0), [['load', 'spring-birds.wav']]);
 
   audio.changeStudy('chrysanthemum');
   assert.deepEqual(events.splice(0), [['retune', 196], ['retune', 294]]);
-  audio.setVisibility(false);
-  assert.deepEqual(rainEvents.splice(0), [['load', 'rain-on-window.wav']]);
-  finishRainLoad();
+  pendingRecordings.get('spring-birds.wav')();
   await Promise.resolve();
-  assert.deepEqual(rainEvents, []);
+  audio.setVisibility(false);
+  assert.deepEqual(recordingEvents.splice(0), [['load', 'light-rain.wav']]);
+  pendingRecordings.get('light-rain.wav')();
+  await Promise.resolve();
+  assert.deepEqual(recordingEvents, []);
   audio.changeStudy('snowdrop');
   assert.deepEqual(events.splice(0), [['release'], ['release']]);
   audio.setVisibility(true);
   assert.deepEqual(events.splice(0), [['attack', 147], ['attack', 220]]);
+  pendingRecordings.get('winter-snow.wav')();
+  await Promise.resolve();
+  assert.deepEqual(recordingEvents.splice(0), [['load', 'winter-snow.wav'], ['start', 'winter-snow.wav']]);
 
   audio.mute();
   audio.setVisibility(true);
@@ -593,13 +602,20 @@ test('the quiet pad and optional autumn rain loop follow sound opt-in and garden
   await audio.enable('lily');
   assert.deepEqual(events.splice(0), [['attack', 147], ['attack', 220]]);
   assert.equal(volumes.length, 2, 'Re-enabling sound reuses the pad voices');
+  pendingRecordings.get('summer-wind.wav')();
+  await Promise.resolve();
+  assert.ok(recordingVolumes.get('summer-wind.wav') <= recordingVolumes.get('spring-birds.wav') - 6);
+  assert.deepEqual(recordingEvents.splice(0), [
+    ['stop', 'winter-snow.wav'], ['load', 'summer-wind.wav'], ['start', 'summer-wind.wav'],
+  ]);
   audio.changeStudy('chrysanthemum');
   audio.setVisibility(true);
   audio.changeStudy('poppy');
-  assert.deepEqual(rainEvents.splice(0), [['start'], ['stop']]);
-  audio.changeStudy('chrysanthemum');
   audio.mute();
-  assert.deepEqual(rainEvents, [['start'], ['stop']]);
+  assert.deepEqual(recordingEvents, [
+    ['stop', 'summer-wind.wav'], ['start', 'light-rain.wav'], ['stop', 'light-rain.wav'],
+    ['start', 'spring-birds.wav'], ['stop', 'spring-birds.wav'],
+  ]);
 });
 
 test('visual envelopes stay silent before the scheduled note and expire after release', () => {
@@ -680,6 +696,27 @@ test('upright chrysanthemums have a clustered center and batched moving petal ti
   let draws = 0;
   flower.root.traverse((object) => { if (object.isMesh && object.material.visible !== false) draws++; });
   assert.ok(draws <= 9, `Unexpected draw count per chrysanthemum: ${draws}`);
+});
+
+test('autumn clusters mix tall stems with low, upward-facing chrysanthemums', () => {
+  const assets = makeFlowerAssets();
+  assets.chrysanthemum = makeChrysanthemumAssets(assets);
+  const random = seededRandom(821);
+  const planting = gardenPlanting(821);
+  const blooms = planting.map((_, id) => createChrysanthemum(id, assets, random));
+  const clusters = new Set(planting.map(({ cluster }) => cluster));
+  assert.ok(blooms[0].height > 2.4, 'The lead bloom keeps a tall stem');
+  for (const cluster of clusters) {
+    const low = blooms.filter((bloom, id) => planting[id].cluster === cluster && bloom.height < 1);
+    assert.equal(low.length, 1);
+    const [bloom] = low;
+    assert.ok(bloom.height > 0.6);
+    assert.ok(bloom.baseRotation.x < 0.4);
+    assert.equal(bloom.head.scale.x, blooms[0].head.scale.x);
+    updateFlowerMotion(bloom, 1, 0.08, -0.05, 0.3);
+    assert.equal(bloom.head.position.y, bloom.height);
+    assert.ok(bloom.stemGeometry.attributes.normal.array.every(Number.isFinite));
+  }
 });
 
 test('seasonal petals use the opacity and depth settings for their species', () => {

@@ -201,9 +201,9 @@ export function createPoppy(id, assets, random) {
   return createFlower(id, assets, random, 'poppy');
 }
 
-function createFlowerStem(id, assets, random, poppy, foliage = poppy ? assets.poppyLeaf : assets.leaf) {
+function createFlowerStem(id, assets, random, poppy, foliage = poppy ? assets.poppyLeaf : assets.leaf, heightScale = 1) {
   const root = new THREE.Group();
-  const height = (poppy ? 2.45 : 2.65) + random() * 0.65;
+  const height = ((poppy ? 2.45 : 2.65) + random() * 0.65) * heightScale;
   const bend = (random() - 0.5) * 0.4;
   const curve = new THREE.CatmullRomCurve3([
     new THREE.Vector3(0, -0.15, 0),
@@ -222,11 +222,12 @@ function createFlowerStem(id, assets, random, poppy, foliage = poppy ? assets.po
   const stemNormals = stemGeometry.attributes.normal.array.slice();
   const privateGeometries = [stemGeometry];
   const leaves = [];
+  const leafSizeFactor = Math.sqrt(heightScale);
   for (let i = 0; i < (poppy ? 3 : 4); i++) {
     const blade = new THREE.Mesh(foliage, assets.green);
     blade.position.copy(curve.getPoint(0.19 + i * 0.155));
     blade.rotation.set((random() - 0.5) * 0.12, i * 2.45 + id, 0.48 + i * 0.06);
-    blade.scale.setScalar((poppy ? 0.48 : 0.65) + random() * 0.2);
+    blade.scale.setScalar(((poppy ? 0.48 : 0.65) + random() * 0.2) * leafSizeFactor);
     root.add(blade);
     leaves.push({ mesh: blade, position: blade.position.clone(), rotation: blade.rotation.clone(), phase: random() * Math.PI * 2 });
   }
@@ -372,12 +373,15 @@ export function makeChrysanthemumAssets(assets) {
 
 export function createChrysanthemum(id, assets, random) {
   const chrysanthemum = assets.chrysanthemum;
-  const stem = createFlowerStem(id, assets, random, true, chrysanthemum.leaf);
+  // Use the middle spot in each drift for a low bloom and keep the lead tall.
+  const lowBloom = id % 3 === 1;
+  const stem = createFlowerStem(id, assets, random, true, chrysanthemum.leaf, lowBloom ? 0.27 : 1);
   const { root, height, bend } = stem;
   const head = new THREE.Group();
   head.position.set(bend, height, 0);
   head.scale.setScalar(1.25);
-  head.rotation.set(0.42 + random() * 0.27, random() * 2 * Math.PI, (random() - 0.5) * 0.27);
+  const tilt = 0.42 + random() * 0.27;
+  head.rotation.set(tilt * (lowBloom ? 0.48 : 1), random() * 2 * Math.PI, (random() - 0.5) * 0.27);
   root.add(head);
   const petals = chrysanthemum.tiers.map(({ geometry, material }) => {
     const pivot = new THREE.Mesh(geometry, material);

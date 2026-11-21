@@ -26,9 +26,9 @@ const en = {
 };
 
 const zh = {
-  'site.name': '伍芷萱',
+  'site.name': '伍 芷萱',
   'site.home': '{name}的主页',
-  'site.description': '伍芷萱的个人网站。这里有游戏开发、计算机音乐、互动视觉作品，还有一座可以演奏的花园。',
+  'site.description': '伍 芷萱的个人网站。这里有游戏开发、计算机音乐、互动视觉作品，还有一座可以演奏的花园。',
   'site.copyright': '© {year} {name}',
   'site.skip': '跳到正文',
   'site.nav': '主导航',
