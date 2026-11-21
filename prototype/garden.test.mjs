@@ -213,8 +213,8 @@ test('all petal variants share bounded PBR maps without extra render objects', (
   assets.snowdrop = makeSnowdropAssets(assets);
   const families = [
     [assets.petalMaterials, assets.surfaces.lily, 0.8, 0.04, 0.24],
-    [assets.poppyMaterials, assets.surfaces.poppy, 0.8, 0.08, 0.43],
-    [[assets.snowdrop.material, assets.snowdrop.innerMaterial], assets.snowdrop.surface, 0.65, 0.08, 0.45],
+    [assets.poppyMaterials, assets.surfaces.poppy, 0.8, 0.04, 0.28],
+    [[assets.snowdrop.material, assets.snowdrop.innerMaterial], assets.snowdrop.surface, 0.9, 0.04, 0.32],
   ];
   const winterPetal = assets.snowdrop.material;
   assert.deepEqual(assets.petalMaterials.map(({ color }) => color.getHexString()), ['e0dce9', 'c7b6dd', 'dbb8d4']);
@@ -225,8 +225,8 @@ test('all petal variants share bounded PBR maps without extra render objects', (
     assert.equal(material.envMapIntensity, 2.1);
   }
   for (const material of assets.poppyMaterials) {
-    assert.equal(material.metalness, 0.97);
-    assert.equal(material.envMapIntensity, 1.65);
+    assert.equal(material.metalness, 1);
+    assert.equal(material.envMapIntensity, 2);
   }
   for (const { material } of makeChrysanthemumAssets(assets).tiers) {
     assert.equal(material.metalness, winterPetal.metalness);

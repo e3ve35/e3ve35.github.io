@@ -2,7 +2,7 @@ import * as THREE from './vendor/three.module.min.js';
 import { createPetalSurfaces } from './petal-surfaces.js?v=autumn-veins-1';
 
 export const pearlFinish = Object.freeze({
-  color: '#e6edf1', metalness: 0.82, roughness: 0.41, envMapIntensity: 1.35,
+  color: '#e6edf1', metalness: 1, roughness: 0.22, envMapIntensity: 1.9,
   side: THREE.DoubleSide,
 });
 export const bloomColors = Object.freeze({
@@ -272,7 +272,7 @@ export function makeFlowerAssets() {
   }));
   lazy(assets, 'poppyMaterials', () => ['#e3dce7', '#dfc4cb', '#c9bddb'].map((color) => {
     const material = new THREE.MeshStandardMaterial({
-      ...surfaces.poppy, color, metalness: 0.97, roughness: 0.41, envMapIntensity: 1.65,
+      ...surfaces.poppy, color, metalness: 1, roughness: 0.26, envMapIntensity: 2,
       side: THREE.DoubleSide, vertexColors: true, bumpScale: 0.003, aoMapIntensity: 0.4,
     });
     material.onBeforeCompile = poppyBlush;

@@ -1,8 +1,8 @@
 import './site.js?v=garden-controls-1';
 import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=seasonal-pollen-1';
-import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=lazy-assets-1';
-import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=lazy-assets-1';
+import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=chrome-blooms-1';
+import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=chrome-blooms-1';
 import { GardenAudio, flowerNote, loadSoundLibrary } from './audio.js?v=idle-sound-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
 import { gardenSelection } from './studies.js?v=spring-summer-2';

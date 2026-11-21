@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
-import { bloomColors, distantDetail, makePetalBlade, mergeSurfaces, pearlFinish, taperStem } from './flowers.js?v=lazy-assets-1';
+import { bloomColors, distantDetail, makePetalBlade, mergeSurfaces, pearlFinish, taperStem } from './flowers.js?v=chrome-blooms-1';
 import { createPetalSurfaces } from './petal-surfaces.js?v=autumn-veins-1';
 
 function snowdropPoint(t, u, inner = false, variant = 0) {
@@ -54,8 +54,8 @@ export function makeSnowdropAssets(assets) {
   const innerMaterial = material.clone();
   innerMaterial.color.set('#ffffff');
   innerMaterial.vertexColors = true;
-  innerMaterial.metalness = 0.69;
-  innerMaterial.roughness = 0.45;
+  innerMaterial.metalness = 0.92;
+  innerMaterial.roughness = 0.3;
   innerMaterial.bumpScale = 0.003;
   innerMaterial.aoMapIntensity = 0.3;
   const cap = new THREE.SphereGeometry(0.105, 14, 10);

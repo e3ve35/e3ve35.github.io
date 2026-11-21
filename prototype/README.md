@@ -89,6 +89,10 @@ Measured with a GPU timer query on a 2376 by 1485 buffer, the frame is GPU-bound
 - Petal meshes, petal textures, and petal materials are built on first use (`lazy` in `flowers.js`), and snowdrop assets are created when winter is first shown. Startup no longer builds the three species that are not on screen; on the test machine that is roughly 40 ms less geometry work.
 - Tone.js is no longer a script tag. `loadSoundLibrary` in `audio.js` requests it once the garden is idle; enabling sound waits for it only if the visitor clicks first.
 
+### Chrome pass
+
+All four species now share the lily's mirror finish. The shared `pearlFinish` (snowdrops and chrysanthemums) is fully metallic with roughness 0.22 and reflection strength 1.9; poppies are fully metallic with roughness 0.26 and reflection strength 2; the snowdrop's jade-marked inner bell is 0.92 metallic with roughness 0.3. Petal colors, the chrysanthemum's translucent tips, and each season's reflected sky are unchanged, so each species picks up its own season's colors.
+
 The scene requires WebGL 2. Initialization failure presents a readable fallback; the HTML portfolio remains usable. No tracking, microphone access, or backend is involved.
 
 ## Verification
