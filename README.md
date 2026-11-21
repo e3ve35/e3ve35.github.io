@@ -16,7 +16,7 @@ Open http://127.0.0.1:4173/. The site is buildless HTML, CSS, and JavaScript. It
 
 - `index.html`: production homepage and portfolio content.
 - `prototype/`: garden graphics, audio, navigation, styling, and browser libraries. Its `index.html` redirects earlier prototype URLs to the production homepage, preserving the selected view.
-- `archive/index.html`: previous p5.js website, using the retained `js/` and font assets.
+- `archive/index.html`: previous p5.js website, using `archive/js/` and the shared `Share_Tech_Mono/` font.
 - `resume.pdf`: retained original résumé file; the portfolio uses the original Google Docs résumé link.
 
 GitHub Pages publishes the repository root from `main` through its existing Pages deployment. `.nojekyll` keeps it a static site. There are no build dependencies, backend services, or runtime environment variables.
