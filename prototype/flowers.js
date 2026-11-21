@@ -28,10 +28,15 @@ function petalPoint(t, u, variant = 0, leaf = false) {
   );
   const length = [1.65, 1.72, 1.60][variant];
   const width = Math.max(0, edge) ** 0.74 * [0.49, 0.47, 0.46][variant];
+  // A rounded midrib groove, a tip that rolls back on itself, and a lightly
+  // ruffled margin keep the tepal from reading as two flat plates.
+  const midrib = Math.exp(-u * u * 7);
+  const recurve = THREE.MathUtils.smoothstep(t, 0.6, 1);
+  const ruffle = Math.sin(t * 17 + variant * 2.1) * 0.022 * Math.abs(u) ** 3 * edge;
   return new THREE.Vector3(
-    length * t,
-    0.12 + 0.78 * Math.sin(t * Math.PI * 0.86) - 0.75 * t ** 4
-      + u * u * 0.18 * edge - 0.065 * (1 - Math.abs(u)) * edge,
+    length * (t - 0.1 * recurve * recurve),
+    0.12 + 0.78 * Math.sin(t * Math.PI * 0.86) - 0.75 * t ** 4 - 0.17 * recurve * recurve
+      + u * u * 0.18 * edge - 0.07 * midrib * edge + ruffle,
     u * width,
   );
 }
@@ -146,11 +151,41 @@ export function mergeSurfaces(geometries) {
   return merged;
 }
 
-export function makePetalBlade(pointAt) { return makeBlade(0, false, false, pointAt, { normalThickness: true }); }
+export function makePetalBlade(pointAt, options = {}) { return makeBlade(0, false, false, pointAt, { ...options, normalThickness: true }); }
+
+// Distant drifts use these coarser grids; at that size the silhouette is identical.
+export const distantDetail = Object.freeze({ lily: { rows: 14, columns: 8 }, poppy: { rows: 20, columns: 14 }, snowdrop: { rows: 14, columns: 8 } });
+
+// TubeGeometry has one radius. Scale each ring about its centre so stems
+// thicken toward the soil and narrow under the bloom.
+export function taperStem(geometry, base = 1.9, tip = 0.95) {
+  const { path, tubularSegments, radialSegments } = geometry.parameters;
+  const position = geometry.attributes.position;
+  const centre = new THREE.Vector3();
+  for (let i = 0; i <= tubularSegments; i++) {
+    const t = i / tubularSegments;
+    path.getPointAt(t, centre);
+    const factor = base + (tip - base) * t ** 0.7;
+    for (let j = 0; j <= radialSegments; j++) {
+      const index = i * (radialSegments + 1) + j;
+      position.setXYZ(index,
+        centre.x + (position.getX(index) - centre.x) * factor,
+        centre.y + (position.getY(index) - centre.y) * factor,
+        centre.z + (position.getZ(index) - centre.z) * factor);
+    }
+  }
+  return geometry;
+}
 
 export function makeFlowerAssets() {
   const petals = [0, 1, 2].map((variant) => makeBlade(variant, false, false, null, { normalThickness: true }));
   const poppyPetals = [0, 1, 2].map((variant) => makeBlade(variant, false, true));
+  const distantPetals = [0, 1, 2].map((variant) => makeBlade(variant, false, false, null, { ...distantDetail.lily, normalThickness: true }));
+  const distantPoppyPetals = [0, 1, 2].map((variant) => makeBlade(variant, false, true, null, distantDetail.poppy));
+  // One cheap blade, instanced a few thousand times for the meadow.
+  const grassBlade = makeBlade(0, true, false, null, { rows: 5, columns: 2 });
+  // A small cup of sepals joins every upright bloom to its stem.
+  const calyx = new THREE.LatheGeometry([[0.03, -0.11], [0.062, -0.05], [0.108, 0.03], [0.124, 0.1], [0.1, 0.145]].map(([x, y]) => new THREE.Vector2(x, y)), 12);
   const poppyLeaf = makeBlade(0, true, false, poppyLeafPoint);
   const leaf = makeBlade(0, true);
   const lilySurface = createPetalSurfaces('lily');
@@ -186,16 +221,24 @@ export function makeFlowerAssets() {
     crown.push(ridge);
   }
   const poppyCenter = mergeSurfaces(crown);
-  return { petals, poppyPetals, poppyLeaf, leaf, surfaces: { lily: lilySurface, poppy: poppySurface }, petalMaterials, poppyMaterials, poppyCenter,
+  return { petals, poppyPetals, distantPetals, distantPoppyPetals, grassBlade, calyx, poppyLeaf, leaf, surfaces: { lily: lilySurface, poppy: poppySurface }, petalMaterials, poppyMaterials, poppyCenter,
     poppyCenterMaterial, poppyAnther, poppyFilament, green, stem, anther, lilyAnther, lilyFilament, pistil, antherGeometry, hitGeometry, hitMaterial };
 }
 
-export function createLily(id, assets, random) {
-  return createFlower(id, assets, random, 'lily');
+// detail 1 selects the coarser distant meshes; 0 is the full model.
+export function createLily(id, assets, random, detail = 0) {
+  return createFlower(id, assets, random, 'lily', detail);
 }
 
-export function createPoppy(id, assets, random) {
-  return createFlower(id, assets, random, 'poppy');
+export function createPoppy(id, assets, random, detail = 0) {
+  return createFlower(id, assets, random, 'poppy', detail);
+}
+
+function addCalyx(head, assets, y, scale) {
+  const calyx = new THREE.Mesh(assets.calyx, assets.stem);
+  calyx.position.y = y;
+  calyx.scale.set(scale, 1, scale);
+  head.add(calyx);
 }
 
 function createFlowerStem(id, assets, random, poppy, foliage = poppy ? assets.poppyLeaf : assets.leaf, heightScale = 1) {
@@ -208,7 +251,7 @@ function createFlowerStem(id, assets, random, poppy, foliage = poppy ? assets.po
     new THREE.Vector3(bend * 0.3, height * 0.7, -0.08),
     new THREE.Vector3(bend, height, 0),
   ]);
-  const stemGeometry = new THREE.TubeGeometry(curve, 22, 0.025, 7, false);
+  const stemGeometry = taperStem(new THREE.TubeGeometry(curve, 22, 0.025, 7, false));
   stemGeometry.attributes.position.setUsage(THREE.DynamicDrawUsage);
   stemGeometry.attributes.normal.setUsage(THREE.DynamicDrawUsage);
   // Expand once for the maximum bend; avoid recalculating bounds every frame.
@@ -231,7 +274,7 @@ function createFlowerStem(id, assets, random, poppy, foliage = poppy ? assets.po
   return { root, height, bend, stemGeometry, stemPositions, stemNormals, privateGeometries, leaves };
 }
 
-function createFlower(id, assets, random, species) {
+function createFlower(id, assets, random, species, detail = 0) {
   const poppy = species === 'poppy';
   const stem = createFlowerStem(id, assets, random, poppy);
   const { root, height, bend, privateGeometries } = stem;
@@ -241,23 +284,30 @@ function createFlower(id, assets, random, species) {
   root.add(head);
   const petals = [];
   const petalCount = poppy ? 4 : 6;
+  const petalGeometries = poppy ? (detail ? assets.distantPoppyPetals : assets.poppyPetals) : (detail ? assets.distantPetals : assets.petals);
+  addCalyx(head, assets, poppy ? -0.03 : 0, poppy ? 1.25 : 1);
   for (let i = 0; i < petalCount; i++) {
     const pivot = new THREE.Group();
     pivot.rotation.set((random() - 0.5) * 0.06, i / petalCount * Math.PI * 2 + (random() - 0.5) * 0.065, i % 2 ? 0.1 : -0.07);
     pivot.scale.set(0.96 + random() * 0.12 + (i % 2) * 0.03, 1, (i % 2 ? 0.91 : 1) * (0.94 + random() * 0.12));
+    if (!poppy) {
+      // Two whorls: three broad inner tepals sit slightly above three narrower outer ones.
+      pivot.position.y = i % 2 ? 0.035 : 0;
+      pivot.scale.z *= i % 2 ? 1.2 : 0.87;
+    }
     if (poppy) {
       pivot.rotation.y += (random() - 0.5) * 0.09;
       pivot.rotation.z = (i % 2 ? 0.11 : -0.025) + (random() - 0.5) * 0.08;
       pivot.position.y = i % 2 ? 0.095 : 0;
       pivot.scale.multiplyScalar(i % 2 ? 0.96 : 1.07);
     }
-    pivot.add(new THREE.Mesh((poppy ? assets.poppyPetals : assets.petals)[(i + id) % 3], (poppy ? assets.poppyMaterials : assets.petalMaterials)[(id + i % 2) % 3]));
+    pivot.add(new THREE.Mesh(petalGeometries[(i + id) % 3], (poppy ? assets.poppyMaterials : assets.petalMaterials)[(id + i % 2) % 3]));
     head.add(pivot);
     petals.push({ pivot, rotation: pivot.rotation.clone(), phase: random() * Math.PI * 2 });
   }
   const stamens = new THREE.Group();
   const filaments = [];
-  const stamenCount = poppy ? 56 : 6;
+  const stamenCount = poppy ? (detail ? 22 : 56) : 6;
   const anthers = new THREE.InstancedMesh(assets.antherGeometry, poppy ? assets.poppyAnther : assets.lilyAnther, poppy ? stamenCount : 7);
   const dummy = new THREE.Object3D();
   for (let i = 0; i < stamenCount; i++) {
@@ -268,8 +318,10 @@ function createFlower(id, assets, random, species) {
     filaments.push(new THREE.TubeGeometry(filamentCurve, poppy ? 6 : 10, poppy ? 0.007 : 0.011, 5, false));
     dummy.position.copy(tip);
     if (poppy) dummy.scale.set(0.025, 0.018, 0.04).multiplyScalar(0.8 + random() * 0.5);
-    else dummy.scale.set(0.145, 0.047, 0.062);
-    dummy.rotation.set(0, -angle + 0.3, 0.2);
+    else dummy.scale.set(0.118, 0.04, 0.052);
+    // Lily anthers pivot freely on their filaments, so no two sit alike.
+    if (poppy) dummy.rotation.set(0, -angle + 0.3, 0.2);
+    else dummy.rotation.set((random() - 0.5) * 0.9, -angle + 0.3 + (random() - 0.5) * 1.3, 0.2 + (random() - 0.5) * 0.8);
     dummy.updateMatrix();
     anthers.setMatrixAt(i, dummy.matrix);
   }
@@ -304,16 +356,24 @@ function createFlower(id, assets, random, species) {
 }
 
 export function makeChrysanthemumAssets(assets) {
-  const random = seededRandom(410);
   const material = assets.petalMaterials[0].clone();
-  material.setValues({ ...pearlFinish, bumpMap: null, side: THREE.FrontSide, transparent: true, opacity: 0.70, depthWrite: false });
+  // Petal bodies stay solid and write depth, so tiers and the stem occlude each
+  // other correctly; only the curled tips thin out toward glass.
+  material.setValues({ ...pearlFinish, bumpMap: null, side: THREE.FrontSide, transparent: true });
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = 'varying float vPetalLength;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvPetalLength=uv.y;');
+    shader.fragmentShader = 'varying float vPetalLength;\n' + shader.fragmentShader.replace('#include <dithering_fragment>', '#include <dithering_fragment>\ngl_FragColor.a*=1.-.62*smoothstep(.42,1.,vPetalLength);');
+  };
   const layers = [
     { count: 11, base: 0.11, level: 0.10, length: 0.96, lift: 0.30, curl: 2.03, droop: 0.20, width: 0.178 },
     { count: 10, base: 0.10, level: 0.21, length: 0.74, lift: 0.34, curl: 2.16, droop: 0.11, width: 0.150 },
     { count: 8, base: 0.08, level: 0.33, length: 0.54, lift: 0.33, curl: 2.32, droop: 0.06, width: 0.125 },
     { count: 7, base: 0.06, level: 0.44, length: 0.34, lift: 0.26, curl: 2.48, droop: 0.025, width: 0.104 },
   ];
-  const tiers = layers.map(({ count, base, level, length, lift, curl, droop, width }, tier) => {
+  const buildTiers = (rows, columns) => {
+  // Reseeding gives both detail levels the same petal arrangement.
+  const random = seededRandom(410);
+  return layers.map(({ count, base, level, length, lift, curl, droop, width }, tier) => {
     const petals = Array.from({ length: count }, (_, i) => {
       const reach = length * (0.86 + random() * 0.28);
       const rise = lift * (0.83 + random() * 0.34);
@@ -344,11 +404,14 @@ export function makeChrysanthemumAssets(assets) {
           level + rise * (1 - Math.cos(tangent)) - fall * Math.sin(progress * Math.PI * 0.82) + cup * Math.cos(tangent),
           radius * Math.sin(angle),
         );
-      }, { rows: 20, columns: 7, normalThickness: true });
+      }, { rows, columns, normalThickness: true });
       return petal.rotateY(yaw);
     });
     return { geometry: mergeSurfaces(petals), material };
   });
+  };
+  const tiers = buildTiers(20, 7);
+  const distantTiers = buildTiers(8, 3);
   const florets = Array.from({ length: 24 }, (_, i) => {
     const angle = i * Math.PI * (3 - Math.sqrt(5));
     const radius = 0.20 * Math.sqrt(i / 24);
@@ -364,10 +427,10 @@ export function makeChrysanthemumAssets(assets) {
     const lobes = 0.82 + 0.18 * Math.cos(t * Math.PI * 10);
     return new THREE.Vector3(t * 1.42, t * 0.76 - t * t * 0.44 + u * u * outline * 0.13, u * outline * lobes * 0.43);
   }, { rows: 28, columns: 10 });
-  return { tiers, center, centerMaterial, leaf };
+  return { tiers, distantTiers, center, centerMaterial, leaf };
 }
 
-export function createChrysanthemum(id, assets, random) {
+export function createChrysanthemum(id, assets, random, detail = 0) {
   const chrysanthemum = assets.chrysanthemum;
   // Use the middle spot in each drift for a low bloom and keep the lead tall.
   const lowBloom = id % 3 === 1;
@@ -379,7 +442,8 @@ export function createChrysanthemum(id, assets, random) {
   const tilt = 0.42 + random() * 0.27;
   head.rotation.set(tilt * (lowBloom ? 0.48 : 1), random() * 2 * Math.PI, (random() - 0.5) * 0.27);
   root.add(head);
-  const petals = chrysanthemum.tiers.map(({ geometry, material }) => {
+  addCalyx(head, assets, -0.03, 1.75);
+  const petals = (detail ? chrysanthemum.distantTiers : chrysanthemum.tiers).map(({ geometry, material }) => {
     const pivot = new THREE.Mesh(geometry, material);
     pivot.rotation.y = random() * 0.12;
     pivot.rotation.z = (random() - 0.5) * 0.065;

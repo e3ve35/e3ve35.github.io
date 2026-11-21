@@ -1,18 +1,21 @@
 import './site.js?v=garden-controls-1';
 import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=seasonal-pollen-1';
-import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=flower-finishes-1';
-import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=flower-finishes-1';
+import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=scene-depth-2';
+import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=scene-depth-2';
 import { GardenAudio, flowerNote } from './audio.js?v=seasonal-recordings-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
-import { gardenSelection } from './studies.js?v=autumn-gusts-1';
+import { gardenSelection } from './studies.js?v=autumn-rose-1';
 import { SeasonalParticles } from './snowfall.js?v=autumn-rain-density-1';
-import { gardenPlanting, placeFlower, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=flower-variation-1';
+import { gardenPlanting, placeFlower, flowerDetail, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=scene-depth-1';
 import { GroundSignals } from './ground-signals.js?v=garden-controls-1';
 import { currentLanguage, text } from './i18n.js?v=garden-controls-1';
 
 const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop, chrysanthemum: createChrysanthemum };
-const maxRenderPixels = 1_600_000;
+// Enough for 1.65x on a laptop and above 1x on a 1440p window. Slow devices
+// step the buffer down at run time instead of everyone starting soft.
+const maxRenderPixels = 4_200_000;
+const grassBlades = 2600;
 
 const $ = (selector) => document.querySelector(selector);
 const garden = $('#garden');
@@ -108,7 +111,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) app?.clearResponses();
 });
 
-function environmentTexture(renderer) {
+function environmentTexture(renderer, palette) {
   // A studio lighting rig painted into an environment, with high-contrast strips
   // to make the silver read as metal rather than uniformly colored plastic.
   const surface = document.createElement('canvas');
@@ -141,6 +144,26 @@ function environmentTexture(renderer) {
   strip(930, 50, '#ddff9d', 100, 320);
   strip(548, 14, '#faf9ff', 45, 350);
   strip(862, 11, '#f8ffed', 130, 240);
+  // Wash the rig with the season's sky and ground so reflections belong to
+  // the scene, and so downward-facing chrome picks up bounce instead of black.
+  ctx.globalCompositeOperation = 'screen';
+  const wash = ctx.createLinearGradient(0, 0, 0, 512);
+  wash.addColorStop(0, palette.night);
+  wash.addColorStop(0.42, palette.horizon);
+  wash.addColorStop(0.5, palette.horizon);
+  wash.addColorStop(0.6, palette.fog);
+  wash.addColorStop(1, palette.ground);
+  ctx.globalAlpha = 0.8;
+  ctx.fillStyle = wash;
+  ctx.fillRect(0, 0, 1024, 512);
+  const sun = ctx.createRadialGradient(640, 236, 0, 640, 236, 250);
+  sun.addColorStop(0, palette.glow);
+  sun.addColorStop(1, '#000000');
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle = sun;
+  ctx.fillRect(0, 0, 1024, 512);
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
   const map = new THREE.CanvasTexture(surface);
   map.mapping = THREE.EquirectangularReflectionMapping;
   map.colorSpace = THREE.SRGBColorSpace;
@@ -194,12 +217,14 @@ function setupBackground(scene) {
   floor.position.y = -0.15;
   scene.add(floor);
 
+  const horizonTint = new THREE.Color();
   return (palette) => {
     sky.night.value.set(palette.night);
     sky.horizonColor.value.set(palette.horizon);
     sky.glowColor.value.set(palette.glow);
     sky.accentColor.value.set(palette.accent);
-    scene.fog.color.set(palette.fog);
+    // Distant flowers dissolve toward the sky behind them, not a darker haze.
+    scene.fog.color.set(palette.fog).lerp(horizonTint.set(palette.horizon), 0.7);
     floorMaterial.color.set(palette.ground);
   };
 }
@@ -213,8 +238,7 @@ class Garden {
     this.scene = new THREE.Scene();
     this.scene.fog = new THREE.Fog(gardenAtmosphere.color, gardenAtmosphere.near, gardenAtmosphere.far);
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 150);
-    this.environment = environmentTexture(this.renderer);
-    this.scene.environment = this.environment.texture;
+    this.environments = new Map();
     this.setBackgroundPalette = setupBackground(this.scene);
     this.seasonalParticles = new SeasonalParticles(this.scene);
     this.scene.add(new THREE.HemisphereLight('#e4cee7', '#2d243b', 1.2));
@@ -256,6 +280,14 @@ class Garden {
     this.burst = 0;
     this.projected = new THREE.Vector3();
     this.targetCamera = new THREE.Vector3();
+    this.focusPoint = new THREE.Vector3();
+    this.currentLook = new THREE.Vector3();
+    this.focusAmount = 0;
+    this.focusUntil = 0;
+    this.focusDistance = 13.5;
+    this.quality = 1;
+    this.frameAverage = 16;
+    this.frameSamples = 0;
     this.seed = 821;
     this.buildPost();
     this.replant();
@@ -270,22 +302,54 @@ class Garden {
   }
 
   buildPost() {
+    const hdr = this.renderer.extensions.has('EXT_color_buffer_float');
+    const type = hdr ? THREE.HalfFloatType : THREE.UnsignedByteType;
     this.renderTarget = new THREE.WebGLRenderTarget(1, 1, {
-      depthBuffer: true, samples: 2,
-      type: this.renderer.extensions.has('EXT_color_buffer_float') ? THREE.HalfFloatType : THREE.UnsignedByteType,
+      depthBuffer: true, samples: 4, type, depthTexture: new THREE.DepthTexture(1, 1),
     });
+    // Two half-resolution targets hold a blurred scene for depth of field;
+    // two quarter-resolution ones spread the highlights into bloom.
+    this.blurTargets = [0, 1, 2, 3].map(() => new THREE.WebGLRenderTarget(1, 1, { depthBuffer: false, type }));
     this.postScene = new THREE.Scene();
     this.postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const vertexShader = `varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}`;
+    this.blur = new THREE.ShaderMaterial({
+      depthTest: false, depthWrite: false, toneMapped: false,
+      uniforms: { image: { value: null }, direction: { value: new THREE.Vector2() }, threshold: { value: 0 } },
+      vertexShader,
+      fragmentShader: `
+        uniform sampler2D image;uniform vec2 direction;uniform float threshold;varying vec2 vUv;
+        vec3 tap(vec2 uv){
+          vec3 c=texture2D(image,uv).rgb;
+          if(threshold>0.){
+            // Chrome speculars are far above 1; cap them so one pixel cannot
+            // print a hard-edged copy of the blur kernel.
+            float level=max(c.r,max(c.g,c.b));
+            c=min(c,vec3(2.5))*smoothstep(threshold,threshold+.7,level);
+          }
+          return c;
+        }
+        void main(){
+          vec3 sum=tap(vUv)*.227027;
+          sum+=(tap(vUv+direction*1.384615)+tap(vUv-direction*1.384615))*.316216;
+          sum+=(tap(vUv+direction*3.230769)+tap(vUv-direction*3.230769))*.070270;
+          gl_FragColor=vec4(sum,1.);
+        }`,
+    });
     this.post = new THREE.ShaderMaterial({
       depthTest: false, depthWrite: false,
       uniforms: {
-        image: { value: this.renderTarget.texture }, resolution: { value: new THREE.Vector2() },
+        image: { value: this.renderTarget.texture }, depthMap: { value: this.renderTarget.depthTexture },
+        soft: { value: this.blurTargets[1].texture }, glow: { value: this.blurTargets[3].texture },
+        resolution: { value: new THREE.Vector2() }, focusDistance: { value: 13.5 },
+        glowStrength: { value: hdr ? 0.4 : 0.3 },
         time: { value: 0 }, burst: { value: 0 }, distortion: { value: 0 },
         focus: { value: new THREE.Vector2(0.6, 0.6) }, motion: { value: paused ? 0 : 1 },
       },
-      vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}`,
+      vertexShader,
       fragmentShader: `
-        uniform sampler2D image;uniform vec2 resolution;uniform float time;
+        uniform sampler2D image;uniform sampler2D depthMap;uniform sampler2D soft;uniform sampler2D glow;
+        uniform vec2 resolution;uniform float time;uniform float focusDistance;uniform float glowStrength;
         uniform float burst;uniform float distortion;uniform vec2 focus;uniform float motion;varying vec2 vUv;
         float hash(float n){return fract(sin(n*127.1)*43758.5453);}
         void main(){
@@ -301,25 +365,35 @@ class Garden {
           col.r=texture2D(image,uv+vec2(split,0.)).r;
           col.g=texture2D(image,uv).g;
           col.b=texture2D(image,uv-vec2(split,0.)).b;
-          vec3 glow=vec3(0.);
-          vec2 pixel=1./resolution;
-          for(int i=0;i<8;i++){
-            float a=float(i)*.785398;
-            vec2 offset=vec2(cos(a),sin(a))*pixel*5.;
-            vec3 sampleColor=texture2D(image,uv+offset).rgb;
-            vec3 hot=max(sampleColor-1.35,0.);
-            glow+=hot/(1.+hot);
-          }
-          col+=glow*.06;
-          float scan=sin(vUv.y*resolution.y*1.4)*.0016;
-          col-=scan;
+          // Depth of field: the selected flower's distance stays sharp. The sky
+          // writes no depth, so the glyphs drawn over it stay crisp.
+          float depth=texture2D(depthMap,uv).r;
+          float ndc=depth*2.-1.;
+          float range=2.*.1*150./(150.1-ndc*149.9);
+          float farBlur=smoothstep(focusDistance+5.,focusDistance+22.,range)*.92;
+          float nearBlur=smoothstep(focusDistance-6.,focusDistance-15.,range)*.6;
+          float circle=depth>.99999?0.:max(farBlur,nearBlur);
+          col=mix(col,texture2D(soft,uv).rgb,circle);
+          col+=texture2D(glow,uv).rgb*glowStrength;
+          // Three-pixel lines survive the canvas being scaled without moire.
+          col-=sin(gl_FragCoord.y*2.0944)*.0016;
           col+=vec3(.13,.01,.1)*tear*energy*region*.15;
           gl_FragColor=vec4(col,1.);
           #include <tonemapping_fragment>
           #include <colorspace_fragment>
         }`,
     });
-    this.postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.post));
+    this.postQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.post);
+    this.postScene.add(this.postQuad);
+  }
+
+  blurPass(source, target, x, y, threshold = 0) {
+    this.blur.uniforms.image.value = source.texture;
+    // Offsets are in target texels, so taps stay adjacent and never ghost.
+    this.blur.uniforms.direction.value.set(x / target.width, y / target.height);
+    this.blur.uniforms.threshold.value = threshold;
+    this.renderer.setRenderTarget(target);
+    this.renderer.render(this.postScene, this.postCamera);
   }
 
   replant() {
@@ -335,7 +409,7 @@ class Garden {
       this.assets.chrysanthemum = makeChrysanthemumAssets(this.assets);
     }
     placements.forEach((placement, id) => {
-      const flower = flowerFactories[this.study.id](id, this.assets, random);
+      const flower = flowerFactories[this.study.id](id, this.assets, random, flowerDetail(placement));
       placeFlower(flower, placement);
       this.scene.add(flower.root);
       this.flowers.push(flower);
@@ -404,7 +478,11 @@ class Garden {
   applySeasonPalette() {
     this.keyLight.color.set(this.selection.keyLight);
     this.fillLight.color.set(this.selection.fillLight);
-    this.setBackgroundPalette(this.selection.study.sky);
+    const study = this.selection.study;
+    this.setBackgroundPalette(study.sky);
+    // One prefiltered environment per season, built the first time it is shown.
+    if (!this.environments.has(study.id)) this.environments.set(study.id, environmentTexture(this.renderer, study.sky));
+    this.scene.environment = this.environments.get(study.id).texture;
     this.seasonalParticles.select(this.selection.season);
     this.pollen.setSeason(this.selection.season);
   }
@@ -438,20 +516,50 @@ class Garden {
       material.metalness = 0.22;
       material.roughness = 0.54;
       material.envMapIntensity = 0.55;
-      this.grass = new THREE.InstancedMesh(this.assets.leaf, material, 220);
+      // Half-transparent blades read as a soft field and leave the blooms in charge.
+      material.transparent = true;
+      material.opacity = 0.32;
+      material.depthWrite = false;
+      // Wind lives in the vertex shader: blades bend from the root with a
+      // phase taken from where they stand, so gusts travel across the meadow.
+      this.grassWind = { value: 0 };
+      material.onBeforeCompile = (shader) => {
+        shader.uniforms.windTime = this.grassWind;
+        shader.vertexShader = 'uniform float windTime;\n' + shader.vertexShader.replace('#include <project_vertex>', `
+          vec4 mvPosition=vec4(transformed,1.);
+          #ifdef USE_INSTANCING
+            mvPosition=instanceMatrix*mvPosition;
+            float bladeHeight=clamp(position.x/1.85,0.,1.);
+            float bend=bladeHeight*bladeHeight*length(instanceMatrix[0].xyz);
+            vec2 root=instanceMatrix[3].xz;
+            float gust=windTime*1.25+root.x*.33+root.y*.27;
+            mvPosition.x+=(sin(gust)*.16+sin(gust*2.3+root.y)*.06)*bend;
+            mvPosition.z+=cos(gust*.8+root.x)*.08*bend;
+          #endif
+          mvPosition=modelViewMatrix*mvPosition;
+          gl_Position=projectionMatrix*mvPosition;`);
+      };
+      this.grass = new THREE.InstancedMesh(this.assets.grassBlade, material, grassBlades);
+      // Bounds are fixed at planting; the shader sway stays well inside them.
+      this.grass.renderOrder = 1.6; // After the floor, shadows and ground signals.
       this.scene.add(this.grass);
     }
+    this.grass.count = window.innerWidth < 601 ? Math.round(grassBlades * 0.55) : grassBlades;
     const dummy = new THREE.Object3D();
     const [shade, tip] = this.study.grass.map((color) => new THREE.Color(color));
     const bladeColor = new THREE.Color();
+    const greyTint = new THREE.Color();
     const variation = seededRandom(this.seed + 371);
-    meadowGrass(placements, this.seed).forEach(({ x, z, yaw, lean, scale }, i) => {
+    meadowGrass(placements, this.seed, this.grass.count).forEach(({ x, z, yaw, lean, scale }, i) => {
       dummy.position.set(x, -0.1, z);
       dummy.rotation.set(0, yaw, lean);
       dummy.scale.set(scale, scale, scale * 0.65);
       dummy.updateMatrix();
       this.grass.setMatrixAt(i, dummy.matrix);
-      this.grass.setColorAt(i, bladeColor.lerpColors(shade, tip, variation()));
+      // Pull each blade a third of the way to its own grey so the field recedes.
+      bladeColor.lerpColors(shade, tip, variation());
+      const grey = bladeColor.r * 0.3 + bladeColor.g * 0.55 + bladeColor.b * 0.15;
+      this.grass.setColorAt(i, bladeColor.lerp(greyTint.setScalar(grey), 0.38));
     });
     this.grass.instanceMatrix.needsUpdate = true;
     this.grass.instanceColor.needsUpdate = true;
@@ -463,20 +571,43 @@ class Garden {
     this.width = window.innerWidth;
     this.height = window.innerHeight;
     this.mobile = this.width < 601;
-    const budgetRatio = Math.sqrt(maxRenderPixels / (this.width * this.height));
-    const pixelRatio = Math.min(devicePixelRatio, this.mobile ? 1.35 : 1.65, budgetRatio);
-    this.renderer.setDrawingBufferSize(this.width, this.height, pixelRatio);
-    this.renderTarget.setSize(canvas.width, canvas.height);
-    this.post.uniforms.resolution.value.set(canvas.width, canvas.height);
+    this.sizeBuffers();
     this.camera.aspect = this.width / this.height;
     this.camera.fov = this.mobile ? 49 : 40;
     this.camera.updateProjectionMatrix();
-    this.pollen.resize(this.height, this.camera.fov, pixelRatio);
+    this.pollen.resize(this.height, this.camera.fov, this.pixelRatio);
     this.baseCamera = this.mobile ? new THREE.Vector3(1.0, 6.8, 13.6) : new THREE.Vector3(0, 5.65, 13.9);
     this.lookAt = this.mobile ? new THREE.Vector3(1, 2.0, 0) : new THREE.Vector3(0, 2.5, 0);
     this.camera.position.copy(this.baseCamera);
+    this.currentLook.copy(this.lookAt);
     this.camera.lookAt(this.lookAt);
     this.needsPicking = true;
+  }
+
+  sizeBuffers() {
+    const budgetRatio = Math.sqrt(maxRenderPixels / Math.max(1, this.width * this.height));
+    this.pixelRatio = Math.min(devicePixelRatio, this.mobile ? 1.5 : 1.65, budgetRatio) * this.quality;
+    this.renderer.setDrawingBufferSize(this.width, this.height, this.pixelRatio);
+    this.renderTarget.setSize(canvas.width, canvas.height);
+    const halfWidth = Math.max(1, canvas.width >> 1), halfHeight = Math.max(1, canvas.height >> 1);
+    this.blurTargets[0].setSize(halfWidth, halfHeight);
+    this.blurTargets[1].setSize(halfWidth, halfHeight);
+    this.blurTargets[2].setSize(Math.max(1, halfWidth >> 1), Math.max(1, halfHeight >> 1));
+    this.blurTargets[3].setSize(Math.max(1, halfWidth >> 1), Math.max(1, halfHeight >> 1));
+    this.post.uniforms.resolution.value.set(canvas.width, canvas.height);
+  }
+
+  // Sustained slow frames trade resolution for smoothness, one step at a time.
+  watchFrameTime(elapsedMs) {
+    if (elapsedMs > 200) return; // A throttled or just-restored tab says nothing about the GPU.
+    this.frameAverage += (elapsedMs - this.frameAverage) * 0.05;
+    // 40 ms sits below a 30 fps battery-saver cap, which is not a slow GPU.
+    if (++this.frameSamples < 120 || this.frameAverage < 40 || this.quality <= 0.55) return;
+    this.quality *= 0.8;
+    this.frameSamples = 0;
+    this.frameAverage = 16;
+    this.sizeBuffers();
+    this.pollen.resize(this.height, this.camera.fov, this.pixelRatio);
   }
 
   bind() {
@@ -586,8 +717,11 @@ class Garden {
     this.visualGesture = null;
     this.burst = 0;
     this.lastPointerSample = null;
+    this.focusUntil = 0;
+    this.focusAmount = 0;
     if (this.baseCamera) {
       this.camera.position.copy(this.baseCamera);
+      this.currentLook.copy(this.lookAt);
       this.camera.lookAt(this.lookAt);
     }
     for (const flower of this.flowers) {
@@ -603,6 +737,9 @@ class Garden {
     if (!flower) return;
     this.selectedId = id;
     flower.head.getWorldPosition(this.projected);
+    // The camera leans toward the played flower and the lens refocuses on it.
+    this.focusPoint.copy(this.projected);
+    this.focusUntil = performance.now() + 4200;
     this.projected.project(this.camera);
     const pan = this.projected.x * 0.5 + 0.5;
     const note = audio.play(id, pan, strength, this.study.id);
@@ -649,19 +786,34 @@ class Garden {
       return;
     }
     this.needsRender = false;
-    const delta = Math.min((timestamp - (this.lastTime || timestamp)) / 1000, 0.05);
+    const frameMs = timestamp - (this.lastTime || timestamp);
+    const delta = Math.min(frameMs / 1000, 0.05);
     this.lastTime = timestamp;
+    if (!paused && !this.contentOpen && frameMs > 0) this.watchFrameTime(frameMs);
     if (!paused) this.elapsed += delta;
     const now = timestamp / 1000;
     if (this.ripples.length) this.ripples = this.ripples.filter((ripple) => now - ripple.startedAt < ripple.gate + ripple.release + 9 / 4.4);
     this.burst = this.visualGesture ? bloomEnvelope(now - this.visualGesture.startedAt, this.visualGesture) * this.visualGesture.energy : 0;
     const parallaxX = this.pointerInside && !paused ? this.pointer.x * 0.16 : 0;
     const parallaxY = this.pointerInside && !paused ? this.pointer.y * 0.06 : 0;
+    // A slow drift keeps the reflections alive; playing a flower eases the
+    // camera a little toward it, then lets it settle back.
+    const drift = paused ? 0 : 1;
+    this.focusAmount += ((!paused && timestamp < this.focusUntil ? 1 : 0) - this.focusAmount) * (1 - Math.exp(-delta * 1.6));
     this.targetCamera.copy(this.baseCamera);
-    this.targetCamera.x += parallaxX;
-    this.targetCamera.y += parallaxY;
+    this.targetCamera.x += parallaxX + Math.sin(this.elapsed * 0.11) * 0.3 * drift;
+    this.targetCamera.y += parallaxY + Math.sin(this.elapsed * 0.083 + 1.3) * 0.1 * drift;
+    this.targetCamera.lerp(this.focusPoint, 0.05 * this.focusAmount);
     this.camera.position.lerp(this.targetCamera, 1 - Math.exp(-delta * 3));
-    this.camera.lookAt(this.lookAt);
+    this.targetLook = (this.targetLook || new THREE.Vector3()).copy(this.lookAt).lerp(this.focusPoint, 0.16 * this.focusAmount);
+    if (paused) this.currentLook.copy(this.lookAt);
+    else this.currentLook.lerp(this.targetLook, 1 - Math.exp(-delta * 2.2));
+    this.camera.lookAt(this.currentLook);
+    const selected = this.flowers[this.selectedId];
+    if (selected) {
+      const lens = selected.head.getWorldPosition(this.projected).distanceTo(this.camera.position);
+      this.focusDistance += (lens - this.focusDistance) * (paused ? 1 : 1 - Math.exp(-delta * 2.5));
+    }
     for (const flower of this.flowers) {
       const envelope = flower.gesture ? bloomEnvelope(now - flower.gesture.startedAt, flower.gesture) * flower.gesture.energy : 0;
       let wave = 0, waveX = 0, waveZ = 0;
@@ -700,8 +852,20 @@ class Garden {
     this.post.uniforms.motion.value = paused ? 0 : 1;
     this.groundSignals.update(this.elapsed, paused);
     this.seasonalParticles.update(this.elapsed, this.renderTarget.height);
+    this.post.uniforms.focusDistance.value = this.focusDistance;
+    this.grassWind.value = this.elapsed;
     this.renderer.setRenderTarget(this.renderTarget);
     this.renderer.render(this.scene, this.camera);
+    const [softA, soft, glowA, glow] = this.blurTargets;
+    this.postQuad.material = this.blur;
+    this.blurPass(this.renderTarget, softA, 1, 0);
+    this.blurPass(softA, soft, 0, 1);
+    this.blurPass(soft, glowA, 1, 0, this.renderTarget.texture.type === THREE.HalfFloatType ? 1.05 : 0.82);
+    this.blurPass(glowA, glow, 0, 1);
+    // A second, wider round on the already-smooth result widens the halo.
+    this.blurPass(glow, glowA, 2, 0);
+    this.blurPass(glowA, glow, 0, 2);
+    this.postQuad.material = this.post;
     this.renderer.setRenderTarget(null);
     this.renderer.render(this.postScene, this.postCamera);
   }

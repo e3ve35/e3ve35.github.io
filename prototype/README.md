@@ -49,6 +49,14 @@ Open http://127.0.0.1:4173/. No package installation or build is needed. Pinned 
 - `site.js` and `portfolio.css`: accessible portfolio navigation, a seven-project accordion, an introduction, the existing résumé link, and contact details. Project content was originally migrated from `archive/js/functions.js`; the pixel-art entry has since been updated to SharePix using its repository description and link. Randforest links to its demo video and describes furniture crafting, foraging, and Perlin-noise weather. The résumé URL comes from `archive/js/sketch.js`.
 - `project-previews.js`: moves each original preview figure between its project and the desktop preview area. Native details elements still work without JavaScript, with images inline. Existing order, numbering, links, and single-open behavior are preserved. `projects/` contains seven optimized WebP images totaling about 330 KB, plus source attribution. No video files or additional runtime libraries are required.
 
+### Scene depth pass
+
+- Resolution: the render budget is 4.2 million pixels (up to 1.65x on desktop, 1.5x on phones) with 4x MSAA. If frames average above 40 ms the buffer steps down by 20% at a time, to no less than about half.
+- Flowers: lily tepals have a rounded midrib, recurved tips, ruffled margins, two whorls, and individually turned anthers; the lily keeps its chrome finish. Stems taper from soil to bloom, and upright blooms sit in a small calyx (one more draw per flower: 14 lily, 12 poppy, 10 chrysanthemum). Chrysanthemum petals are solid and write depth, thinning to translucent only at the tips. Flowers behind z = -6 use coarser petal meshes.
+- Meadow: 2,600 half-transparent instanced blades (55% of that on phones) bend in the vertex shader with a position-based gust phase. Contact shadows are stronger.
+- Atmosphere: each season gets its own prefiltered environment, washed with its sky, glow, and ground colors; fog is tinted toward the horizon color.
+- Lens: a half-resolution blur feeds depth of field focused on the selected flower, and a quarter-resolution bloom spreads highlights. The camera drifts slowly and leans toward a played flower. Pause and reduced motion hold the camera still.
+
 The scene requires WebGL 2. Initialization failure presents a readable fallback; the HTML portfolio remains usable. No tracking, microphone access, or backend is involved.
 
 ## Verification

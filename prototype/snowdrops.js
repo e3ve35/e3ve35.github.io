@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
-import { bloomColors, makePetalBlade, mergeSurfaces, pearlFinish } from './flowers.js?v=flower-finishes-1';
+import { bloomColors, distantDetail, makePetalBlade, mergeSurfaces, pearlFinish, taperStem } from './flowers.js?v=scene-depth-2';
 import { createPetalSurfaces } from './petal-surfaces.js?v=chrome-finish-1';
 
 function snowdropPoint(t, u, inner = false, variant = 0) {
@@ -28,19 +28,25 @@ function snowdropPoint(t, u, inner = false, variant = 0) {
 }
 
 export function makeSnowdropAssets(assets) {
-  const outers = [0, 1, 2].map((variant) => makePetalBlade((t, u) => snowdropPoint(t, u, false, variant)));
-  const inner = makePetalBlade((t, u) => snowdropPoint(t, u, true));
-  const colors = [];
   const baseColor = new THREE.Color(bloomColors.innerPearl);
   const green = new THREE.Color(bloomColors.jade);
-  for (let i = 0; i < inner.attributes.position.count; i++) {
-    const t = inner.attributes.uv.getY(i);
-    const u = inner.attributes.uv.getX(i) * 2 - 1;
-    const mark = THREE.MathUtils.smoothstep(t, 0.70 + 0.17 * Math.abs(u), 0.78 + 0.17 * Math.abs(u));
-    const color = baseColor.clone().lerp(green, mark * 0.95);
-    colors.push(color.r, color.g, color.b);
-  }
-  inner.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  const makeInner = (options) => {
+    const inner = makePetalBlade((t, u) => snowdropPoint(t, u, true), options);
+    const colors = [];
+    for (let i = 0; i < inner.attributes.position.count; i++) {
+      const t = inner.attributes.uv.getY(i);
+      const u = inner.attributes.uv.getX(i) * 2 - 1;
+      const mark = THREE.MathUtils.smoothstep(t, 0.70 + 0.17 * Math.abs(u), 0.78 + 0.17 * Math.abs(u));
+      const color = baseColor.clone().lerp(green, mark * 0.95);
+      colors.push(color.r, color.g, color.b);
+    }
+    inner.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    return inner;
+  };
+  const outers = [0, 1, 2].map((variant) => makePetalBlade((t, u) => snowdropPoint(t, u, false, variant)));
+  const inner = makeInner();
+  const distantOuters = [0, 1, 2].map((variant) => makePetalBlade((t, u) => snowdropPoint(t, u, false, variant), distantDetail.snowdrop));
+  const distantInner = makeInner(distantDetail.snowdrop);
   const surface = createPetalSurfaces('snowdrop');
   const material = new THREE.MeshStandardMaterial({
     ...pearlFinish, ...surface, bumpScale: 0.003, aoMapIntensity: 0.5,
@@ -58,10 +64,10 @@ export function makeSnowdropAssets(assets) {
     t * 2.1, t * 0.9 + 0.12 * Math.sin(Math.PI * t),
     u * 0.12 * Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.6) + 0.03 * Math.sin(t * Math.PI * 2),
   ));
-  return { outer: outers[0], outers, inner, leaf, surface, material, innerMaterial, cap, capMaterial };
+  return { outer: outers[0], outers, inner, distantOuters, distantInner, leaf, surface, material, innerMaterial, cap, capMaterial };
 }
 
-export function createSnowdrop(id, assets, random) {
+export function createSnowdrop(id, assets, random, detail = 0) {
   const snow = assets.snowdrop;
   const root = new THREE.Group();
   const height = 3.15 + random() * 0.85;
@@ -78,7 +84,7 @@ export function createSnowdrop(id, assets, random) {
     new THREE.Vector3(bend, height + 0.28, 0),
     new THREE.Vector3(bend, height, 0),
   ]);
-  const stemGeometry = new THREE.TubeGeometry(curve, 64, 0.02, 8, false);
+  const stemGeometry = taperStem(new THREE.TubeGeometry(curve, detail ? 32 : 64, 0.02, 8, false), 1.8, 0.85);
   stemGeometry.attributes.position.setUsage(THREE.DynamicDrawUsage);
   stemGeometry.attributes.normal.setUsage(THREE.DynamicDrawUsage);
   stemGeometry.computeBoundingSphere();
@@ -105,7 +111,7 @@ export function createSnowdrop(id, assets, random) {
     const pivot = new THREE.Group();
     pivot.rotation.set(0, (i % 3) * Math.PI * 2 / 3 + (inner ? Math.PI / 3 : 0), inner ? 0 : 0.02 + random() * 0.1);
     pivot.scale.set(0.94 + random() * 0.12, 0.94 + random() * 0.12, 1);
-    pivot.add(new THREE.Mesh(inner ? snow.inner : snow.outers[i], inner ? snow.innerMaterial : snow.material));
+    pivot.add(new THREE.Mesh(inner ? (detail ? snow.distantInner : snow.inner) : (detail ? snow.distantOuters : snow.outers)[i], inner ? snow.innerMaterial : snow.material));
     head.add(pivot);
     petals.push({ pivot, rotation: pivot.rotation.clone(), phase: random() * Math.PI * 2 });
   }

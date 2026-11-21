@@ -45,6 +45,9 @@ export function gardenPlanting(seed) {
   });
 }
 
+// Flowers past the middle drifts are small on screen and use the coarser meshes.
+export function flowerDetail({ z }) { return z < -6 ? 1 : 0; }
+
 export function placeFlower(flower, { x, z, scale, yaw, pitch, roll, distortion }) {
   flower.distortion = distortion;
   flower.root.position.set(x, 0, z);
@@ -85,7 +88,7 @@ export function createContactShadows(count) {
   map.needsUpdate = true;
   map.magFilter = map.minFilter = THREE.LinearFilter;
   const material = new THREE.MeshBasicMaterial({
-    color: '#08050d', map, transparent: true, opacity: 0.42, depthWrite: false, toneMapped: false,
+    color: '#08050d', map, transparent: true, opacity: 0.62, depthWrite: false, toneMapped: false,
   });
   const shadows = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), material, count);
   // The translucent floor draws first; opaque stems still occlude the shadows.

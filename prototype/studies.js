@@ -30,9 +30,11 @@ const studies = {
     id: 'chrysanthemum', index: '04', season: 'Autumn', name: 'Chrysanthemums', genus: 'Chrysanthemum',
     noteLabel: 'G PENTATONIC',
     sound: 'A warm, coppery pluck', pollenMode: 0,
-    ...bloomLights, keyLight: '#ffd0a2',
-    grass: ['#755335', '#c59b55'],
-    sky: { night: '#392839', horizon: '#98677b', glow: '#c78983', accent: '#624968', fog: '#513d50', ground: '#291f2b' },
+    // Light pink over plum, in the site's lilac family. A pink key and lilac
+    // fill tint the pearl petals so sky, grass, and blooms share one range.
+    ...bloomLights, keyLight: '#ffd3e2', fillLight: '#d8c6ff',
+    grass: ['#6b5566', '#bba4b4'],
+    sky: { night: '#3a2b45', horizon: '#b78aa8', glow: '#e3a9c6', accent: '#6f5689', fog: '#5e4a66', ground: '#2a2031' },
   },
 };
 
