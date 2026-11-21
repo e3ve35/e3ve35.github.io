@@ -28,9 +28,14 @@ const presets = {
     place: (positions, index, random) => positions.setXYZ(index, (random() - 0.5) * 25, 1.25 + random() * 4.6, -16 + random() * 22),
   },
   Autumn: {
-    mode: 3, glyphs: ['<>', '()', '/', '~'], colors: ['#ffd464', '#f79b42', '#ed6754', '#db4740'], fontSize: 42,
-    count: 72, seed: 919, height: 8.5, speed: [0.58, 0.52], size: [0.22, 0.25], sway: 0.24, spin: 0.46,
-    place: (positions, index, random, height) => positions.setXYZ(index, (random() - 0.5) * 52, random() * height, -19 + random() * 25),
+    mode: 3, glyphs: ['|', '|', '|', ':'], colors: ['#c5d2ec', '#e1e6f5', '#b6cced', '#d0c8e4'],
+    count: 106, seed: 919, height: 11, speed: [4.6, 3.2], size: [0.13, 0.96], sway: 0.22,
+    place(positions, index, random, height) {
+      const foreground = index < 16;
+      const width = foreground ? 24 : 52;
+      positions.setXYZ(index, (random() - 0.5) * width, random() * height,
+        foreground ? 2 + random() * 7 : -19 + random() * 21);
+    },
   },
 };
 
@@ -43,8 +48,8 @@ function createGlyphAtlas() {
   const context = canvas.getContext('2d');
   context.textAlign = 'center';
   context.textBaseline = 'middle';
-  for (const { mode, glyphs, colors, halo = 0, fontSize = 54 } of Object.values(presets)) {
-    context.font = `${fontSize}px monospace`;
+  context.font = '54px monospace';
+  for (const { mode, glyphs, colors, halo = 0 } of Object.values(presets)) {
     context.shadowBlur = halo;
     glyphs.forEach((glyph, i) => {
       context.fillStyle = colors[i];
@@ -82,16 +87,21 @@ export class SeasonalParticles {
         attribute vec4 particle;
         uniform int mode;
         uniform float time, viewportHeight, fieldHeight, sway, spin;
-        varying float opacity, angle, glyph, leafWidth;
+        varying float opacity, angle, glyph;
+        varying float ripple, rippleSquash, streakWidth;
         void main() {
           vec3 point = position;
           float phase = particle.x;
           float rate = particle.y;
           float edge = 1.;
           float pulse = 1.;
+          float diameter = particle.z;
+          float sizeLimit = 30.;
           vec2 flight = vec2(0.);
           angle = 0.;
-          leafWidth = 1.;
+          ripple = -1.;
+          rippleSquash = 1.;
+          streakWidth = 1.;
           glyph = floor(phase / 6.28319 * 4.);
           if (mode == 1) {
             flight.x = mod(position.x + time * .11 + 1.2, 2.4) - 1.2;
@@ -106,17 +116,33 @@ export class SeasonalParticles {
             float glow = .5 + .5 * sin(time * rate + phase);
             pulse = .10 + .90 * glow * glow * glow;
           } else {
-            point.y = .12 + mod(position.y - time * rate, fieldHeight);
+            float fall = time * rate;
             if (mode == 3) {
-              // Drift with the wind and fade before wrapping the same leaf back into the sky.
-              point.x = mod(position.x + time * rate * .60 + 26., 52.) - 26.;
-              point.x += sway * sin(time * 1.4 + phase);
-              point.z += .21 * cos(time * 1.1 + phase);
-              edge = smoothstep(.12, .72, point.y) * (1. - smoothstep(fieldHeight - .9, fieldHeight, point.y));
-              edge *= 1. - smoothstep(24., 26., abs(point.x));
-              angle = phase + time * (spin + rate * .35);
-              leafWidth = .7 + .3 * abs(cos(phase + time * 2.1));
+              // Each drop lands, briefly becomes a ripple, then wraps to the top.
+              float foreground = smoothstep(2., 7., position.z);
+              float halfWidth = mix(26., 12., step(2., position.z));
+              float lean = sway * mix(.65, 1.18, phase / 6.28319);
+              float rippleDuration = .48;
+              float cycleDistance = mod(fall - position.y, fieldHeight + rate * rippleDuration);
+              float afterImpact = max(0., cycleDistance - fieldHeight);
+              point.x = mod(position.x + (fall - afterImpact) * lean + halfWidth, 2. * halfWidth) - halfWidth;
+              edge = 1. - smoothstep(halfWidth - 2., halfWidth, abs(point.x));
+              if (afterImpact > 0.) {
+                ripple = afterImpact / (rate * rippleDuration);
+                point.y = -.12;
+                diameter = mix(.18, 1.35, ripple);
+                sizeLimit = 48.;
+                pulse = .52 * (1. - smoothstep(.12, 1., ripple)) * smoothstep(-11., -5., point.z);
+              } else {
+                float height = fieldHeight - cycleDistance;
+                point.y = -.12 + height + diameter * .34;
+                edge *= smoothstep(0., .23, height) * (1. - smoothstep(fieldHeight - .9, fieldHeight, height));
+                angle = -atan(lean);
+                streakWidth = min(1., .29 / diameter);
+                sizeLimit = mix(33., 56., foreground);
+              }
             } else {
+              point.y = .12 + mod(position.y - fall, fieldHeight);
               point.x += sway * sin(time * .46 + phase);
               point.z += sway * .4 * cos(time * .34 + phase);
               edge = smoothstep(.12, .65, point.y) * (1. - smoothstep(fieldHeight - 1., fieldHeight, point.y));
@@ -125,13 +151,15 @@ export class SeasonalParticles {
           }
           vec4 view = modelViewMatrix * vec4(point, 1.);
           float depth = -view.z;
+          if (mode == 3) pulse *= mix(1., .16, smoothstep(8., 24., depth));
+          if (ripple >= 0.) rippleSquash = clamp((cameraPosition.y - point.y) / max(depth, 1.), .16, .72);
           opacity = particle.w * edge * pulse * (1. - smoothstep(18., 37., depth));
-          if (opacity < .025 || depth <= 0.) {
+          if (opacity < (mode == 3 ? .012 : .025) || depth <= 0.) {
             gl_Position = vec4(2., 2., 2., 1.);
             gl_PointSize = 1.;
             return;
           }
-          gl_PointSize = clamp(particle.z * viewportHeight * projectionMatrix[1][1] / (2. * depth), 2., 30.);
+          gl_PointSize = clamp(diameter * viewportHeight * projectionMatrix[1][1] / (2. * depth), 2., sizeLimit);
           gl_Position = projectionMatrix * view;
           if (mode == 1) gl_Position.xy = flight * gl_Position.w;
         }
@@ -139,17 +167,28 @@ export class SeasonalParticles {
       fragmentShader: `
         uniform sampler2D spriteMap;
         uniform int mode;
-        varying float opacity, angle, glyph, leafWidth;
+        varying float opacity, angle, glyph;
+        varying float ripple, rippleSquash, streakWidth;
         void main() {
+          if (ripple >= 0.) {
+            vec2 p = gl_PointCoord * 2. - 1.;
+            p.y /= rippleSquash;
+            float ring = 1. - smoothstep(.035, .12, abs(length(p) - .75));
+            float gaps = smoothstep(.12, .26, fract(atan(p.y, p.x) * .96 + glyph * .19));
+            float alpha = ring * gaps * opacity;
+            if (alpha < .012) discard;
+            gl_FragColor = vec4(.56, .69, .88, alpha);
+            return;
+          }
           float c = cos(angle), s = sin(angle);
           vec2 uv = mat2(c, -s, s, c) * (gl_PointCoord - .5) + .5;
           if (mode != 0) uv.y = 1. - uv.y;
-          uv.x = (uv.x - .5) / leafWidth + .5;
+          uv.x = (uv.x - .5) / streakWidth + .5;
           if (any(lessThan(uv, vec2(0.))) || any(greaterThan(uv, vec2(1.)))) discard;
           vec2 tile = vec2(glyph, 3. - float(mode));
           vec4 sprite = texture2D(spriteMap, (tile + uv) / 4.);
           float alpha = sprite.a * opacity;
-          if (alpha < .025) discard;
+          if (alpha < (mode == 3 ? .012 : .025)) discard;
           gl_FragColor = vec4(sprite.rgb, alpha);
         }
       `,

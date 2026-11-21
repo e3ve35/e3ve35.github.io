@@ -1,6 +1,12 @@
 import * as THREE from './vendor/three.module.min.js';
 
 const GLYPHS = Array.from('*+.:;01<>/\\{}[]^~|#%=-xv?&$!_bc@');
+const pollenPalettes = {
+  Spring: { primary: [0.46, 1.85, 0.09], accent: [1.95, 1.65, 0.08], echo: [0.48, 1.6, 0.1], threshold: 0.64 },
+  Summer: { primary: [1.18, 0.28, 2.05], accent: [0.26, 1.86, 0.31], echo: [0.85, 0.16, 1.82], threshold: 0.63 },
+  Autumn: { primary: [2, 1.4, 0.012], accent: [2, 0.23, 0.008], echo: [1.9, 0.16, 0.008], threshold: 0.8 },
+  Winter: { primary: [1.62, 1.65, 1.78], accent: [0.29, 0.93, 2.15], echo: [0.39, 0.87, 1.85], threshold: 0.62 },
+};
 
 // Fixed storage: even rapid visits to every flower cannot grow the effect.
 export class PollenPool {
@@ -90,6 +96,8 @@ export class AsciiPollen {
       uniforms: {
         atlas: { value: glyphAtlas() }, time: { value: 0 },
         scale: { value: 800 }, pixelRatio: { value: 1 }, seedDrift: { value: 0 },
+        primaryColor: { value: new THREE.Vector3() }, accentColor: { value: new THREE.Vector3() },
+        echoColor: { value: new THREE.Vector3() }, accentThreshold: { value: 0 },
       },
       vertexShader: `
         attribute vec4 particle;attribute float glyph;attribute float distortion;
@@ -120,6 +128,8 @@ export class AsciiPollen {
         }`,
       fragmentShader: `
         uniform sampler2D atlas;uniform float time;
+        uniform vec3 primaryColor, accentColor, echoColor;
+        uniform float accentThreshold;
         varying float vSeed;varying float vGlyph;varying float vFade;varying float vDistortion;
         float hash(float n){return fract(sin(n*127.1)*43758.5453);}
         float ink(vec2 uv,float glyph){
@@ -134,11 +144,11 @@ export class AsciiPollen {
           uv.x+=step(.6,uv.y)*step(uv.y,.78)*glitch*.18;
           float core=ink(uv,glyph);
           float echo=ink(uv+vec2(.12+glitch*.13,0.),glyph)*glitch*.65;
-          vec3 color=vSeed>.8?vec3(2.,.23,.008):vec3(2.,1.4,.012);
+          vec3 color=vSeed>accentThreshold?accentColor:primaryColor;
           float alpha=max(core,echo)*vFade*.88;
           alpha*=1.-step(.94,hash(tick+vSeed*53.))*vDistortion*.65;
           if(alpha<.015)discard;
-          gl_FragColor=vec4(mix(color,vec3(1.9,.16,.008),echo/(core+echo+.001)),alpha);
+          gl_FragColor=vec4(mix(color,echoColor,echo/(core+echo+.001)),alpha);
         }`,
     });
     this.points = new THREE.Points(this.geometry, this.material);
@@ -146,6 +156,16 @@ export class AsciiPollen {
     this.points.frustumCulled = false;
     this.points.renderOrder = 2;
     scene.add(this.points);
+    this.setSeason('Autumn');
+  }
+
+  setSeason(season) {
+    const { primary, accent, echo, threshold } = pollenPalettes[season] ?? pollenPalettes.Autumn;
+    const { uniforms } = this.material;
+    uniforms.primaryColor.value.fromArray(primary);
+    uniforms.accentColor.value.fromArray(accent);
+    uniforms.echoColor.value.fromArray(echo);
+    uniforms.accentThreshold.value = threshold;
   }
 
   flowerOrigin(flower) {

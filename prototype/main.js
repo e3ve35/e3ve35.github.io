@@ -1,15 +1,15 @@
-import './site.js?v=pearl-blooms-1';
+import './site.js?v=copyright-footer-1';
 import * as THREE from './vendor/three.module.min.js';
-import { AsciiPollen } from './pollen.js?v=flower-distortion-1';
-import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=pearl-blooms-1';
-import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=pearl-blooms-1';
-import { GardenAudio, flowerNote } from './audio.js?v=master-gain-1';
+import { AsciiPollen } from './pollen.js?v=seasonal-pollen-1';
+import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=curled-petals-1';
+import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=seasonal-blooms-1';
+import { GardenAudio, flowerNote } from './audio.js?v=master-gain-3';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
-import { gardenSelection } from './studies.js?v=seasonal-skies-1';
-import { SeasonalParticles } from './snowfall.js?v=seasonal-particles-1';
-import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=pearl-blooms-1';
+import { gardenSelection } from './studies.js?v=autumn-gusts-1';
+import { SeasonalParticles } from './snowfall.js?v=autumn-gusts-1';
+import { gardenPlanting, placeFlower, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=flower-variation-1';
 import { GroundSignals } from './ground-signals.js?v=pearl-blooms-1';
-import { currentLanguage, text } from './i18n.js?v=pearl-blooms-1';
+import { currentLanguage, text } from './i18n.js?v=localized-about-1';
 
 const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop, chrysanthemum: createChrysanthemum };
 const maxRenderPixels = 1_600_000;
@@ -75,10 +75,9 @@ async function toggleSound() {
     } else {
       soundTuning = true;
       syncSoundLabel();
-      await audio.enable();
+      await audio.enable(app?.study.id);
       setStatus('status.ready');
       if (app && document.body.dataset.page === 'garden') app.playFlower(app.selectedId, 0.35);
-      audio.setVisibility(document.body.dataset.page === 'garden');
     }
   } catch (error) {
     console.error(error);
@@ -232,13 +231,13 @@ class Garden {
     this.fillLight = lime;
     this.selection = gardenSelection(savedStudyMode());
     this.study = this.selection.study;
-    this.applySeasonPalette();
     this.nextCalendarCheck = 0;
 
     this.assets = makeFlowerAssets();
     this.assets.snowdrop = makeSnowdropAssets(this.assets);
     this.groundSignals = new GroundSignals(this.scene);
     this.pollen = new AsciiPollen(this.scene);
+    this.applySeasonPalette();
     this.flowers = [];
     this.selectedId = 0;
     this.hoveredId = -1;
@@ -335,12 +334,9 @@ class Garden {
     if (this.study.id === 'chrysanthemum' && !this.assets.chrysanthemum) {
       this.assets.chrysanthemum = makeChrysanthemumAssets(this.assets);
     }
-    placements.forEach(({ x, z, scale, yaw, distortion }, id) => {
+    placements.forEach((placement, id) => {
       const flower = flowerFactories[this.study.id](id, this.assets, random);
-      flower.distortion = distortion;
-      flower.root.position.set(x, 0, z);
-      flower.root.scale.setScalar(scale);
-      flower.root.rotation.y = yaw;
+      placeFlower(flower, placement);
       this.scene.add(flower.root);
       this.flowers.push(flower);
     });
@@ -406,6 +402,7 @@ class Garden {
     this.fillLight.color.set(this.selection.fillLight);
     this.setBackgroundPalette(this.selection.study.sky);
     this.seasonalParticles.select(this.selection.season);
+    this.pollen.setSeason(this.selection.season);
   }
 
   changeStudy(mode, remember = true) {
@@ -418,7 +415,7 @@ class Garden {
     this.applySeasonPalette();
     this.needsRender = true;
     if (selection.study !== this.study) {
-      audio.changeStudy();
+      audio.changeStudy(selection.study.id);
       this.study = selection.study;
       this.pointerInside = false;
       this.gestureStrength = 0.35;

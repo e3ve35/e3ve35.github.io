@@ -30,7 +30,7 @@ const studies = {
     id: 'chrysanthemum', index: '04', season: 'Autumn', name: 'Chrysanthemums', genus: 'Chrysanthemum',
     noteLabel: 'G PENTATONIC',
     sound: 'A warm, coppery pluck', pollenMode: 0,
-    ...bloomLights,
+    ...bloomLights, keyLight: '#ffd0a2',
     grass: ['#755335', '#c59b55'],
     sky: { night: '#392839', horizon: '#98677b', glow: '#c78983', accent: '#624968', fog: '#513d50', ground: '#291f2b' },
   },

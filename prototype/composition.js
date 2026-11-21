@@ -11,28 +11,48 @@ const drifts = [
   { x: 4.4, z: -21, yaw: -0.20, flowers: [[0, 0.5, 0.73], [2.7, -1.5, 0.62], [-2, -3.7, 0.59]] },
   { x: 0, z: 0, yaw: 0, flowers: [[5.9, 3.7, 1.21], [-5.2, 3, 1.05], [-9.3, -1.8, 0.94]] },
 ];
+const sizeFactors = [0.72, 1, 1.23];
+const distortionRanges = [[0.11, 0.27], [0.40, 0.64], [0.80, 0.95]];
 
 export const gardenAtmosphere = Object.freeze({ color: '#24152f', near: 18, far: 43 });
 
 export function gardenPlanting(seed) {
   const random = seededRandom(seed + 1709);
+  const sizeRandom = seededRandom(seed + 2027);
+  const angleRandom = seededRandom(seed + 2519);
   const distortionRandom = seededRandom(seed + 3011);
   return drifts.flatMap((drift, cluster) => {
     const dx = (random() - 0.5) * 0.45;
     const dz = (random() - 0.5) * 0.55;
+    const sizeOffset = Math.floor(sizeRandom() * sizeFactors.length);
+    const distortionOffset = Math.floor(distortionRandom() * distortionRanges.length);
     return drift.flowers.map(([x, z, scale], index) => {
       const lead = cluster === 0 && index === 0;
       const jitter = lead ? 0.12 : 0.55;
+      const sizeFactor = lead ? 1 : sizeFactors[(index + sizeOffset) % sizeFactors.length];
+      const [minDistortion, maxDistortion] = distortionRanges[(index + distortionOffset) % distortionRanges.length];
       return {
         x: drift.x + x + (lead ? 0 : dx) + (random() - 0.5) * jitter,
         z: drift.z + z + (lead ? 0 : dz) + (random() - 0.5) * jitter,
-        scale: scale * (0.95 + random() * 0.10),
-        yaw: lead ? -0.08 + (random() - 0.5) * 0.10 : drift.yaw + (random() - 0.5) * 0.85,
-        distortion: 0.3 + distortionRandom() * 0.5,
+        scale: THREE.MathUtils.clamp(scale * sizeFactor * (0.95 + random() * 0.10), 0.52, 1.28),
+        yaw: lead ? -0.08 + (random() - 0.5) * 0.10 : drift.yaw + (random() - 0.5) * 1.68,
+        pitch: lead ? 0 : (angleRandom() - 0.5) * 0.44,
+        roll: lead ? 0 : (angleRandom() - 0.5) * 0.38,
+        distortion: THREE.MathUtils.lerp(minDistortion, maxDistortion, distortionRandom()),
         cluster,
       };
     });
   });
+}
+
+export function placeFlower(flower, { x, z, scale, yaw, pitch, roll, distortion }) {
+  flower.distortion = distortion;
+  flower.root.position.set(x, 0, z);
+  flower.root.scale.setScalar(scale);
+  flower.root.rotation.y = yaw;
+  flower.baseRotation.x += pitch;
+  flower.baseRotation.z += roll;
+  flower.head.rotation.copy(flower.baseRotation);
 }
 
 export function meadowGrass(planting, seed, count = 220) {

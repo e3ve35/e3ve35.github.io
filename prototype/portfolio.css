@@ -111,7 +111,6 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
 .portfolio-view h2 em { color: var(--acid); font-weight: normal; }
 .view-intro { max-width: 265px; margin: 27px 0 0; font-size: 12px; line-height: 1.9; color: var(--muted); }
 .about-aliases:empty { display: none; }
-.view-footnote { font-size: 8px; letter-spacing: .08em; margin: 49px 0 0; color: #85758f; }
 .project-list { border-top: 1px solid var(--line); }
 .project { border-bottom: 1px solid var(--line); }
 .project summary { display: flex; align-items: center; gap: 17px; padding: 11px 0; list-style: none; cursor: pointer; }
@@ -151,13 +150,13 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
 .preview-title { color: #c8bbd0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .preview-note { font-size: 7px; letter-spacing: .07em; color: #8e7d9b; }
 @media (min-width: 901px) {
-  .work-view .view-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 6vw; }
+  .work-view { inset-inline: 3.2vw; }
+  .work-view .view-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(24px, 4vw, 72px); }
   .work-view h2 { font-size: clamp(64px, 5.4vw, 90px); }
   .work-view .view-intro { margin-top: 20px; max-width: 300px; }
-  .work-view .view-footnote { margin-top: 18px; }
   .work-view.has-work-preview .work-preview { display: block; margin-top: 27px; }
   .work-preview .project-preview { margin-bottom: 0; }
-  .work-preview .project-preview-link { aspect-ratio: 16 / 10; }
+  .work-preview .project-preview-link { width: 100%; max-height: max(175px, calc(100dvh - 360px)); }
   .work-view.has-work-preview .project-description > .project-preview { display: none; }
   .work-view .project summary { padding: 17px 0; }
   .work-view .project-description { margin-bottom: 23px; }
@@ -167,7 +166,6 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
   .work-view h2 { font-size: 65px; }
   .work-view .view-intro { margin-top: 15px; font-size: 11px; line-height: 1.7; }
   .work-view.has-work-preview .work-preview { margin-top: 20px; }
-  .work-preview .project-preview-link { aspect-ratio: 16 / 9; max-height: 29vh; }
 }
 @media (max-width: 900px) {
   .project-preview figcaption { gap: 7px; }
@@ -240,7 +238,6 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   .portfolio-view .eyebrow { font-size: 7px; margin-bottom: 17px; letter-spacing: .06em; }
   .portfolio-view h2 { font-size: 59px; }
   .view-intro { margin: 18px 0 27px; max-width: 285px; font-size: 11px; line-height: 1.8; }
-  .view-footnote { display: none; }
   .project-title { font-size: 22px; }
   .project summary { gap: 10px; padding: 18px 0; }
   .project-index { font-size: 8px; width: 18px; }

@@ -1,4 +1,4 @@
-import { translations } from './translations.js?v=pearl-blooms-1';
+import { translations } from './translations.js?v=localized-about-1';
 
 const languages = ['en', 'zh-Hans', 'ja'];
 const preferenceKey = 'evelyn-site-language';

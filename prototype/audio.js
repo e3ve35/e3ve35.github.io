@@ -4,13 +4,18 @@ const MIDI = [50, 53, 55, 57, 60, 62, 65, 67, 69, 72, 74, 77];
 const POPPY_MIDI = [45, 48, 50, 52, 55, 57, 60, 62, 64, 67, 69, 72];
 const CHRYSANTHEMUM_MIDI = [43, 45, 47, 50, 52, 55, 57, 59, 62, 64, 67, 69];
 const scales = { poppy: POPPY_MIDI, chrysanthemum: CHRYSANTHEMUM_MIDI };
-const MASTER_GAIN = 0.78;
+const MASTER_GAIN = 2.20;
+// “Rain on Window Loop” by alxl (CC0): https://opengameart.org/content/rain-on-window-loop
+const rainLoop = new URL('./rain-on-window.wav', import.meta.url).href;
 const NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
 
+const scaleFor = (species) => Object.hasOwn(scales, species) ? scales[species] : MIDI;
+const midiFrequency = (midi) => 440 * 2 ** ((midi - 69) / 12);
+
 export function flowerNote(id, species = 'lily') {
-  const scale = Object.hasOwn(scales, species) ? scales[species] : MIDI;
+  const scale = scaleFor(species);
   const midi = scale[(id * 7 + 5) % scale.length] + (species === 'snowdrop' ? 12 : 0);
-  return { midi, frequency: 440 * 2 ** ((midi - 69) / 12), name: `${NAMES[midi % 12]}${Math.floor(midi / 12) - 1}` };
+  return { midi, frequency: midiFrequency(midi), name: `${NAMES[midi % 12]}${Math.floor(midi / 12) - 1}` };
 }
 
 // Eight reusable voices. Editing a free voice never recolors a ringing note.
@@ -19,13 +24,17 @@ export class GardenAudio {
     this.enabled = false;
     this.ready = false;
     this.voices = [];
+    this.ambientVoices = [];
+    this.ambientActive = false;
+    this.species = 'lily';
     this.lastPlayed = -Infinity;
     this.lastByFlower = new Map();
   }
 
-  async enable() {
+  async enable(species = this.species) {
     const Tone = window.Tone;
     if (!Tone) throw new Error('The sound library did not load. Please refresh and try again.');
+    this.species = species;
     // Called directly from a click/keyboard handler, including on iOS.
     await Tone.start();
     if (!this.ready) {
@@ -39,7 +48,7 @@ export class GardenAudio {
         const panner = new Tone.Panner(0).connect(delay);
         const filter = new Tone.Filter(5200, 'lowpass').connect(panner);
         const synth = new Tone.FMSynth({
-          volume: -16,
+          volume: -4,
           harmonicity: 2.002,
           modulationIndex: 2.6,
           oscillator: { type: 'sine' },
@@ -50,24 +59,78 @@ export class GardenAudio {
         this.voices.push({ synth, filter, panner, busyUntil: 0 });
       }
       await reverb.ready;
+      this.ambientVoices = [
+        { interval: 0, type: 'triangle', volume: -65 },
+        { interval: 7, type: 'sine', volume: -71 },
+      ].map(({ interval, type, volume }) => ({
+        interval,
+        synth: new Tone.Synth({
+          volume, portamento: 0.65, oscillator: { type },
+          envelope: { attack: 1.8, decay: 1.2, sustain: 0.75, release: 1.2 },
+        }).connect(reverb),
+      }));
       this.ready = true;
     }
     this.enabled = true;
-    this.master.gain.rampTo(MASTER_GAIN, 0.15);
+    const audible = !document.hidden && document.body.dataset.page === 'garden';
+    this.master.gain.rampTo(audible ? MASTER_GAIN : 0, 0.15);
+    this.setAmbientActive(audible);
     this.updateState();
   }
 
   mute() {
     this.enabled = false;
     this.master?.gain.rampTo(0, 0.06);
+    this.setAmbientActive(false);
     this.releaseVoices();
     this.updateState();
   }
 
   setVisibility(visible) {
     if (!this.ready) return;
-    this.master.gain.rampTo(visible && this.enabled ? MASTER_GAIN : 0, 0.08);
+    const audible = visible && this.enabled;
+    this.master.gain.rampTo(audible ? MASTER_GAIN : 0, 0.08);
+    this.setAmbientActive(audible);
     if (!visible) this.releaseVoices();
+  }
+
+  setAmbientActive(active) {
+    if (!this.ambientVoices.length || active === this.ambientActive) return;
+    this.ambientActive = active;
+    if (active) this.tuneAmbient(true);
+    else {
+      const when = window.Tone.now();
+      for (const { synth } of this.ambientVoices) synth.triggerRelease(when);
+    }
+    this.syncRain();
+  }
+
+  tuneAmbient(attack) {
+    const root = 48 + scaleFor(this.species)[0] % 12;
+    const when = window.Tone.now();
+    for (const { synth, interval } of this.ambientVoices) {
+      const frequency = midiFrequency(root + interval);
+      if (attack) synth.triggerAttack(frequency, when);
+      else synth.setNote(frequency, when);
+    }
+  }
+
+  syncRain() {
+    const audible = this.ambientActive && this.species === 'chrysanthemum';
+    if (audible && !this.rain) {
+      const player = new window.Tone.Player({
+        loop: true, volume: -47, fadeIn: 0.85, fadeOut: 0.35,
+      }).connect(this.master);
+      this.rain = player;
+      player.load(rainLoop).then(() => this.syncRain()).catch((error) => {
+        player.dispose();
+        this.rain = null;
+        console.warn('The garden rain loop could not load.', error);
+      });
+    }
+    if (!this.rain?.loaded) return;
+    if (audible && this.rain.state === 'stopped') this.rain.start();
+    if (!audible && this.rain.state === 'started') this.rain.stop();
   }
 
   releaseVoices() {
@@ -78,10 +141,13 @@ export class GardenAudio {
     document.body.dataset.voicesInUse = '0';
   }
 
-  changeStudy() {
+  changeStudy(species) {
     this.releaseVoices();
     this.lastByFlower.clear();
     this.lastPlayed = -Infinity;
+    this.species = species;
+    if (this.ambientActive) this.tuneAmbient(false);
+    this.syncRain();
   }
 
   play(id, screenPosition = 0.5, strength = 0.45, species = 'lily') {

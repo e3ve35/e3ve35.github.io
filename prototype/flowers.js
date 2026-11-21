@@ -2,7 +2,8 @@ import * as THREE from './vendor/three.module.min.js';
 import { createPetalSurfaces } from './petal-surfaces.js?v=chrome-finish-1';
 
 export const pearlFinish = Object.freeze({
-  color: '#e6edf1', metalness: 0.82, roughness: 0.41, envMapIntensity: 1.35, side: THREE.DoubleSide,
+  color: '#e6edf1', metalness: 0.82, roughness: 0.41, envMapIntensity: 1.35,
+  side: THREE.FrontSide, transparent: true, opacity: 0.92, depthWrite: false,
 });
 export const bloomColors = Object.freeze({
   innerPearl: '#dce5e7', jade: '#56876c', sage: '#91aa9e', pollenGold: '#dfc477',
@@ -27,14 +28,17 @@ function petalPoint(t, u, variant = 0, leaf = false) {
     u * Math.pow(edge, 0.95) * 0.22 + 0.04 * edge * t,
   );
   const length = [1.68, 1.8, 1.72][variant];
-  const width = Math.pow(Math.max(0, edge), 0.82) * [0.46, 0.48, 0.43][variant];
+  const tip = THREE.MathUtils.smoothstep(t, 0.78, 1);
+  const progress = t - 0.047 * u * u * tip;
+  const width = (Math.max(0, edge) ** 0.82 + 0.15 * tip) * [0.46, 0.48, 0.43][variant];
   const fold = -0.056 * Math.exp(-u * u * 18) * edge;
   const veins = 0.006 * Math.cos(u * Math.PI * 3) * edge * (1 - Math.abs(u) * 0.6);
-  const ruffle = 0.016 * Math.sin(t * 15 + variant) * Math.abs(u) ** 3 * edge;
+  const waves = Math.sin(t * 24 + variant + u) + 0.4 * Math.sin(t * 39 - variant + u * 2);
+  const ruffle = 0.022 * waves * Math.abs(u) ** 3 * edge;
   return new THREE.Vector3(
-    t * length,
-    0.1 + [0.7, 0.63, 0.75][variant] * Math.sin(t * Math.PI * 0.88)
-      - [0.56, 0.64, 0.57][variant] * t ** 3 + u * u * 0.19 * edge + fold + veins + ruffle,
+    length * progress,
+    0.1 + [0.7, 0.63, 0.75][variant] * Math.sin(progress * Math.PI * 0.88)
+      - [0.56, 0.64, 0.57][variant] * progress ** 3 + u * u * 0.19 * edge + fold + veins + ruffle,
     u * width * (1 + 0.1 * Math.sin(t * 6 + variant)) + 0.045 * edge * t,
   );
 }
@@ -152,14 +156,14 @@ export function mergeSurfaces(geometries) {
 export function makePetalBlade(pointAt) { return makeBlade(0, false, false, pointAt, { normalThickness: true }); }
 
 export function makeFlowerAssets() {
-  const petals = [0, 1, 2].map((variant) => makeBlade(variant));
+  const petals = [0, 1, 2].map((variant) => makeBlade(variant, false, false, null, { normalThickness: true }));
   const poppyPetals = [0, 1, 2].map((variant) => makeBlade(variant, false, true));
   const poppyLeaf = makeBlade(0, true, false, poppyLeafPoint);
   const leaf = makeBlade(0, true);
   const lilySurface = createPetalSurfaces('lily');
   const poppySurface = createPetalSurfaces('poppy');
   const petalMaterials = pearlShades.map((color) => new THREE.MeshStandardMaterial({
-    ...pearlFinish, ...lilySurface, color, bumpScale: 0.003, aoMapIntensity: 0.5,
+    ...pearlFinish, ...lilySurface, color, opacity: 0.70, bumpScale: 0.003, aoMapIntensity: 0.5,
   }));
   const green = new THREE.MeshStandardMaterial({ color: '#8b9b82', metalness: 0.84, roughness: 0.36, envMapIntensity: 1.55, side: THREE.DoubleSide });
   const stem = new THREE.MeshStandardMaterial({ color: '#839379', metalness: 0.88, roughness: 0.32, envMapIntensity: 1.45 });
@@ -170,6 +174,7 @@ export function makeFlowerAssets() {
   const hitMaterial = new THREE.MeshBasicMaterial({ visible: false });
   const poppyMaterials = pearlShades.map((color) => new THREE.MeshStandardMaterial({
     ...pearlFinish, ...poppySurface, color, vertexColors: true, bumpScale: 0.003, aoMapIntensity: 0.4,
+    side: THREE.DoubleSide, transparent: false, opacity: 1, depthWrite: true,
   }));
   const poppyCenterMaterial = new THREE.MeshStandardMaterial({ color: bloomColors.jade, metalness: 0.65, roughness: 0.54, envMapIntensity: 1.1 });
   const filament = new THREE.MeshStandardMaterial({ color: bloomColors.innerPearl, metalness: 0.65, roughness: 0.42 });
@@ -304,27 +309,42 @@ export function makeChrysanthemumAssets(assets) {
   const random = seededRandom(410);
   const material = assets.petalMaterials[0].clone();
   material.bumpMap = null;
+  material.opacity = 0.70;
   const layers = [
-    { count: 17, base: 0.22, level: 0.03, length: 1.42, lift: 0.27, curl: 0.28, width: 0.155 },
-    { count: 15, base: 0.18, level: 0.12, length: 1.14, lift: 0.35, curl: 0.20, width: 0.144 },
-    { count: 12, base: 0.13, level: 0.22, length: 0.86, lift: 0.41, curl: 0.14, width: 0.124 },
-    { count: 9, base: 0.09, level: 0.32, length: 0.60, lift: 0.36, curl: 0.07, width: 0.102 },
-    { count: 6, base: 0.06, level: 0.40, length: 0.35, lift: 0.23, curl: 0.03, width: 0.086 },
+    { count: 11, base: 0.11, level: 0.10, length: 0.96, lift: 0.30, curl: 2.03, droop: 0.20, width: 0.178 },
+    { count: 10, base: 0.10, level: 0.21, length: 0.74, lift: 0.34, curl: 2.16, droop: 0.11, width: 0.150 },
+    { count: 8, base: 0.08, level: 0.33, length: 0.54, lift: 0.33, curl: 2.32, droop: 0.06, width: 0.125 },
+    { count: 7, base: 0.06, level: 0.44, length: 0.34, lift: 0.26, curl: 2.48, droop: 0.025, width: 0.104 },
   ];
-  const tiers = layers.map(({ count, base, level, length, lift, curl, width }, tier) => {
+  const tiers = layers.map(({ count, base, level, length, lift, curl, droop, width }, tier) => {
     const petals = Array.from({ length: count }, (_, i) => {
-      const reach = length * (0.88 + random() * 0.22);
-      const rise = lift * (0.9 + random() * 0.22);
-      const yaw = i * Math.PI * 2 / count + tier * 0.19 + (random() - 0.5) * 0.035;
-      const twist = (random() - 0.5) * 0.08;
+      const reach = length * (0.86 + random() * 0.28);
+      const rise = lift * (0.83 + random() * 0.34);
+      const sweep = curl + (random() - 0.5) * 0.43;
+      const fall = droop * (0.72 + random() * 0.56);
+      const yaw = i * Math.PI * 2 / count + tier * 0.21 + (random() - 0.5) * 0.13;
+      const twist = (random() - 0.5) * 0.14;
+      const sideSweep = 0.06 + tier * 0.032 + (random() - 0.5) * 0.32;
+      const curlTiming = (random() - 0.5) * 0.48;
+      const outline = 0.76 + random() * 0.25;
+      const breadth = width * (0.86 + random() * 0.27);
       const petal = makeBlade(0, false, false, (t, u) => {
-        const radius = base + reach * (t - 0.13 * t ** 6);
-        const spread = Math.sin(Math.PI * t ** 1.25) ** 0.56;
-        const halfAngle = Math.min(width * spread / radius, Math.PI / count * 0.80);
-        const angle = u * halfAngle + 0.12 * (radius / (base + length)) ** 2;
+        // The arc passes vertical before the tip, turning back toward the crown.
+        const tip = THREE.MathUtils.smoothstep(t, 0.64, 1);
+        const edge = u * u;
+        const roundCap = edge * (0.62 + 0.38 * edge);
+        const progress = t - 0.13 * roundCap * tip;
+        const tangent = sweep * (progress + curlTiming * progress * (1 - progress));
+        const turn = Math.sin(tangent);
+        const spread = Math.sin(Math.PI * t ** outline) ** 0.72;
+        const rim = THREE.MathUtils.lerp(spread, 0.82, tip);
+        const cup = (edge * (0.041 + 0.023 * t) + u * twist) * rim;
+        const radius = base + (reach - cup) * turn;
+        const halfAngle = Math.min(breadth * rim / radius, Math.PI / count * 0.93);
+        const angle = u * halfAngle + sideSweep * progress * progress;
         return new THREE.Vector3(
           radius * Math.cos(angle),
-          level + rise * Math.sin(t * 1.72) - curl * t ** 4 + (u * u * 0.056 + u * twist) * spread,
+          level + rise * (1 - Math.cos(tangent)) - fall * Math.sin(progress * Math.PI * 0.82) + cup * Math.cos(tangent),
           radius * Math.sin(angle),
         );
       }, { rows: 20, columns: 7, normalThickness: true });
@@ -339,14 +359,14 @@ export function makeChrysanthemumAssets(assets) {
       .scale(0.026, 0.046, 0.026)
       .translate(Math.cos(angle) * radius, 0.49 + (1 - radius / 0.20) * 0.08, Math.sin(angle) * radius);
   });
+  const center = mergeSurfaces(florets);
+  const centerMaterial = assets.anther.clone();
+  centerMaterial.roughness = 0.52;
   const leaf = makeBlade(0, true, false, (t, u) => {
     const outline = Math.sin(Math.PI * t) ** 0.75;
     const lobes = 0.82 + 0.18 * Math.cos(t * Math.PI * 10);
     return new THREE.Vector3(t * 1.42, t * 0.76 - t * t * 0.44 + u * u * outline * 0.13, u * outline * lobes * 0.43);
   }, { rows: 28, columns: 10 });
-  const center = mergeSurfaces(florets);
-  const centerMaterial = assets.anther.clone();
-  centerMaterial.roughness = 0.52;
   return { tiers, center, centerMaterial, leaf };
 }
 
@@ -356,20 +376,23 @@ export function createChrysanthemum(id, assets, random) {
   const { root, height, bend } = stem;
   const head = new THREE.Group();
   head.position.set(bend, height, 0);
-  head.rotation.set(0.67 + random() * 0.33, random() * 2 * Math.PI, (random() - 0.5) * 0.36);
+  head.scale.setScalar(1.25);
+  head.rotation.set(0.42 + random() * 0.27, random() * 2 * Math.PI, (random() - 0.5) * 0.27);
   root.add(head);
   const petals = chrysanthemum.tiers.map(({ geometry, material }) => {
     const pivot = new THREE.Mesh(geometry, material);
     pivot.rotation.y = random() * 0.12;
-    pivot.scale.setScalar(0.97 + random() * 0.06);
+    pivot.rotation.z = (random() - 0.5) * 0.065;
+    const spread = 0.95 + random() * 0.10;
+    pivot.scale.set(spread, 0.91 + random() * 0.18, spread);
     head.add(pivot);
     return { pivot, rotation: pivot.rotation.clone(), phase: random() * Math.PI * 2 };
   });
   const stamens = new THREE.Mesh(chrysanthemum.center, chrysanthemum.centerMaterial);
   head.add(stamens);
   const hit = new THREE.Mesh(assets.hitGeometry, assets.hitMaterial);
-  hit.scale.set(1.08, 0.54, 1.08);
-  hit.position.y = 0.32;
+  hit.scale.set(0.91, 0.59, 0.91);
+  hit.position.y = 0.36;
   hit.userData.flowerId = id;
   head.add(hit);
   return {

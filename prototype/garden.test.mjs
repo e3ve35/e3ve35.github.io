@@ -4,15 +4,15 @@ import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEn
 import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateLilyMotion, updateFlowerMotion } from './flowers.js';
 import { AsciiPollen, PollenPool } from './pollen.js';
 import * as THREE from './vendor/three.module.min.js';
-import { flowerNote } from './audio.js';
+import { flowerNote, GardenAudio } from './audio.js';
 import { gardenStudy, gardenSelection } from './studies.js';
 import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js';
-import { gardenPlanting, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js';
+import { gardenPlanting, placeFlower, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js';
 import { GroundSignals, groundMarks, groundGlyphAtlas } from './ground-signals.js';
 import { createPetalSurfaces } from './petal-surfaces.js';
 import { SeasonalParticles } from './snowfall.js';
 
-function particleScene(testContext) {
+function stubParticleCanvas(testContext) {
   const previousDocument = globalThis.document;
   const glyphs = [];
   globalThis.document = {
@@ -24,6 +24,11 @@ function particleScene(testContext) {
     if (previousDocument === undefined) delete globalThis.document;
     else globalThis.document = previousDocument;
   });
+  return glyphs;
+}
+
+function particleScene(testContext) {
+  const glyphs = stubParticleCanvas(testContext);
   const scene = new THREE.Scene();
   return { scene, particles: new SeasonalParticles(scene), glyphs };
 }
@@ -60,11 +65,72 @@ test('cached garden versions can still initialize and animate winter snowfall', 
   assert.equal(snow.material.uniforms.viewportHeight.value, 1);
 });
 
-test('autumn foliage uses printable ASCII marks', (context) => {
+test('autumn rain uses printable ASCII drops in its atlas row', (context) => {
   const { particles, glyphs } = particleScene(context);
   particles.select('Autumn');
-  assert.ok(glyphs.some((glyph) => glyph === '<>'));
+  assert.deepEqual(glyphs.slice(-4), ['|', '|', '|', ':']);
   assert.ok(glyphs.every((glyph) => /^[\x20-\x7e]+$/.test(glyph)));
+});
+
+test('flower pollen recolors the existing pool for each season', (context) => {
+  stubParticleCanvas(context);
+  const scene = new THREE.Scene();
+  const pollen = new AsciiPollen(scene);
+  assert.equal(typeof pollen.setSeason, 'function');
+  const { uniforms } = pollen.material;
+  const { position } = pollen.geometry.attributes;
+  const version = position.version;
+  const { value: primary } = uniforms.primaryColor;
+  const { value: accent } = uniforms.accentColor;
+  pollen.setSeason('Spring');
+  assert.ok(primary.y > primary.x && primary.y > primary.z);
+  assert.ok(accent.x > 1 && accent.y > 1 && accent.z < 0.2);
+  pollen.setSeason('Summer');
+  assert.ok(primary.z > primary.x && primary.x > primary.y);
+  assert.ok(accent.y > accent.x && accent.y > accent.z);
+  pollen.setSeason('Winter');
+  assert.ok(primary.x > 1 && primary.y > 1 && primary.z > 1);
+  assert.ok(accent.z > accent.y && accent.y > accent.x);
+  pollen.setSeason('Autumn');
+  assert.deepEqual(primary.toArray(), [2, 1.4, 0.012]);
+  assert.deepEqual(accent.toArray(), [2, 0.23, 0.008]);
+  assert.deepEqual(uniforms.echoColor.value.toArray(), [1.9, 0.16, 0.008]);
+  assert.equal(uniforms.accentThreshold.value, 0.8);
+  assert.equal(position.version, version);
+  assert.equal(scene.children.length, 1);
+});
+
+test('autumn rain uses fewer drops with a wide range of streak lengths and depths', (context) => {
+  const { scene, particles } = particleScene(context);
+  particles.select('Autumn');
+  const { geometry } = scene.children[0];
+  const { position, particle } = geometry.attributes;
+  const count = geometry.drawRange.count;
+  const depth = Array.from({ length: count }, (_, index) => position.getZ(index));
+  const lengths = Array.from({ length: count }, (_, index) => particle.getZ(index));
+  const foreground = depth.filter((z) => z > 6);
+  assert.ok(count >= 85 && count <= 120);
+  assert.ok(Math.min(...lengths) < 0.18);
+  assert.ok(Math.max(...lengths) > 0.85);
+  assert.ok(foreground.length >= 4 && foreground.length < depth.length / 3);
+  assert.ok(depth.filter((z) => z < -6).length > depth.length / 3);
+});
+
+test('autumn drops fall at varied speeds and update only through the garden clock', (context) => {
+  const { scene, particles } = particleScene(context);
+  particles.select('Autumn');
+  const { geometry, material } = scene.children[0];
+  const { position, particle } = geometry.attributes;
+  const speeds = Array.from({ length: geometry.drawRange.count }, (_, index) => particle.getY(index));
+  assert.ok(Math.min(...speeds) > 4);
+  assert.ok(Math.max(...speeds) - Math.min(...speeds) > 2);
+  assert.ok(material.uniforms.sway.value > 0 && material.uniforms.sway.value < 0.35);
+  const versions = [position.version, particle.version];
+  particles.update(5, 720);
+  particles.update(5, 1080);
+  assert.equal(material.uniforms.time.value, 5);
+  assert.equal(material.uniforms.viewportHeight.value, 1080);
+  assert.deepEqual([position.version, particle.version], versions);
 });
 
 test('summer fireflies reach above the lilies and also float near their stems', (context) => {
@@ -278,16 +344,48 @@ test('clustered planting preserves the lead bloom and separation across replant 
     assert.ok(Math.abs(planting[0].x - 1.65) < 0.1);
     assert.ok(Math.abs(planting[0].z - 1.1) < 0.1);
     assert.ok(planting[0].scale > 1.1);
+    assert.equal(planting[0].pitch, 0);
+    assert.equal(planting[0].roll, 0);
     for (let i = 0; i < planting.length; i++) {
       const flower = planting[i];
-      assert.ok([flower.x, flower.z, flower.scale, flower.yaw].every(Number.isFinite));
+      assert.ok([flower.x, flower.z, flower.scale, flower.yaw, flower.pitch, flower.roll].every(Number.isFinite));
       assert.ok(flower.scale > 0.5 && flower.scale < 1.3);
-      assert.ok(flower.distortion >= 0.3 && flower.distortion <= 0.8);
+      assert.ok(flower.distortion >= 0.11 && flower.distortion <= 0.95);
       for (let j = i + 1; j < planting.length; j++) {
         assert.ok(Math.hypot(flower.x - planting[j].x, flower.z - planting[j].z) > 1.8, 'Stems must retain room to breathe');
       }
     }
     assert.ok(planting.some(({ z }) => z < -23), 'The field needs a distant layer');
+  }
+});
+
+test('replanting mixes noticeably different flower sizes within most clusters', () => {
+  const patterns = [821, 948, 1075].map((seed) => {
+    const planting = gardenPlanting(seed);
+    const clusterSizes = new Map();
+    for (const { cluster, scale } of planting) {
+      if (!clusterSizes.has(cluster)) clusterSizes.set(cluster, []);
+      clusterSizes.get(cluster).push(scale);
+    }
+    const variedClusters = [...clusterSizes.values()].filter((sizes) => Math.max(...sizes) - Math.min(...sizes) > 0.22);
+    assert.ok(variedClusters.length >= 4);
+    return planting.map(({ scale }) => scale);
+  });
+  assert.notDeepEqual(patterns[0], patterns[1]);
+  assert.notDeepEqual(patterns[1], patterns[2]);
+});
+
+test('planting mixes different facing angles, head tilts, and distortion strengths', () => {
+  for (const seed of [821, 948, 1075]) {
+    const planting = gardenPlanting(seed);
+    const span = (key) => {
+      const values = planting.map((flower) => flower[key]);
+      return Math.max(...values) - Math.min(...values);
+    };
+    assert.ok(span('yaw') > 1.4);
+    assert.ok(span('pitch') > 0.30);
+    assert.ok(span('roll') > 0.24);
+    assert.ok(span('distortion') > 0.68);
   }
 });
 
@@ -297,11 +395,13 @@ test('the lead flower stays visible and pickable on desktop and phone in every s
   assets.chrysanthemum = makeChrysanthemumAssets(assets);
   for (const seed of [821, 922, 1337]) for (const createFlower of [createLily, createPoppy, createSnowdrop, createChrysanthemum]) {
     const random = seededRandom(seed);
-    const flowers = gardenPlanting(seed).map(({ x, z, scale, yaw }, id) => {
+    const flowers = gardenPlanting(seed).map((placement, id) => {
       const flower = createFlower(id, assets, random);
-      flower.root.position.set(x, 0, z);
-      flower.root.scale.setScalar(scale);
-      flower.root.rotation.y = yaw;
+      const { x: pitch, z: roll } = flower.head.rotation;
+      placeFlower(flower, placement);
+      assert.equal(flower.head.rotation.x, pitch + placement.pitch);
+      assert.equal(flower.head.rotation.z, roll + placement.roll);
+      assert.ok(flower.baseRotation.equals(flower.head.rotation));
       flower.root.updateMatrixWorld(true);
       return flower;
     });
@@ -400,6 +500,108 @@ test('flowers retain their identity while faster gestures change expression', ()
   assert.ok(new Set(Array.from({ length: 18 }, (_, id) => flowerCharacter(id).name)).size >= 4);
 });
 
+test('the garden restores the louder master gain when sound is enabled', () => {
+  const gains = [];
+  const audio = new GardenAudio();
+  audio.ready = true;
+  audio.master = { gain: { rampTo(value) { gains.push(value); } } };
+  audio.setVisibility(true);
+  audio.enabled = true;
+  audio.setVisibility(true);
+  assert.deepEqual(gains, [0, 2.20]);
+});
+
+test('the quiet pad and optional autumn rain loop follow sound opt-in and garden visibility', async (context) => {
+  const previousWindow = globalThis.window;
+  const previousDocument = globalThis.document;
+  context.after(() => {
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+  });
+  const events = [];
+  const rainEvents = [];
+  const volumes = [];
+  class AudioNode {
+    gain = { rampTo() {} };
+    ready = Promise.resolve();
+    connect() { return this; }
+    toDestination() { return this; }
+    triggerRelease() {}
+  }
+  class PadVoice extends AudioNode {
+    constructor({ volume }) {
+      super();
+      volumes.push(volume);
+    }
+    triggerAttack(hz) { events.push(['attack', Math.round(hz)]); }
+    setNote(hz) { events.push(['retune', Math.round(hz)]); }
+    triggerRelease() { events.push(['release']); }
+  }
+  let finishRainLoad;
+  class RainVoice extends AudioNode {
+    state = 'stopped';
+    loaded = false;
+    constructor(options) {
+      super();
+      assert.ok(options.loop && options.volume < -25);
+    }
+    load(url) {
+      rainEvents.push(['load', new URL(url).pathname.split('/').pop()]);
+      return new Promise((resolve) => {
+        finishRainLoad = () => { this.loaded = true; resolve(); };
+      });
+    }
+    start() { this.state = 'started'; rainEvents.push(['start']); }
+    stop() { this.state = 'stopped'; rainEvents.push(['stop']); }
+  }
+  globalThis.window = { Tone: {
+    start: async () => {}, now: () => 1, getContext: () => ({ state: 'running' }),
+    Limiter: AudioNode, Gain: AudioNode, Filter: AudioNode, Reverb: AudioNode,
+    FeedbackDelay: AudioNode, Panner: AudioNode, FMSynth: AudioNode, Synth: PadVoice, Player: RainVoice,
+  } };
+  globalThis.document = { hidden: false, body: { dataset: { page: 'garden' } } };
+  const audio = new GardenAudio();
+  audio.setVisibility(true);
+  assert.deepEqual(events, []);
+  assert.deepEqual(rainEvents, []);
+  assert.deepEqual(volumes, []);
+
+  await audio.enable('poppy');
+  audio.setVisibility(true);
+  assert.deepEqual(events.splice(0), [['attack', 220], ['attack', 330]]);
+  assert.equal(volumes.length, 2);
+  assert.ok(volumes.every((volume) => volume <= -47));
+  assert.deepEqual(rainEvents, []);
+
+  audio.changeStudy('chrysanthemum');
+  assert.deepEqual(events.splice(0), [['retune', 196], ['retune', 294]]);
+  audio.setVisibility(false);
+  assert.deepEqual(rainEvents.splice(0), [['load', 'rain-on-window.wav']]);
+  finishRainLoad();
+  await Promise.resolve();
+  assert.deepEqual(rainEvents, []);
+  audio.changeStudy('snowdrop');
+  assert.deepEqual(events.splice(0), [['release'], ['release']]);
+  audio.setVisibility(true);
+  assert.deepEqual(events.splice(0), [['attack', 147], ['attack', 220]]);
+
+  audio.mute();
+  audio.setVisibility(true);
+  assert.deepEqual(events.splice(0), [['release'], ['release']]);
+  await audio.enable('lily');
+  assert.deepEqual(events.splice(0), [['attack', 147], ['attack', 220]]);
+  assert.equal(volumes.length, 2, 'Re-enabling sound reuses the pad voices');
+  audio.changeStudy('chrysanthemum');
+  audio.setVisibility(true);
+  audio.changeStudy('poppy');
+  assert.deepEqual(rainEvents.splice(0), [['start'], ['stop']]);
+  audio.changeStudy('chrysanthemum');
+  audio.mute();
+  assert.deepEqual(rainEvents, [['start'], ['stop']]);
+});
+
 test('visual envelopes stay silent before the scheduled note and expire after release', () => {
   const profile = bloomProfile(0);
   assert.equal(bloomEnvelope(-0.1, profile), 0);
@@ -448,25 +650,130 @@ test('thick petal variants and flower geometry have finite vertices and valid fa
   const flower = createLily(0, assets, seededRandom(821));
   assert.equal(flower.petals.length, 6);
   assert.equal(flower.anthers.count, 7);
+  assert.deepEqual(flower.head.scale.toArray(), [1, 1, 1]);
   let draws = 0;
   flower.root.traverse((object) => { if (object.isMesh && object.material.visible !== false) draws++; });
   assert.ok(draws <= 13, `Unexpected draw count per flower: ${draws}`);
 });
 
-test('chrysanthemum florets and petal tiers stay batched', () => {
+test('upright chrysanthemums have a clustered center and batched moving petal tiers', () => {
   const assets = makeFlowerAssets();
   assets.chrysanthemum = makeChrysanthemumAssets(assets);
   const { tiers, center, leaf } = assets.chrysanthemum;
   const flower = createChrysanthemum(0, assets, seededRandom(821));
-  assert.equal(flower.petals.length, 5);
+  assert.equal(flower.petals.length, 4);
+  assert.deepEqual(flower.head.scale.toArray(), [1.25, 1.25, 1.25]);
+  assert.ok(flower.head.rotation.x >= 0.42 && flower.head.rotation.x <= 0.69);
   assert.equal(flower.stamens.geometry, center);
+  center.computeBoundingBox();
+  const centerSize = center.boundingBox.getSize(new THREE.Vector3());
+  assert.ok(centerSize.x > 0.32 && centerSize.x < 0.44 && centerSize.y < 0.2);
+  assert.equal(center.attributes.position.count / 3, 1920);
+  assert.ok(flower.stamens.material.color.equals(assets.anther.color));
+  assert.ok(flower.head.children.includes(flower.hit));
+  updateFlowerMotion(flower, 0.5, 0.03, -0.02, 0.4);
+  assert.ok(tiers.reduce((sum, { geometry }) => sum + geometry.attributes.position.count / 3, 0) <= 24_048);
   for (const geometry of [...tiers.map(({ geometry }) => geometry), center, leaf]) {
     assert.ok(geometry.attributes.position.array.every(Number.isFinite));
     assert.ok(geometry.attributes.normal.array.every(Number.isFinite));
   }
   let draws = 0;
   flower.root.traverse((object) => { if (object.isMesh && object.material.visible !== false) draws++; });
-  assert.ok(draws <= 10, `Unexpected draw count per chrysanthemum: ${draws}`);
+  assert.ok(draws <= 9, `Unexpected draw count per chrysanthemum: ${draws}`);
+});
+
+test('seasonal petals use the opacity and depth settings for their species', () => {
+  const assets = makeFlowerAssets();
+  const snowdrop = makeSnowdropAssets(assets);
+  const { tiers, centerMaterial } = makeChrysanthemumAssets(assets);
+  const translucentMaterials = [
+    [0.70, [...assets.petalMaterials, ...tiers.map(({ material }) => material)]],
+    [0.92, [snowdrop.material, snowdrop.innerMaterial]],
+  ];
+  for (const [opacity, materials] of translucentMaterials) {
+    for (const material of materials) {
+      assert.equal(material.opacity, opacity);
+      assert.ok(material.transparent && material.depthTest && !material.depthWrite);
+      assert.equal(material.side, THREE.FrontSide);
+    }
+  }
+  for (const material of [...assets.poppyMaterials, centerMaterial]) {
+    assert.equal(material.opacity, 1);
+    assert.ok(!material.transparent && material.depthTest && material.depthWrite);
+  }
+});
+
+test('summer lily petals arch outward to a visible rounded tip', () => {
+  const { petals } = makeFlowerAssets();
+  for (const geometry of petals) {
+    const { uv, position } = geometry.attributes;
+    let furthest = -Infinity;
+    let shoulderHeight = -Infinity;
+    let tipX = -Infinity;
+    let tipHeight = -Infinity;
+    let leftEdge = Infinity;
+    let rightEdge = -Infinity;
+    for (let i = 0; i < uv.count; i++) {
+      const t = uv.getY(i);
+      if (t === 1) {
+        leftEdge = Math.min(leftEdge, position.getZ(i));
+        rightEdge = Math.max(rightEdge, position.getZ(i));
+      }
+      if (uv.getX(i) !== 0.5) continue;
+      if (t > 0.65 && t < 0.95) furthest = Math.max(furthest, position.getX(i));
+      if (t > 0.54 && t < 0.70) shoulderHeight = Math.max(shoulderHeight, position.getY(i));
+      if (t === 1) {
+        tipX = Math.max(tipX, position.getX(i));
+        tipHeight = Math.max(tipHeight, position.getY(i));
+      }
+    }
+    assert.ok(tipX > furthest + 0.06);
+    assert.ok(shoulderHeight > 0.55 && tipHeight < shoulderHeight - 0.33);
+    assert.ok(rightEdge - leftEdge > 0.10);
+  }
+});
+
+test('chrysanthemum petals form a compact dome with broad, rounded tips', () => {
+  const { tiers } = makeChrysanthemumAssets(makeFlowerAssets());
+  const profile = (geometry, t) => {
+    const { uv, position } = geometry.attributes;
+    let radius = 0;
+    let height = 0;
+    let samples = 0;
+    for (let i = 0; i < uv.count; i++) {
+      if (Math.abs(uv.getY(i) - t) > 0.0001 || Math.abs(uv.getX(i) - 0.5) > 0.1) continue;
+      radius += Math.hypot(position.getX(i), position.getZ(i));
+      height += position.getY(i);
+      samples++;
+    }
+    assert.ok(samples > 0);
+    return { radius: radius / samples, height: height / samples };
+  };
+  const outer = tiers[0].geometry;
+  const inner = tiers.at(-1).geometry;
+  const outerShoulder = profile(outer, 0.75);
+  const outerTip = profile(outer, 1);
+  const innerTip = profile(inner, 1);
+  const outerCurl = outerShoulder.radius - outerTip.radius;
+  assert.ok(outerShoulder.radius < 1.11);
+  assert.ok(outerCurl > 0.025 && outerCurl < 0.14);
+  assert.ok(outerTip.height > outerShoulder.height + 0.12);
+  assert.ok(innerTip.height > outerTip.height + 0.45);
+  const innerRelativeRadius = innerTip.radius / profile(inner, 0.6).radius;
+  assert.ok(innerRelativeRadius > 0.64 && innerRelativeRadius < 0.88);
+  const { uv, position } = outer.attributes;
+  const widthAt = (t) => {
+    const edges = [];
+    for (let i = 0; i < uv.count && edges.length < 2; i++) {
+      if (Math.abs(uv.getY(i) - t) > 0.0001 || uv.getX(i) !== edges.length) continue;
+      edges.push(new THREE.Vector3().fromBufferAttribute(position, i));
+    }
+    assert.equal(edges.length, 2);
+    return edges[0].distanceTo(edges[1]);
+  };
+  const bodyWidth = widthAt(0.55);
+  assert.ok(bodyWidth > 0.34);
+  assert.ok(widthAt(1) > 0.7 * bodyWidth);
 });
 
 test('stem bending preserves its anchored base and remains attached to the head', () => {
@@ -550,6 +857,7 @@ test('poppies have a distinct silhouette with finite geometry and a bounded draw
   assert.equal(poppy.anthers.count, 56);
   assert.equal(poppy.leaves.length, 3);
   assert.equal(poppy.species, 'poppy');
+  assert.deepEqual(poppy.head.scale.toArray(), [1, 1, 1]);
   for (const geometry of [...assets.poppyPetals, assets.poppyLeaf, assets.poppyCenter, ...poppy.privateGeometries]) {
     for (const value of geometry.attributes.position.array) assert.ok(Number.isFinite(value));
     for (const value of geometry.attributes.normal.array) assert.ok(Number.isFinite(value));
