@@ -93,6 +93,13 @@ Measured with a GPU timer query on a 2376 by 1485 buffer, the frame is GPU-bound
 
 All four species now share the lily's mirror finish. The shared `pearlFinish` (snowdrops and chrysanthemums) is fully metallic with roughness 0.22 and reflection strength 1.9; poppies are fully metallic with roughness 0.26 and reflection strength 2; the snowdrop's jade-marked inner bell is 0.92 metallic with roughness 0.3. Petal colors, the chrysanthemum's translucent tips, and each season's reflected sky are unchanged, so each species picks up its own season's colors.
 
+### Phone layout pass
+
+- Phones (600 px wide or less) show the summer study only. The footer is one row of two equal 44 px buttons (sound, pause) with replant as an icon beside them, and the copyright on its own line underneath; labels can change without moving the row.
+- The opening title is not shown on phones; it stays in the page for screen readers.
+- On every layout the instructions above the footer fade once a flower has been played by pointer or keyboard (`data-flower-picked` on `body`).
+- On phones 700 px tall or less the navigation row and the content below it sit 14 px higher.
+
 The scene requires WebGL 2. Initialization failure presents a readable fallback; the HTML portfolio remains usable. No tracking, microphone access, or backend is involved.
 
 ## Verification

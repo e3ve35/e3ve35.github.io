@@ -827,10 +827,12 @@ class Garden {
         this.selectedId = (this.selectedId + direction + this.flowers.length) % this.flowers.length;
         this.playFlower(this.selectedId, 0.45);
         document.body.dataset.gardenTouched = 'true';
+        document.body.dataset.flowerPicked = 'true';
       } else if (event.code === 'Space' || event.key === 'Enter') {
         event.preventDefault();
         if (event.repeat) return;
         this.playFlower(this.selectedId, 0.45);
+        document.body.dataset.flowerPicked = 'true';
       }
     });
     $('#reseed').addEventListener('click', () => {
@@ -859,6 +861,7 @@ class Garden {
     const hits = this.raycaster.intersectObjects(this.hitTargets, false);
     const id = hits.length ? hits[0].object.userData.flowerId : -1;
     if (id >= 0 && (id !== this.hoveredId || force)) this.playFlower(id, this.gestureStrength);
+    if (id >= 0 && !document.body.dataset.flowerPicked) document.body.dataset.flowerPicked = 'true';
     this.hoveredId = id;
     cursor.classList.toggle('visible', id >= 0 && !this.mobile);
     garden.style.cursor = id >= 0 && !this.mobile ? 'none' : 'default';
