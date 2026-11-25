@@ -95,6 +95,10 @@ html:is(:lang(zh-Hans), :lang(ja)) .portfolio-view h2 {
 html:is(:lang(zh-Hans), :lang(ja)) :is(h2, .large-copy) em { font-style: normal; }
 .about-view .view-heading { container-type: inline-size; }
 html:is(:lang(zh-Hans), :lang(ja)) #about-title { font-size: min(clamp(41px, 4.4vw, 76px), 16cqi); }
+/* Where a language gives the name a reading, it sits above the name as furigana. */
+#about-title ruby:has(rt:empty) { display: none; }
+#about-title rt { font-size: .3em; letter-spacing: .12em; color: var(--muted); }
+#about-title:has(rt:not(:empty)) em { display: inline-block; margin-top: .2em; }
 .content-shade {
   position: fixed; inset: 0; pointer-events: none; opacity: 0;
   background: linear-gradient(90deg, #09070df5 0%, #09070de8 50%, #09070d7a 100%);
