@@ -4,7 +4,7 @@ import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEn
 import { createLily, createPoppy, createChrysanthemum, distantDetail, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, taperStem, updateLilyMotion, updateFlowerMotion } from './flowers.js';
 import { AsciiPollen, PollenPool } from './pollen.js';
 import * as THREE from './vendor/three.module.min.js';
-import { flowerNote, GardenAudio, harmonyFor, nextPulse, pulseFor } from './audio.js';
+import { flowerNote, GardenAudio, harmonyFor, leadWave, nextPulse, pulseFor, sequenceStep } from './audio.js';
 import { gardenStudy, gardenSelection } from './studies.js';
 import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js';
 import { gardenPlanting, placeFlower, flowerDetail, groundHeight, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js';
@@ -543,6 +543,7 @@ test('the quiet pad and seasonal recordings follow sound opt-in and garden visib
     connect() { return this; }
     toDestination() { return this; }
     triggerRelease() {}
+    triggerAttackRelease() {}
   }
   class PadVoice extends AudioNode {
     constructor({ volume }) {
@@ -575,7 +576,8 @@ test('the quiet pad and seasonal recordings follow sound opt-in and garden visib
   globalThis.window = { Tone: {
     start: async () => {}, now: () => 1, getContext: () => ({ state: 'running' }),
     Limiter: AudioNode, Gain: AudioNode, Filter: AudioNode, Reverb: AudioNode,
-    FeedbackDelay: AudioNode, Panner: AudioNode, FMSynth: AudioNode, Synth: PadVoice, Player: Recording,
+    FeedbackDelay: AudioNode, Panner: AudioNode, MonoSynth: AudioNode, FMSynth: AudioNode, MembraneSynth: AudioNode,
+    NoiseSynth: AudioNode, Synth: PadVoice, Player: Recording,
   } };
   globalThis.document = { hidden: false, body: { dataset: { page: 'garden' } } };
   const audio = new GardenAudio();
@@ -1313,7 +1315,7 @@ test('petal meshes and materials are built on first use and then kept', () => {
 test('notes start on the next free pulse and long queues are refused', () => {
   for (const species of ['lily', 'poppy', 'chrysanthemum', 'snowdrop']) {
     const step = pulseFor(species);
-    assert.ok(step >= 0.12 && step <= 0.25, 'A pulse is quick enough to feel immediate');
+    assert.ok(step >= 0.14 && step <= 0.2, 'A pulse is unhurried but quick enough to feel immediate');
     const origin = 3.2;
     for (const now of [origin, origin + 0.01, origin + step * 4.4, origin + step * 9]) {
       const first = nextPulse(now, origin, step);
@@ -1364,6 +1366,7 @@ test('the drone changes chord on the clock, restarts with the season, and rests 
   let clock = 10;
   const retunes = [];
   const delays = [];
+  const machine = [];
   class AudioNode {
     gain = { rampTo() {} };
     ready = Promise.resolve();
@@ -1371,6 +1374,7 @@ test('the drone changes chord on the clock, restarts with the season, and rests 
     toDestination() { return this; }
     triggerAttack() {}
     triggerRelease() {}
+    triggerAttackRelease(...args) { machine.push(args); }
     setNote(hz) { retunes.push(Math.round(hz)); }
     load() { return new Promise(() => {}); }
   }
@@ -1378,7 +1382,8 @@ test('the drone changes chord on the clock, restarts with the season, and rests 
   globalThis.window = { Tone: {
     start: async () => {}, now: () => clock, getContext: () => ({ state: 'running' }),
     Limiter: AudioNode, Gain: AudioNode, Filter: AudioNode, Reverb: AudioNode,
-    FeedbackDelay: Delay, Panner: AudioNode, FMSynth: AudioNode, Synth: AudioNode, Player: AudioNode,
+    FeedbackDelay: Delay, Panner: AudioNode, MonoSynth: AudioNode, FMSynth: AudioNode, MembraneSynth: AudioNode,
+    NoiseSynth: AudioNode, Synth: class extends AudioNode { triggerAttackRelease() {} }, Player: AudioNode,
   } };
   globalThis.document = { hidden: false, body: { dataset: { page: 'garden' } } };
   audio = new GardenAudio();
@@ -1390,6 +1395,14 @@ test('the drone changes chord on the clock, restarts with the season, and rests 
   assert.ok(Math.abs(delays.at(-1) - pulseFor('lily') * 2) < 1e-9, 'The echo follows the pulse');
   assert.equal(audio.advanceHarmony(), false, 'Nothing moves inside the first chord');
   assert.deepEqual(retunes, []);
+  assert.ok(machine.length >= 2, 'The machine starts with the sound');
+  assert.ok(machine.every((args) => args.some((value) => typeof value === 'number' && value >= 10 && value < 10.36)), 'Steps are queued just ahead of the clock');
+  machine.length = 0;
+  audio.scheduleAhead();
+  assert.deepEqual(machine, [], 'A step is never queued twice');
+  clock = 10 + pulseFor('lily') * 16;
+  audio.scheduleAhead();
+  assert.ok(machine.length >= 2 && machine.length <= 12, 'Only the next few steps are queued after a pause in the timer');
 
   const expected = harmonyFor('lily');
   const home = 147; // D3
@@ -1415,3 +1428,31 @@ test('the drone changes chord on the clock, restarts with the season, and rests 
   assert.equal(audio.harmonyTimer, null);
 });
 
+test('the drum machine and music-box line stay sparse, on the grid, and in the scale', () => {
+  const pitchClass = (midi) => ((midi % 12) + 12) % 12;
+  for (const species of ['lily', 'poppy', 'chrysanthemum', 'snowdrop']) {
+    const scale = new Set(Array.from({ length: 12 }, (_, id) => pitchClass(flowerNote(id, species).midi)));
+    const bar = Array.from({ length: 16 }, (_, slot) => sequenceStep(species, slot));
+    assert.ok(bar[0].kick && bar[0].bell !== null, 'Every bar starts on a kick and a bell');
+    assert.ok(bar.some((step) => step.clap) && bar.some((step) => step.hat));
+    const count = (part) => bar.filter((step) => part === 'bell' ? step.bell !== null : step[part]).length;
+    assert.ok(count('bell') >= 3);
+    for (const part of ['kick', 'clap', 'hat', 'bell']) assert.ok(count(part) <= 7, `${species}: the ${part} stays sparse`);
+    assert.deepEqual(sequenceStep(species, 16), bar[0], 'The pattern repeats every sixteen pulses');
+    const firstNotes = new Set();
+    for (let slot = 0; slot < 64 * 4; slot++) {
+      const { bell } = sequenceStep(species, slot);
+      if (bell === null) continue;
+      assert.ok(bell >= 62 && bell <= 98, `${species}: the bells stay in a music-box register (${bell})`);
+      assert.ok(scale.has(pitchClass(bell)), `${species}: bell ${bell} is in the scale`);
+      if (slot % 16 === 0) firstNotes.add(bell);
+    }
+    assert.equal(firstNotes.size, 4, 'The bells follow all four chords');
+    assert.deepEqual(sequenceStep(species, 64 * 4), bar[0], 'The chord cycle returns home');
+  }
+  assert.deepEqual(sequenceStep('unknown', 3), sequenceStep('lily', 3));
+  const waves = new Set(Array.from({ length: 16 }, (_, id) => leadWave(id)));
+  assert.equal(waves.size, 4);
+  for (const wave of waves) assert.match(wave, /^(sine|triangle\d*|square2)$/, 'Lead waveforms stay rounded');
+  for (let id = 0; id < 16; id++) assert.equal(leadWave(id), leadWave(id), 'A flower keeps its waveform');
+});

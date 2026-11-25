@@ -22,7 +22,7 @@ const scaleFor = (species) => Object.hasOwn(scales, species) ? scales[species] :
 
 // Each season keeps its own pulse, in seconds per sixteenth note. Notes start on
 // the next free pulse, so a sweep across the garden lands as a phrase.
-const pulses = { poppy: 0.1875, lily: 0.15, chrysanthemum: 0.1667, snowdrop: 0.2 };
+const pulses = { poppy: 0.1667, lily: 0.15, chrysanthemum: 0.1579, snowdrop: 0.1875 };
 export const pulseFor = (species) => Object.hasOwn(pulses, species) ? pulses[species] : pulses.lily;
 const PULSES_PER_CHORD = 64;
 const MAX_QUEUED_PULSES = 2;
@@ -34,6 +34,56 @@ const MAX_QUEUED_PULSES = 2;
 const minorHarmony = [[0, 0], [3, 1], [-2, -1], [5, 2]];
 const majorHarmony = [[0, 0], [-3, -1], [5, 1], [-5, 3]];
 export const harmonyFor = (species) => species === 'chrysanthemum' ? majorHarmony : minorHarmony;
+
+// A quiet sixteen-step pattern per season: a soft drum machine and a music-box
+// line, sparse enough to sit under the garden rather than drive it. Drums are
+// 'x' on the steps they sound. The bells are steps of the season's pentatonic
+// scale (five to the octave), counted from the scale's root.
+const _ = null;
+const sequences = {
+  lily: {
+    kick: 'x.......x.......', clap: '....x.......x...', hat: '..x...x...x...x.',
+    bell: [5, _, 8, _, 7, _, 10, _, _, _, 9, _, 8, _, 7, _],
+  },
+  poppy: {
+    kick: 'x.........x.....', clap: '............x...', hat: '....x.x.....x.x.',
+    bell: [5, _, _, 8, _, _, 7, _, 10, _, _, _, 8, _, _, _],
+  },
+  chrysanthemum: {
+    kick: 'x......x........', clap: '....x.......x...', hat: '..x.......x...x.',
+    bell: [5, _, 7, _, 8, _, _, 10, _, _, 8, _, 7, _, _, _],
+  },
+  snowdrop: {
+    kick: 'x...............', clap: '............x...', hat: '......x.......x.',
+    bell: [8, _, _, _, 10, _, _, _, 7, _, _, _, _, _, 5, _],
+  },
+};
+const sequenceFor = (species) => Object.hasOwn(sequences, species) ? sequences[species] : sequences.lily;
+
+// A step of the pentatonic scale as a note in the music-box register: the
+// octave above the scale's root is placed at or just above F#4.
+function bellNote(species, degree) {
+  const scale = scaleFor(species);
+  const lift = 12 * Math.ceil((66 - (scale[0] + 12)) / 12);
+  return scale[((degree % 5) + 5) % 5] + 12 * Math.floor(degree / 5) + lift;
+}
+
+// What the machine plays on one pulse: which drums, and the bell note if any.
+// The bells move with the chord by the same scale steps as the flowers.
+export function sequenceStep(species, slot) {
+  const sequence = sequenceFor(species);
+  const step = ((slot % 16) + 16) % 16;
+  const chord = harmonyFor(species)[Math.floor(Math.max(0, slot) / PULSES_PER_CHORD) % harmonyFor(species).length];
+  const degree = sequence.bell[step];
+  return {
+    kick: sequence.kick[step] === 'x', clap: sequence.clap[step] === 'x', hat: sequence.hat[step] === 'x',
+    bell: degree === null ? null : bellNote(species, degree + chord[1]),
+  };
+}
+
+// Flowers are soft synth plucks; each keeps its own rounded waveform.
+const leadWaves = ['triangle', 'sine', 'square2', 'triangle6'];
+export const leadWave = (id) => leadWaves[(id * 7) % 4];
 
 // The pulse a note may start on: the next one, or the one after the last note.
 // Returns null when the queue is already as long as a played phrase should be.
@@ -86,6 +136,10 @@ export class GardenAudio {
     this.lastSlot = -1;
     this.harmonyStep = 0;
     this.harmonyTimer = null;
+    this.nextSlot = 0;
+    this.drums = null;
+    this.bells = [];
+    this.nextBell = 0;
   }
 
   // Scale steps the flowers are currently shifted by; zero while sound is off.
@@ -96,6 +150,7 @@ export class GardenAudio {
     if (!this.ready) return;
     this.pulseOrigin = window.Tone.now();
     this.lastSlot = -1;
+    this.nextSlot = 0;
     this.harmonyStep = 0;
     this.delay?.delayTime?.rampTo?.(pulseFor(this.species) * 2, 0.2);
   }
@@ -109,6 +164,28 @@ export class GardenAudio {
     this.harmonyStep = step;
     this.tuneAmbient(false);
     return true;
+  }
+
+  // Queue the drum machine and bass a short way ahead of the audio clock.
+  scheduleAhead() {
+    if (!this.ready || !this.ambientActive || !this.drums) return;
+    this.advanceHarmony();
+    const step = pulseFor(this.species);
+    const now = window.Tone.now();
+    let slot = Math.max(this.nextSlot, Math.ceil((now - this.pulseOrigin) / step - 1e-9), 0);
+    for (; this.pulseOrigin + slot * step < now + 0.35; slot++) {
+      const when = this.pulseOrigin + slot * step;
+      const { kick, clap, hat, bell } = sequenceStep(this.species, slot);
+      if (kick) this.drums.kick.triggerAttackRelease('D1', 0.14, when, slot % 16 ? 0.7 : 1);
+      if (clap) this.drums.clap.triggerAttackRelease(0.06, when);
+      if (hat) this.drums.hat.triggerAttackRelease(0.025, when, slot % 4 === 2 ? 1 : 0.6);
+      if (bell !== null) {
+        // Three bells take turns, so each note rings on under the next.
+        const voice = this.bells[this.nextBell++ % this.bells.length];
+        voice.triggerAttackRelease(midiFrequency(bell), 0.3, when, slot % 8 ? 0.62 : 0.8);
+      }
+    }
+    this.nextSlot = slot;
   }
 
   async enable(species = this.species) {
@@ -129,17 +206,46 @@ export class GardenAudio {
       for (let i = 0; i < 8; i++) {
         const panner = new Tone.Panner(0).connect(delay);
         const filter = new Tone.Filter(5200, 'lowpass').connect(panner);
-        const synth = new Tone.FMSynth({
-          volume: -4,
-          harmonicity: 2.002,
-          modulationIndex: 2.6,
-          oscillator: { type: 'sine' },
-          envelope: { attack: 0.005, decay: 1.2, sustain: 0, release: 1.5 },
-          modulation: { type: 'sine' },
-          modulationEnvelope: { attack: 0.002, decay: 0.38, sustain: 0, release: 0.8 },
+        const synth = new Tone.MonoSynth({
+          volume: -11,
+          oscillator: { type: 'triangle' },
+          filter: { Q: 0.7, type: 'lowpass', rolloff: -12 },
+          envelope: { attack: 0.012, decay: 0.8, sustain: 0, release: 1 },
+          filterEnvelope: { attack: 0.01, decay: 0.5, sustain: 0.3, release: 1, baseFrequency: 600, octaves: 2 },
         }).connect(filter);
         this.voices.push({ synth, filter, panner, busyUntil: 0 });
       }
+      // The machine is a soft heartbeat and a brushed tick under a music box.
+      // The drums keep their low end by skipping the garden's high-pass
+      // filter; the bells share the flowers' echo and reverb.
+      const machine = new Tone.Gain(1).connect(this.master);
+      const machineAir = new Tone.Gain(0.22).connect(reverb);
+      const kick = new Tone.MembraneSynth({
+        volume: -23, pitchDecay: 0.05, octaves: 2.5,
+        envelope: { attack: 0.004, decay: 0.32, sustain: 0, release: 0.08 },
+      }).connect(machine);
+      const clapBand = new Tone.Filter(2300, 'bandpass').connect(machine);
+      clapBand.connect(machineAir);
+      const clap = new Tone.NoiseSynth({
+        volume: -37, noise: { type: 'pink' }, envelope: { attack: 0.004, decay: 0.06, sustain: 0, release: 0.03 },
+      }).connect(clapBand);
+      const hatBand = new Tone.Filter(8000, 'highpass').connect(machine);
+      const hat = new Tone.NoiseSynth({
+        volume: -42, noise: { type: 'white' }, envelope: { attack: 0.002, decay: 0.022, sustain: 0, release: 0.01 },
+      }).connect(hatBand);
+      this.drums = { kick, clap, hat };
+      // A music-box tine: a pure tone with a brief bright strike that fades
+      // into a long, quiet ring.
+      const bellPan = [-0.3, 0.3, 0];
+      this.bells = bellPan.map((pan) => new Tone.FMSynth({
+        volume: -20,
+        harmonicity: 4.01,
+        modulationIndex: 1.5,
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.002, decay: 1.5, sustain: 0, release: 1.4 },
+        modulation: { type: 'sine' },
+        modulationEnvelope: { attack: 0.001, decay: 0.11, sustain: 0, release: 0.1 },
+      }).connect(new Tone.Panner(pan).connect(delay)));
       await reverb.ready;
       this.ambientVoices = [
         { interval: 0, type: 'triangle', volume: -65 },
@@ -184,7 +290,8 @@ export class GardenAudio {
     this.harmonyTimer = null;
     if (active) {
       this.tuneAmbient(true);
-      this.harmonyTimer = setInterval(() => this.advanceHarmony(), 400);
+      this.scheduleAhead();
+      this.harmonyTimer = setInterval(() => this.scheduleAhead(), 100);
       this.harmonyTimer.unref?.();
     } else {
       const when = window.Tone.now();
@@ -257,17 +364,24 @@ export class GardenAudio {
     this.lastSlot = pulse.slot;
     const profile = bloomProfile(id, strength, species);
     const note = flowerNote(id, species, this.noteShift);
+    // A soft pluck that rings for most of the season's own decay and release,
+    // and opens a little more with a faster gesture.
+    const decay = profile.decay * 0.8;
+    const release = profile.release * 0.7;
+    const gate = profile.gate;
     voice.synth.set({
-      harmonicity: profile.character.harmonicity,
-      modulationIndex: profile.modulation,
-      detune: (profile.character.color - 0.5) * 4,
-      envelope: { attack: profile.attack, decay: profile.decay, sustain: 0, release: profile.release },
-      modulationEnvelope: { attack: 0.002, decay: profile.decay * 0.42, sustain: 0, release: profile.release * 0.65 },
+      oscillator: { type: leadWave(id) },
+      detune: (profile.character.color - 0.5) * 6,
+      envelope: { attack: profile.attack + 0.006, decay, sustain: 0, release },
+      filterEnvelope: {
+        attack: 0.01, decay: decay * 0.7, sustain: 0.3, release,
+        baseFrequency: profile.brightness * 0.3, octaves: 1.2 + profile.strength,
+      },
     });
     voice.panner.pan.setValueAtTime(Math.max(-0.78, Math.min(0.78, (screenPosition - 0.5) * 1.56)), when);
     voice.filter.frequency.setValueAtTime(profile.brightness, when);
-    voice.synth.triggerAttackRelease(note.frequency, profile.gate, when, profile.velocity);
-    voice.busyUntil = when + profile.gate + profile.release + 0.05;
+    voice.synth.triggerAttackRelease(note.frequency, gate, when, profile.velocity);
+    voice.busyUntil = when + gate + release + 0.05;
     this.lastPlayed = now;
     this.lastByFlower.set(id, now);
     document.body.dataset.lastNote = note.name;
