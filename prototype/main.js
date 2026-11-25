@@ -3,7 +3,7 @@ import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=seasonal-pollen-1';
 import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=chrome-blooms-1';
 import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=chrome-blooms-1';
-import { GardenAudio, flowerNote, loadSoundLibrary } from './audio.js?v=compressed-ambience-1';
+import { GardenAudio, flowerNote, loadSoundLibrary } from './audio.js?v=pulse-harmony-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
 import { gardenSelection } from './studies.js?v=spring-summer-2';
 import { SeasonalParticles } from './snowfall.js?v=lazy-assets-1';
@@ -573,7 +573,7 @@ class Garden {
     const species = this.study.id;
     let label = text(`scale.${species}`, {}, this.study.noteLabel);
     if (this.specimenNoteId !== null) {
-      const note = flowerNote(this.specimenNoteId, species).name;
+      const note = flowerNote(this.specimenNoteId, species, audio.noteShift).name;
       const timbre = flowerCharacter(this.specimenNoteId, species).name;
       label = `${note} / ${text(`timbre.${timbre}`, {}, timbre.toUpperCase())}`;
     }

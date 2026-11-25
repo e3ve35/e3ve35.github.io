@@ -19,11 +19,35 @@ const seasonalRecordings = {
 const NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
 
 const scaleFor = (species) => Object.hasOwn(scales, species) ? scales[species] : MIDI;
+
+// Each season keeps its own pulse, in seconds per sixteenth note. Notes start on
+// the next free pulse, so a sweep across the garden lands as a phrase.
+const pulses = { poppy: 0.1875, lily: 0.15, chrysanthemum: 0.1667, snowdrop: 0.2 };
+export const pulseFor = (species) => Object.hasOwn(pulses, species) ? pulses[species] : pulses.lily;
+const PULSES_PER_CHORD = 64;
+const MAX_QUEUED_PULSES = 2;
+
+// The drone walks through four roots, one per chord, and the flowers move with
+// it. Each entry is [semitones the drone moves, scale steps the flowers shift].
+// Every root and its fifth belong to (or sit a fourth under) the season's
+// pentatonic scale, so any flower stays consonant on any chord.
+const minorHarmony = [[0, 0], [3, 1], [-2, -1], [5, 2]];
+const majorHarmony = [[0, 0], [-3, -1], [5, 1], [-5, 3]];
+export const harmonyFor = (species) => species === 'chrysanthemum' ? majorHarmony : minorHarmony;
+
+// The pulse a note may start on: the next one, or the one after the last note.
+// Returns null when the queue is already as long as a played phrase should be.
+export function nextPulse(now, origin, step, lastSlot = -1) {
+  const slot = Math.max(Math.ceil((now - origin) / step - 1e-9), lastSlot + 1, 0);
+  const when = origin + slot * step;
+  return when - now > step * MAX_QUEUED_PULSES + 1e-9 ? null : { slot, when };
+}
 const midiFrequency = (midi) => 440 * 2 ** ((midi - 69) / 12);
 
-export function flowerNote(id, species = 'lily') {
+export function flowerNote(id, species = 'lily', shift = 0) {
   const scale = scaleFor(species);
-  const midi = scale[(id * 7 + 5) % scale.length] + (species === 'snowdrop' ? 12 : 0);
+  const degree = ((id * 7 + 5 + shift) % scale.length + scale.length) % scale.length;
+  const midi = scale[degree] + (species === 'snowdrop' ? 12 : 0);
   return { midi, frequency: midiFrequency(midi), name: `${NAMES[midi % 12]}${Math.floor(midi / 12) - 1}` };
 }
 
@@ -58,6 +82,33 @@ export class GardenAudio {
     this.species = 'lily';
     this.lastPlayed = -Infinity;
     this.lastByFlower = new Map();
+    this.pulseOrigin = 0;
+    this.lastSlot = -1;
+    this.harmonyStep = 0;
+    this.harmonyTimer = null;
+  }
+
+  // Scale steps the flowers are currently shifted by; zero while sound is off.
+  get noteShift() { return this.ambientActive ? harmonyFor(this.species)[this.harmonyStep][1] : 0; }
+
+  // Restart the pulse and the chord cycle, and tune the echo to the pulse.
+  resetPulse() {
+    if (!this.ready) return;
+    this.pulseOrigin = window.Tone.now();
+    this.lastSlot = -1;
+    this.harmonyStep = 0;
+    this.delay?.delayTime?.rampTo?.(pulseFor(this.species) * 2, 0.2);
+  }
+
+  // Move the drone to the chord the clock has reached. Returns true on a change.
+  advanceHarmony() {
+    if (!this.ready || !this.ambientActive) return false;
+    const chord = pulseFor(this.species) * PULSES_PER_CHORD;
+    const step = Math.max(0, Math.floor((window.Tone.now() - this.pulseOrigin) / chord)) % harmonyFor(this.species).length;
+    if (step === this.harmonyStep) return false;
+    this.harmonyStep = step;
+    this.tuneAmbient(false);
+    return true;
   }
 
   async enable(species = this.species) {
@@ -74,6 +125,7 @@ export class GardenAudio {
       const highpass = new Tone.Filter(130, 'highpass').connect(lowpass);
       const reverb = new Tone.Reverb({ decay: 3.8, preDelay: 0.025, wet: 0.28 }).connect(highpass);
       const delay = new Tone.FeedbackDelay({ delayTime: 0.31, feedback: 0.23, wet: 0.16 }).connect(reverb);
+      this.delay = delay;
       for (let i = 0; i < 8; i++) {
         const panner = new Tone.Panner(0).connect(delay);
         const filter = new Tone.Filter(5200, 'lowpass').connect(panner);
@@ -102,6 +154,7 @@ export class GardenAudio {
       this.ready = true;
     }
     this.enabled = true;
+    this.resetPulse();
     const audible = !document.hidden && document.body.dataset.page === 'garden';
     this.master.gain.rampTo(audible ? MASTER_GAIN : 0, 0.15);
     this.setAmbientActive(audible);
@@ -127,8 +180,13 @@ export class GardenAudio {
   setAmbientActive(active) {
     if (!this.ambientVoices.length || active === this.ambientActive) return;
     this.ambientActive = active;
-    if (active) this.tuneAmbient(true);
-    else {
+    clearInterval(this.harmonyTimer);
+    this.harmonyTimer = null;
+    if (active) {
+      this.tuneAmbient(true);
+      this.harmonyTimer = setInterval(() => this.advanceHarmony(), 400);
+      this.harmonyTimer.unref?.();
+    } else {
       const when = window.Tone.now();
       for (const { synth } of this.ambientVoices) synth.triggerRelease(when);
     }
@@ -136,7 +194,7 @@ export class GardenAudio {
   }
 
   tuneAmbient(attack) {
-    const root = 48 + scaleFor(this.species)[0] % 12;
+    const root = 48 + scaleFor(this.species)[0] % 12 + harmonyFor(this.species)[this.harmonyStep][0];
     const when = window.Tone.now();
     for (const { synth, interval } of this.ambientVoices) {
       const frequency = midiFrequency(root + interval);
@@ -181,6 +239,7 @@ export class GardenAudio {
     this.lastByFlower.clear();
     this.lastPlayed = -Infinity;
     this.species = species;
+    this.resetPulse();
     if (this.ambientActive) this.tuneAmbient(false);
     this.syncRecording();
   }
@@ -192,8 +251,12 @@ export class GardenAudio {
     const immediate = window.Tone.immediate();
     const voice = this.voices.find((candidate) => candidate.busyUntil <= immediate);
     if (!voice) return null;
+    const pulse = nextPulse(window.Tone.now(), this.pulseOrigin, pulseFor(species), this.lastSlot);
+    if (!pulse) return null;
+    const { when } = pulse;
+    this.lastSlot = pulse.slot;
     const profile = bloomProfile(id, strength, species);
-    const when = window.Tone.now();
+    const note = flowerNote(id, species, this.noteShift);
     voice.synth.set({
       harmonicity: profile.character.harmonicity,
       modulationIndex: profile.modulation,
@@ -203,11 +266,11 @@ export class GardenAudio {
     });
     voice.panner.pan.setValueAtTime(Math.max(-0.78, Math.min(0.78, (screenPosition - 0.5) * 1.56)), when);
     voice.filter.frequency.setValueAtTime(profile.brightness, when);
-    voice.synth.triggerAttackRelease(flowerNote(id, species).frequency, profile.gate, when, profile.velocity);
+    voice.synth.triggerAttackRelease(note.frequency, profile.gate, when, profile.velocity);
     voice.busyUntil = when + profile.gate + profile.release + 0.05;
     this.lastPlayed = now;
     this.lastByFlower.set(id, now);
-    document.body.dataset.lastNote = flowerNote(id, species).name;
+    document.body.dataset.lastNote = note.name;
     document.body.dataset.gestureStrength = profile.strength.toFixed(2);
     document.body.dataset.voiceCharacter = profile.character.name;
     document.body.dataset.voicesInUse = String(this.voices.filter((candidate) => candidate.busyUntil > immediate).length);

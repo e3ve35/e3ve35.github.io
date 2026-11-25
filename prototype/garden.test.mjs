@@ -4,7 +4,7 @@ import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEn
 import { createLily, createPoppy, createChrysanthemum, distantDetail, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, taperStem, updateLilyMotion, updateFlowerMotion } from './flowers.js';
 import { AsciiPollen, PollenPool } from './pollen.js';
 import * as THREE from './vendor/three.module.min.js';
-import { flowerNote, GardenAudio } from './audio.js';
+import { flowerNote, GardenAudio, harmonyFor, nextPulse, pulseFor } from './audio.js';
 import { gardenStudy, gardenSelection } from './studies.js';
 import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js';
 import { gardenPlanting, placeFlower, flowerDetail, groundHeight, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js';
@@ -1309,3 +1309,109 @@ test('petal meshes and materials are built on first use and then kept', () => {
   makeChrysanthemumAssets(assets);
   assert.ok(pending('petals') && pending('petalMaterials') && pending('lily', assets.surfaces));
 });
+
+test('notes start on the next free pulse and long queues are refused', () => {
+  for (const species of ['lily', 'poppy', 'chrysanthemum', 'snowdrop']) {
+    const step = pulseFor(species);
+    assert.ok(step >= 0.12 && step <= 0.25, 'A pulse is quick enough to feel immediate');
+    const origin = 3.2;
+    for (const now of [origin, origin + 0.01, origin + step * 4.4, origin + step * 9]) {
+      const first = nextPulse(now, origin, step);
+      assert.ok(first.when >= now - 1e-9 && first.when - now <= step + 1e-9);
+      assert.ok(Math.abs((first.when - origin) / step - first.slot) < 1e-9, 'Notes sit on the grid');
+      const second = nextPulse(now, origin, step, first.slot);
+      assert.equal(second.slot, first.slot + 1, 'A second note takes the following pulse');
+      const third = nextPulse(now, origin, step, second.slot);
+      assert.ok(third === null || third.when - now <= step * 2 + 1e-9);
+      assert.equal(nextPulse(now, origin, step, first.slot + 3), null, 'A long queue is refused');
+    }
+  }
+});
+
+test('every chord keeps the drone and all flowers inside the season\u2019s scale', () => {
+  const pitchClass = (midi) => ((midi % 12) + 12) % 12;
+  for (const species of ['lily', 'poppy', 'chrysanthemum', 'snowdrop']) {
+    const scale = new Set(Array.from({ length: 12 }, (_, id) => pitchClass(flowerNote(id, species).midi)));
+    assert.equal(scale.size, 5);
+    const root = flowerNote(1, species).midi; // Flower 1 sits on the first degree of the scale.
+    const harmony = harmonyFor(species);
+    assert.equal(harmony.length, 4);
+    assert.deepEqual(harmony[0], [0, 0], 'The cycle starts on the home chord');
+    assert.equal(new Set(harmony.map(([semitones]) => pitchClass(semitones))).size, 4, 'Four different roots');
+    for (const [semitones, shift] of harmony) {
+      assert.ok(scale.has(pitchClass(root + semitones + 7)), `${species}: the drone\u2019s fifth is in the scale`);
+      for (let id = 0; id < 24; id++) {
+        const note = flowerNote(id, species, shift);
+        assert.ok(scale.has(pitchClass(note.midi)), `${species}: flower ${id} stays in the scale`);
+        assert.ok(Number.isFinite(note.frequency) && note.name);
+      }
+    }
+    for (let id = 0; id < 24; id++) assert.deepEqual(flowerNote(id, species, 0), flowerNote(id, species));
+  }
+});
+
+test('the drone changes chord on the clock, restarts with the season, and rests with the sound', async (context) => {
+  const previousWindow = globalThis.window;
+  const previousDocument = globalThis.document;
+  let audio;
+  context.after(() => {
+    audio?.mute();
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+  });
+  let clock = 10;
+  const retunes = [];
+  const delays = [];
+  class AudioNode {
+    gain = { rampTo() {} };
+    ready = Promise.resolve();
+    connect() { return this; }
+    toDestination() { return this; }
+    triggerAttack() {}
+    triggerRelease() {}
+    setNote(hz) { retunes.push(Math.round(hz)); }
+    load() { return new Promise(() => {}); }
+  }
+  class Delay extends AudioNode { delayTime = { rampTo(value) { delays.push(value); } }; }
+  globalThis.window = { Tone: {
+    start: async () => {}, now: () => clock, getContext: () => ({ state: 'running' }),
+    Limiter: AudioNode, Gain: AudioNode, Filter: AudioNode, Reverb: AudioNode,
+    FeedbackDelay: Delay, Panner: AudioNode, FMSynth: AudioNode, Synth: AudioNode, Player: AudioNode,
+  } };
+  globalThis.document = { hidden: false, body: { dataset: { page: 'garden' } } };
+  audio = new GardenAudio();
+  assert.equal(audio.noteShift, 0, 'Flowers keep their home notes while sound is off');
+  assert.equal(audio.advanceHarmony(), false);
+
+  await audio.enable('lily');
+  const chord = pulseFor('lily') * 64;
+  assert.ok(Math.abs(delays.at(-1) - pulseFor('lily') * 2) < 1e-9, 'The echo follows the pulse');
+  assert.equal(audio.advanceHarmony(), false, 'Nothing moves inside the first chord');
+  assert.deepEqual(retunes, []);
+
+  const expected = harmonyFor('lily');
+  const home = 147; // D3
+  for (let step = 1; step <= 4; step++) {
+    clock = 10 + chord * step + 0.01;
+    assert.equal(audio.advanceHarmony(), true);
+    assert.equal(audio.advanceHarmony(), false, 'One change per chord');
+    const [semitones, shift] = expected[step % 4];
+    assert.equal(audio.noteShift, shift);
+    assert.equal(retunes.splice(0)[0], Math.round(home * 2 ** (semitones / 12)));
+  }
+
+  clock += chord * 1.5;
+  audio.changeStudy('chrysanthemum');
+  assert.equal(audio.noteShift, 0, 'A new season starts on its home chord');
+  assert.deepEqual(retunes.splice(0), [196, 294]);
+  assert.ok(Math.abs(delays.at(-1) - pulseFor('chrysanthemum') * 2) < 1e-9);
+
+  clock += pulseFor('chrysanthemum') * 64 + 0.01;
+  audio.mute();
+  assert.equal(audio.advanceHarmony(), false, 'The chords rest while the garden is silent');
+  assert.equal(audio.noteShift, 0);
+  assert.equal(audio.harmonyTimer, null);
+});
+
