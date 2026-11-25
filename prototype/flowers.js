@@ -497,7 +497,7 @@ export function makeChrysanthemumAssets(assets) {
       }, { rows, columns, normalThickness: true });
       return petal.rotateY(yaw);
     });
-    return { geometry: mergeSurfaces(petals), material };
+    return { geometry: mergeSurfaces(petals) };
   });
   };
   const tiers = buildTiers(20, 7);
@@ -609,5 +609,3 @@ export function updateFlowerMotion(flower, time, swayX, swayZ, response, paused 
     companion.group.rotation.z = companion.rotation.z - swayX / height * 0.8 + (paused ? 0 : Math.sin(time * 0.9 + companion.phase) * 0.02) + response * 0.03;
   }
 }
-
-export const updateLilyMotion = updateFlowerMotion;

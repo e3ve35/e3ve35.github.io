@@ -1,4 +1,4 @@
-import { bloomProfile } from './expressions.js?v=four-seasons-1';
+import { bloomProfile } from './expressions.js?v=review-fixes-1';
 
 const MIDI = [50, 53, 55, 57, 60, 62, 65, 67, 69, 72, 74, 77];
 const POPPY_MIDI = [45, 48, 50, 52, 55, 57, 60, 62, 64, 67, 69, 72];
@@ -196,67 +196,85 @@ export class GardenAudio {
     // Called directly from a click/keyboard handler, including on iOS.
     await Tone.start();
     if (!this.ready) {
-      const limiter = new Tone.Limiter(-3).toDestination();
-      this.master = new Tone.Gain(0).connect(limiter);
-      const lowpass = new Tone.Filter(6500, 'lowpass').connect(this.master);
-      const highpass = new Tone.Filter(130, 'highpass').connect(lowpass);
-      const reverb = new Tone.Reverb({ decay: 3.8, preDelay: 0.025, wet: 0.28 }).connect(highpass);
-      const delay = new Tone.FeedbackDelay({ delayTime: 0.31, feedback: 0.23, wet: 0.16 }).connect(reverb);
-      this.delay = delay;
-      for (let i = 0; i < 8; i++) {
-        const panner = new Tone.Panner(0).connect(delay);
-        const filter = new Tone.Filter(5200, 'lowpass').connect(panner);
-        const synth = new Tone.MonoSynth({
-          volume: -11,
-          oscillator: { type: 'triangle' },
-          filter: { Q: 0.7, type: 'lowpass', rolloff: -12 },
-          envelope: { attack: 0.012, decay: 0.8, sustain: 0, release: 1 },
-          filterEnvelope: { attack: 0.01, decay: 0.5, sustain: 0.3, release: 1, baseFrequency: 600, octaves: 2 },
-        }).connect(filter);
-        this.voices.push({ synth, filter, panner, busyUntil: 0 });
+      // Every node is recorded as it is made, so a setup that fails partway
+      // can be taken down again and the next attempt starts from nothing.
+      const built = [];
+      const node = (Type, ...options) => {
+        const made = new Type(...options);
+        built.push(made);
+        return made;
+      };
+      try {
+        const limiter = node(Tone.Limiter, -3).toDestination();
+        this.master = node(Tone.Gain, 0).connect(limiter);
+        const lowpass = node(Tone.Filter, 6500, 'lowpass').connect(this.master);
+        const highpass = node(Tone.Filter, 130, 'highpass').connect(lowpass);
+        const reverb = node(Tone.Reverb, { decay: 3.8, preDelay: 0.025, wet: 0.28 }).connect(highpass);
+        const delay = node(Tone.FeedbackDelay, { delayTime: 0.31, feedback: 0.23, wet: 0.16 }).connect(reverb);
+        this.delay = delay;
+        for (let i = 0; i < 8; i++) {
+          const panner = node(Tone.Panner, 0).connect(delay);
+          const filter = node(Tone.Filter, 5200, 'lowpass').connect(panner);
+          const synth = node(Tone.MonoSynth, {
+            volume: -11,
+            oscillator: { type: 'triangle' },
+            filter: { Q: 0.7, type: 'lowpass', rolloff: -12 },
+            envelope: { attack: 0.012, decay: 0.8, sustain: 0, release: 1 },
+            filterEnvelope: { attack: 0.01, decay: 0.5, sustain: 0.3, release: 1, baseFrequency: 600, octaves: 2 },
+          }).connect(filter);
+          this.voices.push({ synth, filter, panner, busyUntil: 0 });
+        }
+        // The machine is a soft heartbeat and a brushed tick under a music box.
+        // The drums keep their low end by skipping the garden's high-pass
+        // filter; the bells share the flowers' echo and reverb.
+        const machine = node(Tone.Gain, 1).connect(this.master);
+        const machineAir = node(Tone.Gain, 0.22).connect(reverb);
+        const kick = node(Tone.MembraneSynth, {
+          volume: -23, pitchDecay: 0.05, octaves: 2.5,
+          envelope: { attack: 0.004, decay: 0.32, sustain: 0, release: 0.08 },
+        }).connect(machine);
+        const clapBand = node(Tone.Filter, 2300, 'bandpass').connect(machine);
+        clapBand.connect(machineAir);
+        const clap = node(Tone.NoiseSynth, {
+          volume: -37, noise: { type: 'pink' }, envelope: { attack: 0.004, decay: 0.06, sustain: 0, release: 0.03 },
+        }).connect(clapBand);
+        const hatBand = node(Tone.Filter, 8000, 'highpass').connect(machine);
+        const hat = node(Tone.NoiseSynth, {
+          volume: -42, noise: { type: 'white' }, envelope: { attack: 0.002, decay: 0.022, sustain: 0, release: 0.01 },
+        }).connect(hatBand);
+        this.drums = { kick, clap, hat };
+        // A music-box tine: a pure tone with a brief bright strike that fades
+        // into a long, quiet ring.
+        const bellPan = [-0.3, 0.3, 0];
+        this.bells = bellPan.map((pan) => node(Tone.FMSynth, {
+          volume: -20,
+          harmonicity: 4.01,
+          modulationIndex: 1.5,
+          oscillator: { type: 'sine' },
+          envelope: { attack: 0.002, decay: 1.5, sustain: 0, release: 1.4 },
+          modulation: { type: 'sine' },
+          modulationEnvelope: { attack: 0.001, decay: 0.11, sustain: 0, release: 0.1 },
+        }).connect(node(Tone.Panner, pan).connect(delay)));
+        await reverb.ready;
+        this.ambientVoices = [
+          { interval: 0, type: 'triangle', volume: -65 },
+          { interval: 7, type: 'sine', volume: -71 },
+        ].map(({ interval, type, volume }) => ({
+          interval,
+          synth: node(Tone.Synth, {
+            volume, portamento: 0.65, oscillator: { type },
+            envelope: { attack: 1.8, decay: 1.2, sustain: 0.75, release: 1.2 },
+          }).connect(reverb),
+        }));
+      } catch (error) {
+        for (const made of built) made.dispose();
+        this.voices = [];
+        this.bells = [];
+        this.drums = null;
+        this.ambientVoices = [];
+        this.master = this.delay = undefined;
+        throw error;
       }
-      // The machine is a soft heartbeat and a brushed tick under a music box.
-      // The drums keep their low end by skipping the garden's high-pass
-      // filter; the bells share the flowers' echo and reverb.
-      const machine = new Tone.Gain(1).connect(this.master);
-      const machineAir = new Tone.Gain(0.22).connect(reverb);
-      const kick = new Tone.MembraneSynth({
-        volume: -23, pitchDecay: 0.05, octaves: 2.5,
-        envelope: { attack: 0.004, decay: 0.32, sustain: 0, release: 0.08 },
-      }).connect(machine);
-      const clapBand = new Tone.Filter(2300, 'bandpass').connect(machine);
-      clapBand.connect(machineAir);
-      const clap = new Tone.NoiseSynth({
-        volume: -37, noise: { type: 'pink' }, envelope: { attack: 0.004, decay: 0.06, sustain: 0, release: 0.03 },
-      }).connect(clapBand);
-      const hatBand = new Tone.Filter(8000, 'highpass').connect(machine);
-      const hat = new Tone.NoiseSynth({
-        volume: -42, noise: { type: 'white' }, envelope: { attack: 0.002, decay: 0.022, sustain: 0, release: 0.01 },
-      }).connect(hatBand);
-      this.drums = { kick, clap, hat };
-      // A music-box tine: a pure tone with a brief bright strike that fades
-      // into a long, quiet ring.
-      const bellPan = [-0.3, 0.3, 0];
-      this.bells = bellPan.map((pan) => new Tone.FMSynth({
-        volume: -20,
-        harmonicity: 4.01,
-        modulationIndex: 1.5,
-        oscillator: { type: 'sine' },
-        envelope: { attack: 0.002, decay: 1.5, sustain: 0, release: 1.4 },
-        modulation: { type: 'sine' },
-        modulationEnvelope: { attack: 0.001, decay: 0.11, sustain: 0, release: 0.1 },
-      }).connect(new Tone.Panner(pan).connect(delay)));
-      await reverb.ready;
-      this.ambientVoices = [
-        { interval: 0, type: 'triangle', volume: -65 },
-        { interval: 7, type: 'sine', volume: -71 },
-      ].map(({ interval, type, volume }) => ({
-        interval,
-        synth: new Tone.Synth({
-          volume, portamento: 0.65, oscillator: { type },
-          envelope: { attack: 1.8, decay: 1.2, sustain: 0.75, release: 1.2 },
-        }).connect(reverb),
-      }));
       this.ready = true;
     }
     this.enabled = true;

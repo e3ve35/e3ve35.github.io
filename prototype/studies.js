@@ -75,6 +75,5 @@ export function gardenSelection(mode = 'calendar', date = new Date()) {
     monthKey: `${date.getFullYear()}-${monthIndex}`,
     keyLight: study.keyLight,
     fillLight: study.fillLight,
-    caption: `${automatic ? study.season : `${study.season} preview`} · ${study.name}`,
   };
 }

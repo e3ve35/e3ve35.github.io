@@ -25,12 +25,12 @@
     <link rel="preload" href="./Instrument_Serif/InstrumentSerif-Regular.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="./Instrument_Serif/InstrumentSerif-Italic.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="./prototype/style.css?v=quiet-footer-1" />
-    <link rel="stylesheet" href="./prototype/portfolio.css?v=furigana-1" />
-    <script type="module" src="./prototype/main.js?v=music-box-1"></script>
+    <link rel="stylesheet" href="./prototype/portfolio.css?v=review-fixes-1" />
+    <script type="module" src="./prototype/main.js?v=review-fixes-1"></script>
   </head>
   <body data-page="garden">
     <a class="skip-link" data-i18n="site.skip" href="#page-content">Skip to content</a>
-    <div id="garden" role="region" aria-label="Interactive chrome lily garden" tabindex="0" aria-describedby="keyboard-hint">
+    <div id="garden" role="region" aria-label="Interactive garden of chrome flowers" tabindex="0" aria-describedby="keyboard-hint">
       <canvas id="scene" aria-hidden="true"></canvas>
       <div class="vignette" aria-hidden="true"></div>
       <div class="grain" aria-hidden="true"></div>
@@ -165,7 +165,7 @@
     <section id="about" class="portfolio-view about-view" data-page-view="about" aria-labelledby="about-title" hidden>
       <div class="view-grid">
         <div class="view-heading">
-          <p class="eyebrow"><span class="tiny-cross">+</span> <span data-i18n="about.eyebrow">03 / ABOUT ME</span></p>
+          <p class="eyebrow"><span class="tiny-cross" aria-hidden="true">+</span> <span data-i18n="about.eyebrow">03 / ABOUT ME</span></p>
           <h2 id="about-title" tabindex="-1"><span data-i18n="about.titleFirst">Hello,</span><br /><em><ruby><span data-i18n="about.titleName"></span><rt data-i18n="about.titleReading"></rt></ruby><span data-i18n="about.titleLast">I’m Evelyn.</span></em></h2>
           <figure class="about-portrait"><img src="./prototype/about/evelyn.jpg" width="1200" height="900" data-i18n-alt="about.portraitAlt" alt="Photo" decoding="async" fetchpriority="low" /></figure>
         </div>
@@ -178,7 +178,7 @@
     </section>
 
     <section id="contact" class="portfolio-view contact-view" data-page-view="contact" aria-labelledby="contact-title" hidden>
-      <p class="eyebrow"><span class="tiny-cross">+</span> <span data-i18n="contact.eyebrow">04 / A CONVERSATION STARTS SOMEWHERE</span></p>
+      <p class="eyebrow"><span class="tiny-cross" aria-hidden="true">+</span> <span data-i18n="contact.eyebrow">04 / A CONVERSATION STARTS SOMEWHERE</span></p>
       <h2 id="contact-title" tabindex="-1"><span data-i18n="contact.titleFirst">Say </span><em data-i18n="contact.titleLast">hello.</em></h2>
       <a class="email-link" href="mailto:e3ve35@gmail.com">e3ve35@gmail.com <span aria-hidden="true">↗</span></a>
       <div class="contact-links"><a href="https://github.com/e3ve35" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a><a href="https://www.linkedin.com/in/evelynn-wu/" target="_blank" rel="noopener noreferrer">LinkedIn <span aria-hidden="true">↗</span></a></div>
@@ -186,7 +186,7 @@
     </main>
 
     <aside class="specimen-card" data-i18n-aria="specimen.label" aria-label="Current flower">
-      <div class="specimen-heading"><span class="tiny-cross">+</span><span><span data-i18n="specimen.number">SPECIMEN /</span> <span id="specimen-id">001</span></span></div>
+      <div class="specimen-heading"><span class="tiny-cross" aria-hidden="true">+</span><span><span data-i18n="specimen.number">SPECIMEN /</span> <span id="specimen-id">001</span></span></div>
       <div class="specimen-name" lang="la"><span id="flower-genus">Lilium</span> <em>synthetica</em></div>
       <div class="specimen-meta"><span data-i18n="specimen.petals">CHROME PETALS</span><span id="note-name">D PENTATONIC</span></div>
       <div class="signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>

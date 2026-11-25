@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync, readdirSync } from 'node:fs';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js';
-import { createLily, createPoppy, createChrysanthemum, distantDetail, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, taperStem, updateLilyMotion, updateFlowerMotion } from './flowers.js';
+import { createLily, createPoppy, createChrysanthemum, distantDetail, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, taperStem, updateFlowerMotion } from './flowers.js';
 import { AsciiPollen, PollenPool } from './pollen.js';
 import * as THREE from './vendor/three.module.min.js';
 import { flowerNote, GardenAudio, harmonyFor, leadWave, nextPulse, pulseFor, sequenceStep } from './audio.js';
@@ -11,6 +12,7 @@ import { gardenPlanting, placeFlower, flowerDetail, groundHeight, meadowGrass, g
 import { GroundSignals, groundMarks, groundGlyphAtlas } from './ground-signals.js';
 import { createPetalSurfaces } from './petal-surfaces.js';
 import { SeasonalParticles } from './snowfall.js';
+import { translations } from './translations.js';
 
 function stubParticleCanvas(testContext) {
   const previousDocument = globalThis.document;
@@ -52,17 +54,6 @@ test('season switches recycle the same particle buffers, shader and glyph atlas'
     assert.ok(geometry.drawRange.count > 0 && geometry.drawRange.count <= positions.length / 3);
   }
   assert.deepEqual(positions, winterPositions);
-});
-
-test('cached garden versions can still initialize and animate winter snowfall', async (context) => {
-  particleScene(context);
-  const { createSnowfall } = await import('./snowfall.js');
-  assert.equal(typeof createSnowfall, 'function');
-  const snow = createSnowfall();
-  assert.ok(snow.isPoints);
-  assert.equal(snow.geometry.drawRange.count, 170);
-  assert.equal(snow.material.uniforms.time.value, 0);
-  assert.equal(snow.material.uniforms.viewportHeight.value, 1);
 });
 
 test('autumn rain uses printable ASCII drops in its atlas row', (context) => {
@@ -228,12 +219,14 @@ test('all petal variants share bounded PBR maps without extra render objects', (
     assert.equal(material.metalness, 1);
     assert.equal(material.envMapIntensity, 2);
   }
-  for (const { material } of makeChrysanthemumAssets(assets).tiers) {
+  const autumnPetals = makeChrysanthemumAssets(assets).materials;
+  for (const material of autumnPetals) {
     assert.equal(material.metalness, winterPetal.metalness);
     assert.equal(material.roughness, winterPetal.roughness);
     assert.equal(material.envMapIntensity, winterPetal.envMapIntensity);
-    assert.ok(material.color.equals(winterPetal.color));
   }
+  // The first bloom keeps the shared pearl; the other two are tinted.
+  assert.ok(autumnPetals[0].color.equals(winterPetal.color));
   let bytes = 0;
   for (const [materials, surface, minMetalness, minRoughness, maxRoughness] of families) {
     for (const map of Object.values(surface)) bytes += map.image.data.byteLength;
@@ -507,7 +500,6 @@ test('flowers retain their identity while faster gestures change expression', ()
   assert.deepEqual(soft.character, bright.character);
   assert.ok(bright.velocity > soft.velocity);
   assert.ok(bright.brightness > soft.brightness);
-  assert.ok(bright.modulation > soft.modulation);
   assert.equal(soft.release, bright.release);
   assert.ok(new Set(Array.from({ length: 18 }, (_, id) => flowerCharacter(id).name)).size >= 4);
 });
@@ -737,8 +729,8 @@ test('autumn clusters mix tall stems with low, upward-facing chrysanthemums', ()
 test('autumn petals keep solid, depth-writing bodies with translucent tips and the other seasons are opaque', () => {
   const assets = makeFlowerAssets();
   const snowdrop = makeSnowdropAssets(assets);
-  const { tiers, centerMaterial } = makeChrysanthemumAssets(assets);
-  for (const { material } of tiers) {
+  const { materials, centerMaterial } = makeChrysanthemumAssets(assets);
+  for (const material of materials) {
     assert.equal(material.opacity, 1);
     assert.ok(material.transparent && material.depthTest && material.depthWrite);
     assert.equal(typeof material.onBeforeCompile, 'function');
@@ -828,7 +820,7 @@ test('chrysanthemum petals form a compact dome with broad, rounded tips', () => 
 
 test('stem bending preserves its anchored base and remains attached to the head', () => {
   const flower = createLily(0, makeFlowerAssets(), seededRandom(821));
-  updateLilyMotion(flower, 1, 0.25, -0.1, 0.5);
+  updateFlowerMotion(flower, 1, 0.25, -0.1, 0.5);
   const result = flower.stemGeometry.attributes.position.array;
   for (let i = 0; i < result.length; i += 3) {
     if (flower.stemPositions[i + 1] <= 0) {
@@ -839,7 +831,7 @@ test('stem bending preserves its anchored base and remains attached to the head'
   }
   assert.equal(flower.head.position.x, flower.bend + 0.25);
   assert.equal(flower.head.position.z, -0.1);
-  updateLilyMotion(flower, 1, 0, 0, 0, true);
+  updateFlowerMotion(flower, 1, 0, 0, 0, true);
   assert.equal(flower.head.position.x, flower.bend);
   assert.equal(flower.head.position.z, 0);
 });
@@ -887,9 +879,9 @@ test('pollen is released from the moving stamens in world space', () => {
   flower.root.position.set(2, 0, -1);
   flower.root.scale.setScalar(1.2);
   const origin = () => AsciiPollen.prototype.flowerOrigin.call({ origin: new THREE.Vector3() }, flower);
-  updateLilyMotion(flower, 0, 0, 0, 0);
+  updateFlowerMotion(flower, 0, 0, 0, 0);
   const before = origin();
-  updateLilyMotion(flower, 2, 0.3, -0.2, 0.5);
+  updateFlowerMotion(flower, 2, 0.3, -0.2, 0.5);
   const after = origin();
   assert.ok(before.distanceTo(after) > 0.1);
   const pool = new PollenPool(96, seededRandom(12));
@@ -925,7 +917,6 @@ test('poppy timbres are softer and retain consistent identity, pitch, and envelo
     const poppy = bloomProfile(id, 0.7, 'poppy');
     assert.ok(poppy.attack > lily.attack);
     assert.ok(poppy.brightness < lily.brightness);
-    assert.ok(poppy.modulation < lily.modulation);
     assert.ok(flowerNote(id, 'poppy').frequency < flowerNote(id).frequency);
     assert.deepEqual(poppy.character, bloomProfile(id, 0.1, 'poppy').character);
     assert.ok(Math.abs(bloomEnvelope(poppy.attack, poppy) - 1) < 1e-9);
@@ -980,7 +971,6 @@ test('manual flowers survive calendar changes and Now restores the seasonal choi
       assert.equal(choice.keyLight, gardenStudy(id).keyLight);
       assert.equal(choice.automatic, false);
       assert.equal(choice.season, choice.study.season);
-      assert.equal(choice.caption, `${choice.study.season} preview · ${choice.study.name}`);
     }
   }
   const october = new Date(2026, 9, 21);
@@ -1005,8 +995,8 @@ test('snowdrops hang below an arched stem with finite geometry and few draws', (
     for (const value of geometry.attributes.normal.array) assert.ok(Number.isFinite(value));
     if (geometry.index) for (const index of geometry.index.array) assert.ok(index < geometry.attributes.position.count);
   }
-  assets.snowdrop.outer.computeBoundingBox();
-  assert.ok(assets.snowdrop.outer.boundingBox.min.y < -1.5);
+  assets.snowdrop.outers[0].computeBoundingBox();
+  assert.ok(assets.snowdrop.outers[0].boundingBox.min.y < -1.5);
   let draws = 0;
   flower.root.traverse((object) => { if (object.isMesh && object.material.visible !== false) draws++; });
   assert.equal(flower.companions.length, 2);
@@ -1218,7 +1208,6 @@ test('chrysanthemums rotate through three petal tints that share one shader', ()
   assets.chrysanthemum = makeChrysanthemumAssets(assets);
   const { materials, tiers } = assets.chrysanthemum;
   assert.equal(materials.length, 3);
-  assert.equal(materials[0], tiers[0].material);
   assert.equal(new Set(materials.map(({ color }) => color.getHexString())).size, 3);
   for (const material of materials) {
     assert.equal(material.onBeforeCompile, materials[0].onBeforeCompile);
@@ -1455,4 +1444,92 @@ test('the drum machine and music-box line stay sparse, on the grid, and in the s
   assert.equal(waves.size, 4);
   for (const wave of waves) assert.match(wave, /^(sine|triangle\d*|square2)$/, 'Lead waveforms stay rounded');
   for (let id = 0; id < 16; id++) assert.equal(leadWave(id), leadWave(id), 'A flower keeps its waveform');
+});
+
+const sourceOf = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
+const gardenModules = readdirSync(new URL('.', import.meta.url)).filter((name) => name.endsWith('.js'));
+
+test('every module is imported under one URL, so the browser loads it once', () => {
+  const urls = new Map();
+  for (const name of gardenModules) {
+    for (const [, file, version = ''] of sourceOf(`./${name}`).matchAll(/from '\.\/([\w-]+\.js)(\?v=[\w-]+)?'/g)) {
+      urls.set(file, (urls.get(file) ?? new Set()).add(version));
+    }
+  }
+  assert.ok(urls.size > 5);
+  for (const [file, versions] of urls) assert.equal(versions.size, 1, `${file} is imported as ${[...versions].join(' and ')}`);
+});
+
+test('a failed sound setup is cleared away, and the next attempt builds one set of voices', async (context) => {
+  const previousWindow = globalThis.window;
+  const previousDocument = globalThis.document;
+  context.after(() => {
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+  });
+  const nodes = [];
+  let reverbFails = true;
+  class AudioNode {
+    gain = { rampTo() {} };
+    ready = Promise.resolve();
+    constructor() { nodes.push(this); }
+    connect() { return this; }
+    toDestination() { return this; }
+    triggerAttack() {}
+    triggerAttackRelease() {}
+    triggerRelease() {}
+    load() { return new Promise(() => {}); }
+    dispose() { this.disposed = true; }
+  }
+  class Reverb extends AudioNode {
+    ready = reverbFails ? Promise.reject(new Error('no impulse response')) : Promise.resolve();
+  }
+  globalThis.window = { Tone: {
+    start: async () => {}, now: () => 1, getContext: () => ({ state: 'running' }),
+    Limiter: AudioNode, Gain: AudioNode, Filter: AudioNode, Reverb,
+    FeedbackDelay: AudioNode, Panner: AudioNode, MonoSynth: AudioNode, FMSynth: AudioNode, MembraneSynth: AudioNode,
+    NoiseSynth: AudioNode, Synth: AudioNode, Player: AudioNode,
+  } };
+  globalThis.document = { hidden: false, body: { dataset: { page: 'garden' } } };
+  const audio = new GardenAudio();
+  await assert.rejects(audio.enable('lily'), /no impulse response/);
+  assert.equal(audio.ready, false);
+  assert.equal(audio.enabled, false);
+  assert.equal(audio.voices.length, 0);
+  assert.equal(audio.bells.length, 0);
+  assert.equal(audio.drums, null);
+  assert.ok(nodes.length > 20 && nodes.every((node) => node.disposed));
+
+  reverbFails = false;
+  await audio.enable('lily');
+  assert.equal(audio.ready, true);
+  assert.equal(audio.voices.length, 8);
+  assert.equal(audio.bells.length, 3);
+  audio.mute();
+});
+
+test('the English garden label reads naturally with a plural flower name', () => {
+  const label = translations.en['garden.region'].replace('{flower}', gardenStudy('lily').name.toLowerCase());
+  assert.equal(label, 'Interactive garden of chrome lilies');
+});
+
+test('every translated string is used by the page or the garden', () => {
+  const page = sourceOf('../index.html');
+  const script = sourceOf('./main.js') + sourceOf('./i18n.js');
+  const used = new Set([...page.matchAll(/data-i18n(?:-\w+)?="([^"]+)"/g)].map(([, key]) => key));
+  const dynamic = [...script.matchAll(/`(\w+)\.\$\{/g)].map(([, prefix]) => `${prefix}.`);
+  for (const [language, strings] of Object.entries(translations)) {
+    for (const key of Object.keys(strings)) {
+      const referenced = used.has(key) || script.includes(`'${key}'`) || dynamic.some((prefix) => key.startsWith(prefix));
+      assert.ok(referenced, `${language} translates ${key}, which nothing displays`);
+    }
+  }
+});
+
+test('decorative crosses are hidden from assistive technology', () => {
+  const crosses = sourceOf('../index.html').match(/<span class="tiny-cross"[^>]*>/g);
+  assert.ok(crosses.length >= 4);
+  for (const cross of crosses) assert.match(cross, /aria-hidden="true"/);
 });

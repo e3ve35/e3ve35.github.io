@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
-import { bloomColors, distantDetail, makePetalBlade, mergeSurfaces, pearlFinish, taperStem } from './flowers.js?v=chrome-blooms-1';
+import { bloomColors, distantDetail, makePetalBlade, mergeSurfaces, pearlFinish, taperStem } from './flowers.js?v=review-fixes-1';
 import { createPetalSurfaces } from './petal-surfaces.js?v=autumn-veins-1';
 
 function snowdropPoint(t, u, inner = false, variant = 0) {
@@ -71,7 +71,7 @@ export function makeSnowdropAssets(assets) {
     new THREE.Vector3(0, -0.15, 0), new THREE.Vector3(-0.06, 1.2, 0), new THREE.Vector3(-0.1, 2.5, 0),
     new THREE.Vector3(-0.02, 3.12, 0), new THREE.Vector3(0.3, 3.3, 0), new THREE.Vector3(0.5, 3.05, 0), new THREE.Vector3(0.5, 2.85, 0),
   ]), 28, 0.022, 6, false), 1.8, 0.85);
-  return { outer: outers[0], outers, inner, distantOuters, distantInner, companionBell, companionStem, leaf, surface, material, innerMaterial, cap, capMaterial };
+  return { outers, inner, distantOuters, distantInner, companionBell, companionStem, leaf, surface, material, innerMaterial, cap, capMaterial };
 }
 
 export function createSnowdrop(id, assets, random, detail = 0) {

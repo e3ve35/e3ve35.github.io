@@ -11,23 +11,18 @@ export function flowerCharacter(id, species = 'lily') {
   const family = (id * 7) % 4;
   if (species === 'chrysanthemum') return {
     name: ['Copper pluck', 'Amber string', 'Bronze chime', 'Ember tone'][family],
-    harmonicity: [1.001, 2.001, 1.505, 1.998][family],
-    modulation: [0.8, 0.65, 1.05, 0.7][family], color,
+    color,
   };
   if (species === 'snowdrop') return {
     name: ['Ice bell', 'Frost glass', 'Silver droplet', 'Winter chime'][family],
-    harmonicity: [2.001, 3.003, 2.5, 1.998][family],
-    modulation: [0.5, 0.7, 0.9, 0.55][family], color,
+    color,
   };
   if (species === 'poppy') return {
     name: ['Silk tone', 'Copper hum', 'Rose chime', 'Hollow tone'][family],
-    harmonicity: [1.002, 1.5, 2.001, 1][family],
-    modulation: [0.35, 0.45, 0.6, 0.3][family], color,
+    color,
   };
   return {
     name: ['Silver bell', 'Glass bell', 'Violet bell', 'Air bell'][family],
-    harmonicity: [2.002, 3.001, 1.003, 2.5][family],
-    modulation: [1.5, 1.1, 2.0, 0.9][family],
     color,
   };
 }
@@ -43,7 +38,6 @@ export function bloomProfile(id, strength = 0.45, species = 'lily') {
     release: 1.1 + character.color * 0.45,
     velocity: 0.28 + strength * 0.30,
     brightness: 1150 + strength * 2450 + character.color * 350,
-    modulation: character.modulation + strength * 0.9,
     energy: 0.45 + strength * 0.52,
   };
   if (species === 'snowdrop') return {
@@ -54,7 +48,6 @@ export function bloomProfile(id, strength = 0.45, species = 'lily') {
     release: 2.6 + character.color * 0.5,
     velocity: 0.2 + strength * 0.22,
     brightness: 2100 + strength * 1600 + character.color * 300,
-    modulation: character.modulation + strength * 0.65,
     energy: 0.3 + strength * 0.4,
   };
   if (species === 'poppy') return {
@@ -65,7 +58,6 @@ export function bloomProfile(id, strength = 0.45, species = 'lily') {
     release: 1.65 + character.color * 0.4,
     velocity: 0.29 + strength * 0.27,
     brightness: 900 + strength * 2200 + character.color * 300,
-    modulation: character.modulation + strength * 0.7,
     energy: 0.4 + strength * 0.5,
   };
   return {
@@ -77,7 +69,6 @@ export function bloomProfile(id, strength = 0.45, species = 'lily') {
     release: 1.15 + character.color * 0.45,
     velocity: 0.31 + strength * 0.38,
     brightness: 1600 + strength * 3900 + character.color * 600,
-    modulation: character.modulation + strength * 1.9,
     energy: 0.46 + strength * 0.54,
   };
 }

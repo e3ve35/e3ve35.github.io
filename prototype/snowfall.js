@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
-import { seededRandom } from './flowers.js?v=pearl-blooms-1';
+import { seededRandom } from './flowers.js?v=review-fixes-1';
 
 const flockPositions = [[0.52, 0.51, -6], [-0.28, 0.62, -9], [-1.08, 0.71, -12]];
 const birdsPerFlock = 5;
@@ -266,11 +266,4 @@ export class SeasonalParticles {
     this.uniforms.time.value = elapsed;
     this.uniforms.viewportHeight.value = viewportHeight;
   }
-}
-
-// Cached versions of the garden still import the winter-only factory.
-export function createSnowfall() {
-  const particles = new SeasonalParticles();
-  particles.select('Winter');
-  return particles.points;
 }

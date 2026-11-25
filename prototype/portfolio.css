@@ -10,6 +10,9 @@
    The other pages have nothing to put in it, so it is not shown there. */
 body[data-page="garden"] .garden-footer { display: grid; grid-template-columns: 1fr auto; }
 body:not([data-page="garden"]) .garden-footer { display: none; }
+/* Without WebGL only the fallback message is left of the garden. Navigation
+   toggles the hidden attribute on these, so the state has to win here. */
+body[data-garden-state="unavailable"] :is(.intro, .specimen-card, .garden-footer) { display: none; }
 body[data-page="garden"] .controls { grid-area: 1 / 2; justify-self: end; }
 .season-preview { grid-area: 1 / 1; display: flex; align-items: center; transition: opacity .8s; }
 .study-label, .study-caption {

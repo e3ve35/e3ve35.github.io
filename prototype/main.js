@@ -1,15 +1,15 @@
-import './site.js?v=review-pass-1';
+import './site.js?v=review-fixes-1';
 import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=seasonal-pollen-1';
-import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=chrome-blooms-1';
-import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=chrome-blooms-1';
-import { GardenAudio, flowerNote, loadSoundLibrary } from './audio.js?v=music-box-1';
-import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
-import { gardenSelection } from './studies.js?v=spring-summer-2';
-import { SeasonalParticles } from './snowfall.js?v=lazy-assets-1';
-import { gardenPlanting, placeFlower, flowerDetail, groundHeight, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=rolling-meadow-1';
-import { GroundSignals } from './ground-signals.js?v=season-traces-1';
-import { currentLanguage, text } from './i18n.js?v=garden-controls-1';
+import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=review-fixes-1';
+import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=review-fixes-1';
+import { GardenAudio, flowerNote, loadSoundLibrary } from './audio.js?v=review-fixes-1';
+import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=review-fixes-1';
+import { gardenSelection } from './studies.js?v=review-fixes-1';
+import { SeasonalParticles } from './snowfall.js?v=review-fixes-1';
+import { gardenPlanting, placeFlower, flowerDetail, groundHeight, meadowGrass, gardenAtmosphere, createContactShadows, updateContactShadows } from './composition.js?v=review-fixes-1';
+import { GroundSignals } from './ground-signals.js?v=review-fixes-1';
+import { currentLanguage, text } from './i18n.js?v=review-fixes-1';
 
 const flowerFactories = { lily: createLily, poppy: createPoppy, snowdrop: createSnowdrop, chrysanthemum: createChrysanthemum };
 // Enough for 1.65x on a laptop and above 1x on a 1440p window. Slow devices
@@ -821,6 +821,8 @@ class Garden {
     });
     garden.addEventListener('keydown', (event) => {
       if (event.target !== garden) return;
+      // Alt, Ctrl and Command combinations belong to the browser (history, tabs).
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
       if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
         event.preventDefault();
         const direction = ['ArrowLeft', 'ArrowDown'].includes(event.key) ? -1 : 1;
@@ -901,6 +903,8 @@ class Garden {
     const flower = this.flowers[id];
     if (!flower) return;
     this.selectedId = id;
+    // A paused garden draws only on request; the lens still follows the selection.
+    this.needsRender = true;
     flower.head.getWorldPosition(this.projected);
     // The camera leans toward the played flower and the lens refocuses on it.
     this.focusPoint.copy(this.projected);
@@ -1048,9 +1052,7 @@ try {
   console.error('Garden initialization failed:', error);
   $('#loading').hidden = true;
   $('#fallback').hidden = false;
-  $('.intro').hidden = true;
-  $('.specimen-card').hidden = true;
-  $('.season-preview').hidden = true;
+  // The stylesheet hides the garden's title, card and footer in this state.
   soundButton.disabled = true;
   document.body.dataset.gardenState = 'unavailable';
 }
