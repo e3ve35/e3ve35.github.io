@@ -194,6 +194,16 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
 /* The copy sits level with the middle of the heading and photo, and its
    measure and type keep growing with the window on wide screens. */
 .about-copy { align-self: center; max-width: clamp(610px, 38vw, 780px); }
+/* On desktop the heading's parts sit straight on the grid, so the first line of
+   the copy shares a baseline with the first line of the title. Narrower
+   two-column windows keep the copy centred beside the heading. */
+@media (min-width: 901px) {
+  .about-view .view-grid { grid-template-rows: auto auto 1fr; row-gap: 0; }
+  .about-view .view-heading { display: contents; }
+  .about-view .view-heading > * { grid-column: 1; }
+  .about-view h2, .about-copy { align-self: first baseline; }
+  .about-copy { grid-area: 2 / 2 / span 2; }
+}
 .about-copy .large-copy {
   margin: -6px 0 24px; font-family: var(--serif);
   font-size: clamp(30px, 2.75vw, 58px); line-height: 1.26; letter-spacing: -.01em; color: #e4dce9;
