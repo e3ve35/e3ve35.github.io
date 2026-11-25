@@ -589,24 +589,24 @@ test('the quiet pad and seasonal recordings follow sound opt-in and garden visib
   assert.deepEqual(events.splice(0), [['attack', 220], ['attack', 330]]);
   assert.equal(volumes.length, 2);
   assert.ok(volumes.every((volume) => volume <= -47));
-  assert.deepEqual(recordingEvents.splice(0), [['load', 'spring-birds.wav']]);
+  assert.deepEqual(recordingEvents.splice(0), [['load', 'spring-birds.m4a']]);
 
   audio.changeStudy('chrysanthemum');
   assert.deepEqual(events.splice(0), [['retune', 196], ['retune', 294]]);
-  pendingRecordings.get('spring-birds.wav')();
+  pendingRecordings.get('spring-birds.m4a')();
   await Promise.resolve();
   audio.setVisibility(false);
-  assert.deepEqual(recordingEvents.splice(0), [['load', 'light-rain.wav']]);
-  pendingRecordings.get('light-rain.wav')();
+  assert.deepEqual(recordingEvents.splice(0), [['load', 'light-rain.m4a']]);
+  pendingRecordings.get('light-rain.m4a')();
   await Promise.resolve();
   assert.deepEqual(recordingEvents, []);
   audio.changeStudy('snowdrop');
   assert.deepEqual(events.splice(0), [['release'], ['release']]);
   audio.setVisibility(true);
   assert.deepEqual(events.splice(0), [['attack', 147], ['attack', 220]]);
-  pendingRecordings.get('winter-snow.wav')();
+  pendingRecordings.get('winter-snow.m4a')();
   await Promise.resolve();
-  assert.deepEqual(recordingEvents.splice(0), [['load', 'winter-snow.wav'], ['start', 'winter-snow.wav']]);
+  assert.deepEqual(recordingEvents.splice(0), [['load', 'winter-snow.m4a'], ['start', 'winter-snow.m4a']]);
 
   audio.mute();
   audio.setVisibility(true);
@@ -614,19 +614,19 @@ test('the quiet pad and seasonal recordings follow sound opt-in and garden visib
   await audio.enable('lily');
   assert.deepEqual(events.splice(0), [['attack', 147], ['attack', 220]]);
   assert.equal(volumes.length, 2, 'Re-enabling sound reuses the pad voices');
-  pendingRecordings.get('summer-wind.wav')();
+  pendingRecordings.get('summer-wind.m4a')();
   await Promise.resolve();
-  assert.ok(recordingVolumes.get('summer-wind.wav') <= recordingVolumes.get('spring-birds.wav') - 6);
+  assert.ok(recordingVolumes.get('summer-wind.m4a') <= recordingVolumes.get('spring-birds.m4a') - 6);
   assert.deepEqual(recordingEvents.splice(0), [
-    ['stop', 'winter-snow.wav'], ['load', 'summer-wind.wav'], ['start', 'summer-wind.wav'],
+    ['stop', 'winter-snow.m4a'], ['load', 'summer-wind.m4a'], ['start', 'summer-wind.m4a'],
   ]);
   audio.changeStudy('chrysanthemum');
   audio.setVisibility(true);
   audio.changeStudy('poppy');
   audio.mute();
   assert.deepEqual(recordingEvents, [
-    ['stop', 'summer-wind.wav'], ['start', 'light-rain.wav'], ['stop', 'light-rain.wav'],
-    ['start', 'spring-birds.wav'], ['stop', 'spring-birds.wav'],
+    ['stop', 'summer-wind.m4a'], ['start', 'light-rain.m4a'], ['stop', 'light-rain.m4a'],
+    ['start', 'spring-birds.m4a'], ['stop', 'spring-birds.m4a'],
   ]);
 });
 

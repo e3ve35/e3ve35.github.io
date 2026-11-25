@@ -6,17 +6,27 @@
     <meta name="theme-color" content="#09070d" />
     <meta name="description" data-i18n-content="site.description" content="Evelyn Wu — programmer and game developer exploring computer graphics, computer music, and playful interfaces. Projects, experiments, and a garden you can play." />
     <title>Evelyn Wu</title>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Evelyn Wu" />
+    <meta property="og:title" content="Evelyn Wu — Unlikely garden" />
+    <meta property="og:description" content="Programmer and game developer exploring computer graphics, computer music, and playful interfaces. Projects, experiments, and a garden you can play." />
+    <meta property="og:url" content="https://e3ve35.github.io/" />
+    <meta property="og:image" content="https://e3ve35.github.io/prototype/og.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="A field of chrome flowers under a lilac sky, with the title Unlikely garden." />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" type="image/svg+xml" href="./prototype/flower-mark.svg?v=white-flower-1" />
     <link rel="canonical" href="https://e3ve35.github.io/" />
     <link rel="alternate" hreflang="en" href="https://e3ve35.github.io/?lang=en" />
     <link rel="alternate" hreflang="zh-Hans" href="https://e3ve35.github.io/?lang=zh-Hans" />
     <link rel="alternate" hreflang="ja" href="https://e3ve35.github.io/?lang=ja" />
     <link rel="alternate" hreflang="x-default" href="https://e3ve35.github.io/" />
-    <link rel="preload" href="./Instrument_Serif/InstrumentSerif-Regular.ttf" as="font" type="font/ttf" crossorigin />
-    <link rel="preload" href="./Instrument_Serif/InstrumentSerif-Italic.ttf" as="font" type="font/ttf" crossorigin />
-    <link rel="stylesheet" href="./prototype/style.css?v=specimen-placement-1" />
-    <link rel="stylesheet" href="./prototype/portfolio.css?v=phone-controls-1" />
-    <script type="module" src="./prototype/main.js?v=phone-controls-2"></script>
+    <link rel="preload" href="./Instrument_Serif/InstrumentSerif-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="./Instrument_Serif/InstrumentSerif-Italic.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="./prototype/style.css?v=review-pass-1" />
+    <link rel="stylesheet" href="./prototype/portfolio.css?v=review-pass-1" />
+    <script type="module" src="./prototype/main.js?v=review-pass-1"></script>
   </head>
   <body data-page="garden">
     <a class="skip-link" data-i18n="site.skip" href="#page-content">Skip to content</a>
@@ -43,7 +53,6 @@
         <a href="#contact" data-page-link="contact" data-i18n="page.contact">Contact</a>
       </nav>
       <div class="header-right">
-        <span class="edition"><span class="live-dot"></span><span><span data-i18n="garden.study">GARDEN STUDY /</span> <span id="garden-study-index">001</span></span></span>
         <nav class="language-switch" data-i18n-aria="site.language" aria-label="Site language" hidden>
           <a href="?lang=en#garden" data-language="en" lang="en" hreflang="en" aria-label="English">EN</a>
           <a href="?lang=zh-Hans#garden" data-language="zh-Hans" lang="zh-Hans" hreflang="zh-Hans" aria-label="简体中文">中文</a>
@@ -54,7 +63,7 @@
 
     <main id="page-content" tabindex="-1">
     <section class="intro" data-page-view="garden" aria-labelledby="garden-title">
-      <h1 id="garden-title"><span data-i18n="garden.titleFirst">Unlikely</span><br /><em data-i18n="garden.titleLast">garden.</em></h1>
+      <h1 id="garden-title" lang="en">Unlikely<br /><em>garden.</em></h1>
     </section>
 
     <section id="work" class="portfolio-view work-view" data-page-view="work" aria-labelledby="work-title" hidden>
@@ -72,7 +81,6 @@
                 <a class="project-preview-link" href="https://drive.google.com/file/d/187dM0Xr1PB2zVEv9FvdQaDkEEt5CKbMA/view?usp=sharing" target="_blank" rel="noopener noreferrer" data-i18n-aria="project.gomi.label" aria-label="Watch the Graphical Music Interface demo (opens in a new tab)">
                   <img src="./prototype/projects/gomi.webp" width="1280" height="801" data-i18n-alt="project.gomi.alt" alt="A dark musical grid with drawn notes, waveforms, and synthesis controls." decoding="async" fetchpriority="low" />
                 </a>
-                <figcaption><span class="preview-number">01</span><span class="preview-title" data-i18n="project.gomi.title">Graphical Music Interface</span><span class="preview-note" data-i18n="preview.demo">DEMO STILL</span></figcaption>
               </figure>
               <p data-i18n="project.gomi.description">A website for creating music compositions through visual interactions. Built to make computer music composition more accessible and enjoyable.</p>
               <div class="project-links"><a href="https://drive.google.com/file/d/187dM0Xr1PB2zVEv9FvdQaDkEEt5CKbMA/view?usp=sharing" target="_blank" rel="noopener noreferrer"><span data-i18n="project.gomi.action">View GOMI</span> <span aria-hidden="true">↗</span></a></div>
@@ -85,7 +93,6 @@
                 <a class="project-preview-link" href="https://github.com/e3ve35/SharePix" target="_blank" rel="noopener noreferrer" data-i18n-aria="project.sharepix.label" aria-label="Explore SharePix on GitHub (opens in a new tab)">
                   <img src="./prototype/projects/sharepix.webp" width="1014" height="604" data-i18n-alt="project.sharepix.alt" alt="SharePix's drawing canvas with colorful pixel art, brush tools, and a color palette." loading="lazy" decoding="async" />
                 </a>
-                <figcaption><span class="preview-number">02</span><span class="preview-title">SharePix</span><span class="preview-note" data-i18n="project.sharepix.preview">DRAWING TOOLS</span></figcaption>
               </figure>
               <p data-i18n="project.sharepix.description">A platform for creating and sharing pixel art, with drawing tools, saved drafts, PNG export, and a social feed for discovering artists and their work.</p>
               <div class="project-links"><a href="https://github.com/e3ve35/SharePix" target="_blank" rel="noopener noreferrer"><span data-i18n="project.code">Explore the code</span> <span aria-hidden="true">↗</span></a></div>
@@ -98,7 +105,6 @@
                 <a class="project-preview-link" href="https://github.com/e3ve35/random_island_generator" target="_blank" rel="noopener noreferrer" data-i18n-aria="project.island.label" aria-label="Explore Random Island Generator on GitHub (opens in a new tab)">
                   <img src="./prototype/projects/island.webp" width="1034" height="778" data-i18n-alt="project.island.alt" alt="A generated tile map with green islands, forests, sandy shores, and blue water." loading="lazy" decoding="async" />
                 </a>
-                <figcaption><span class="preview-number">03</span><span class="preview-title" data-i18n="project.island.title">Random Island Generator</span><span class="preview-note" data-i18n="project.island.preview">GENERATED MAP</span></figcaption>
               </figure>
               <p data-i18n="project.island.description">A procedural content generation algorithm that creates natural-looking game environments, with flexible and customizable maps.</p>
               <div class="project-links"><a href="https://github.com/e3ve35/random_island_generator" target="_blank" rel="noopener noreferrer"><span data-i18n="project.code">Explore the code</span> <span aria-hidden="true">↗</span></a></div>
@@ -111,7 +117,6 @@
                 <a class="project-preview-link" href="https://drive.google.com/file/d/1zN3QWHECH8w9e3bRT5uvcciHxmsov18T/view?usp=sharing" target="_blank" rel="noopener noreferrer" data-i18n-aria="project.desk.label" aria-label="Watch the Garden on the Desk demo (opens in a new tab)">
                   <img src="./prototype/projects/desk-garden.webp" width="1280" height="657" data-i18n-alt="project.desk.alt" alt="Voxel trees and flowers growing in an augmented reality garden over a webcam view." loading="lazy" decoding="async" />
                 </a>
-                <figcaption><span class="preview-number">04</span><span class="preview-title" data-i18n="project.desk.title">Garden on the Desk</span><span class="preview-note" data-i18n="preview.demo">DEMO STILL</span></figcaption>
               </figure>
               <p data-i18n="project.desk.description">An augmented reality garden simulation. Speech recognition and feature tracking let you plant a miniature garden through your webcam.</p>
               <div class="project-links"><a href="https://drive.google.com/file/d/1zN3QWHECH8w9e3bRT5uvcciHxmsov18T/view?usp=sharing" target="_blank" rel="noopener noreferrer"><span data-i18n="project.desk.action">View the project</span> <span aria-hidden="true">↗</span></a></div>
@@ -124,7 +129,6 @@
                 <a class="project-preview-link" href="https://drive.google.com/file/d/14A3ED_Bb8Y9gSPYR-Q-LoUoXUU_xSChf/view?usp=sharing" target="_blank" rel="noopener noreferrer" data-i18n-aria="project.randforest.label" aria-label="Watch the Randforest demo (opens in a new tab)">
                   <img src="./prototype/projects/randforest.webp" width="1280" height="657" data-i18n-alt="project.randforest.alt" alt="Randforest's pixel-art landscape and furnished building, with crafting items and materials beside it." loading="lazy" decoding="async" />
                 </a>
-                <figcaption><span class="preview-number">05</span><span class="preview-title">Randforest</span><span class="preview-note" data-i18n="preview.demo">DEMO STILL</span></figcaption>
               </figure>
               <p data-i18n="project.randforest.description">A Terraria-inspired game with furniture crafting and foraging, plus changing weather simulated using Perlin noise.</p>
               <div class="project-links"><a href="https://drive.google.com/file/d/14A3ED_Bb8Y9gSPYR-Q-LoUoXUU_xSChf/view?usp=sharing" target="_blank" rel="noopener noreferrer"><span data-i18n="project.randforest.action">Watch demo</span> <span aria-hidden="true">↗</span></a></div>
@@ -137,7 +141,6 @@
                 <a class="project-preview-link" href="https://github.com/e3ve35/maze_generator" target="_blank" rel="noopener noreferrer" data-i18n-aria="project.maze.label" aria-label="Explore Maze Generator and Solver on GitHub (opens in a new tab)">
                   <img src="./prototype/projects/maze.webp" width="1034" height="778" data-i18n-alt="project.maze.alt" alt="An intricate rectangular maze generated using Wilson's algorithm." loading="lazy" decoding="async" />
                 </a>
-                <figcaption><span class="preview-number">06</span><span class="preview-title" data-i18n="project.maze.title">Maze Generator &amp; Solver</span><span class="preview-note" data-i18n="project.maze.preview">GENERATED MAZE</span></figcaption>
               </figure>
               <p data-i18n="project.maze.description">A random maze generator and solver, implemented with algorithms including Sidewinder, Wilson’s, Random Walk, and Aldous–Broder.</p>
               <div class="project-links"><a href="https://github.com/e3ve35/maze_generator" target="_blank" rel="noopener noreferrer"><span data-i18n="project.code">Explore the code</span> <span aria-hidden="true">↗</span></a></div>
@@ -150,7 +153,6 @@
                 <a class="project-preview-link" href="https://github.com/e3ve35/game-evolution-datavis" target="_blank" rel="noopener noreferrer" data-i18n-aria="project.evolution.label" aria-label="Explore Evolution of Video Games on GitHub (opens in a new tab)">
                   <img src="./prototype/projects/game-evolution.webp" width="1280" height="700" data-i18n-alt="project.evolution.alt" alt="A video-game history dashboard with a genre heatmap, yearly sales bars, and regional sales charts." loading="lazy" decoding="async" />
                 </a>
-                <figcaption><span class="preview-number">07</span><span class="preview-title" data-i18n="project.evolution.title">Evolution of Video Games</span><span class="preview-note" data-i18n="project.evolution.preview">INTERACTIVE DATA</span></figcaption>
               </figure>
               <p data-i18n="project.evolution.description">A storytelling visualization of the history of video games worldwide. Three views connect through linked highlighting and filters.</p>
               <div class="project-links"><a href="https://github.com/e3ve35/game-evolution-datavis" target="_blank" rel="noopener noreferrer"><span data-i18n="project.code">Explore the code</span> <span aria-hidden="true">↗</span></a></div>
@@ -165,14 +167,12 @@
         <div class="view-heading">
           <p class="eyebrow"><span class="tiny-cross">+</span> <span data-i18n="about.eyebrow">03 / ABOUT ME</span></p>
           <h2 id="about-title" tabindex="-1"><span data-i18n="about.titleFirst">Hello,</span><br /><em data-i18n="about.titleLast">I’m Evelyn.</em></h2>
-          <p class="view-intro about-aliases" data-i18n="about.aliases"></p>
+          <figure class="about-portrait"><img src="./prototype/about/evelyn.jpg" width="1200" height="900" data-i18n-alt="about.portraitAlt" alt="Evelyn sipping a blue drink through a straw under warm string lights." decoding="async" fetchpriority="low" /></figure>
         </div>
         <div class="about-copy">
           <p class="large-copy"><span data-i18n="about.leadStart">I explore the space between </span><em data-i18n="about.algorithms">algorithms</em><span data-i18n="about.leadJoin">, </span><em data-i18n="about.graphics">graphics</em><span data-i18n="about.leadJoin">, </span><em data-i18n="about.music">electronic music</em><span data-i18n="about.leadEnd">, and the joy of making things interactive.</span></p>
           <p data-i18n="about.projects">My projects range from visual music composition and procedural game worlds to augmented reality gardens, data visualization, and creative tools.</p>
-          <div class="about-interests"><span data-i18n="about.tagGraphics">GRAPHICS</span><span data-i18n="about.tagMusic">MUSIC</span><span data-i18n="about.tagGames">GAMES</span><span data-i18n="about.tagInteraction">INTERACTION</span></div>
-          <a class="resume-link" href="https://docs.google.com/document/d/1klBwffp1zl149jt6uduXRdGl6dP8hgR-xbq6mOyV9ok/edit?usp=sharing" target="_blank" rel="noopener noreferrer"><span data-i18n="about.resume">View my résumé</span><span aria-hidden="true">↗</span></a>
-          <a class="quiet-link" href="#contact"><span data-i18n="about.contact">Say hello</span> <span aria-hidden="true">↗</span></a>
+          <a class="resume-link" href="https://docs.google.com/document/d/1klBwffp1zl149jt6uduXRdGl6dP8hgR-xbq6mOyV9ok/preview" target="_blank" rel="noopener noreferrer"><span data-i18n="about.resume">View my résumé</span><span aria-hidden="true">↗</span></a>
         </div>
       </div>
     </section>
@@ -181,7 +181,7 @@
       <p class="eyebrow"><span class="tiny-cross">+</span> <span data-i18n="contact.eyebrow">04 / A CONVERSATION STARTS SOMEWHERE</span></p>
       <h2 id="contact-title" tabindex="-1"><span data-i18n="contact.titleFirst">Say </span><em data-i18n="contact.titleLast">hello.</em></h2>
       <a class="email-link" href="mailto:e3ve35@gmail.com">e3ve35@gmail.com <span aria-hidden="true">↗</span></a>
-      <div class="contact-links"><a href="https://github.com/e3ve35" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a><a href="https://www.linkedin.com/in/evelynn-wu/" target="_blank" rel="noopener noreferrer">LinkedIn <span aria-hidden="true">↗</span></a><a href="https://docs.google.com/document/d/1klBwffp1zl149jt6uduXRdGl6dP8hgR-xbq6mOyV9ok/edit?usp=sharing" target="_blank" rel="noopener noreferrer"><span data-i18n="contact.resume">Résumé</span> <span aria-hidden="true">↗</span></a></div>
+      <div class="contact-links"><a href="https://github.com/e3ve35" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a><a href="https://www.linkedin.com/in/evelynn-wu/" target="_blank" rel="noopener noreferrer">LinkedIn <span aria-hidden="true">↗</span></a></div>
     </section>
     </main>
 
@@ -196,7 +196,6 @@
     <div id="flower-cursor" class="flower-cursor" aria-hidden="true"><span class="cursor-ring"></span><span id="cursor-label">LILIUM / 001</span></div>
 
     <footer class="garden-footer">
-      <div class="footer-caption"><span class="live-dot"></span><span>© EVELYN WU</span></div>
       <div class="controls">
         <button id="sound-toggle" class="sound-toggle" type="button" aria-pressed="false">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path class="sound-waves" d="M15 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14"/><path class="sound-slash" d="m16 9 6 6m0-6-6 6"/></svg>
@@ -209,7 +208,6 @@
         <p id="keyboard-hint" class="keyboard-hint" data-i18n="garden.keyboard">Click the garden, then use ← or → to play a flower. Press Space to replay.</p>
         <p class="touch-hint" data-i18n="garden.touch">Tap a flower to play.</p>
       </div>
-      <a class="return-to-garden" href="#garden"><span data-i18n="footer.return">Return to the garden</span> <span aria-hidden="true">↗</span></a>
       <aside class="season-preview" data-i18n-aria="season.label" aria-label="Seasonal garden">
         <p class="study-label"><span data-i18n="season.label">SEASONAL GARDEN</span> <span id="garden-month"></span></p>
         <div class="study-switch" data-i18n-aria="season.controls" role="group" aria-label="Follow the current season or preview another">
@@ -221,7 +219,6 @@
         </div>
         <p id="study-caption" class="study-caption"></p>
       </aside>
-      <span class="footer-index" hidden></span>
     </footer>
     <noscript><div class="noscript">Enable JavaScript to explore the musical garden. <a href="./archive/">Visit Evelyn’s previous portfolio</a>.</div></noscript>
   </body>

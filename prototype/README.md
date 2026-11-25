@@ -95,7 +95,7 @@ All four species now share the lily's mirror finish. The shared `pearlFinish` (s
 
 ### Phone layout pass
 
-- Phones (600 px wide or less) show the summer study only. The footer is one row of two equal 44 px buttons (sound, pause) with replant as an icon beside them, and the copyright on its own line underneath; labels can change without moving the row.
+- Phones (600 px wide or less) keep the season switch as a slim row ("Now" without the flower name) above the footer's two equal 44 px buttons (sound, pause), with replant as an icon beside them; labels can change without moving the row. The footer appears on the garden page only.
 - The opening title is not shown on phones; it stays in the page for screen readers.
 - On every layout the instructions above the footer fade once a flower has been clicked or tapped (`data-flower-picked` on `body`); hovering and keyboard play leave them up.
 - On phones 700 px tall or less the navigation row and the content below it sit 14 px higher.

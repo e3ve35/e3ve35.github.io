@@ -6,9 +6,12 @@
 }
 .specimen-meta, .specimen-footer { color: #e0d4e4; }
 .specimen-card.playing .signal i { transform: scaleY(var(--signal-strength, 1)); transition: height .1s, transform .08s; }
-body[data-page="garden"] .garden-footer { display: grid; grid-template-columns: 1fr auto 1fr; }
-body[data-page="garden"] .controls { grid-area: 1 / 3; justify-self: end; }
-.season-preview { grid-area: 1 / 2; display: flex; align-items: center; transition: opacity .8s; }
+/* The footer belongs to the garden: seasons on the left, controls on the right.
+   The other pages have nothing to put in it, so it is not shown there. */
+body[data-page="garden"] .garden-footer { display: grid; grid-template-columns: 1fr auto; }
+body:not([data-page="garden"]) .garden-footer { display: none; }
+body[data-page="garden"] .controls { grid-area: 1 / 2; justify-self: end; }
+.season-preview { grid-area: 1 / 1; display: flex; align-items: center; transition: opacity .8s; }
 .study-label, .study-caption {
   position: absolute; width: 1px; height: 1px; margin: 0; padding: 0;
   overflow: hidden; clip-path: inset(50%); white-space: nowrap;
@@ -27,7 +30,6 @@ body[data-page="garden"] .controls { grid-area: 1 / 3; justify-self: end; }
 }
 /* The instructions have done their job once a flower has been clicked or tapped. */
 body[data-flower-picked] .hint-line { opacity: 0; }
-body:not([data-page="garden"]) :is(.season-preview, .hint-line) { display: none; }
 body[data-page="garden"] .vignette {
   --specimen-corner: radial-gradient(ellipse clamp(475px, 49vw, 930px) clamp(310px, 49vh, 560px) at right top, #09070dc4, #09070d70 56%, transparent);
   --instruction-shade: radial-gradient(ellipse 65% clamp(175px, 24vh, 280px) at center bottom, #09070d85, #09070d59 57%, transparent);
@@ -57,10 +59,16 @@ body:is([data-page="garden"], [data-season="winter"]) .vignette::after {
   text-decoration-line: underline; text-decoration-thickness: 1px;
   text-decoration-color: var(--acid); text-underline-offset: 9px;
 }
+/* On touch screens the small text links get a 44px-tall touch area that does
+   not move anything. */
+@media (pointer: coarse) {
+  :is(.page-nav a, .language-switch a, .project-links a, .contact-links a)::before { content: ""; position: absolute; inset: -8px -6px; }
+  .project-links a::before, .contact-links a::before { inset-block: -12px; }
+}
 .sound-toggle:hover { border-color: #d2fb8366; color: var(--acid); }
 .language-switch { display: flex; align-items: center; gap: 18px; font-size: 12px; line-height: 1; }
 .language-switch[hidden] { display: none; }
-.language-switch a { display: grid; place-items: center; min-height: 32px; color: #bcb1c7; white-space: nowrap; transition: color .2s; }
+.language-switch a { position: relative; display: grid; place-items: center; min-height: 32px; color: #bcb1c7; white-space: nowrap; transition: color .2s; }
 .language-switch a:hover, .language-switch a[aria-current="true"] { color: var(--acid); }
 :is(.language-switch, .name) [lang="zh-Hans"] { font-family: "Noto Sans CJK SC", "Microsoft YaHei", "PingFang SC", sans-serif; }
 :is(.language-switch, .name) [lang="ja"] { font-family: "Noto Sans CJK JP", "Yu Gothic", "Hiragino Sans", sans-serif; }
@@ -73,15 +81,16 @@ html:lang(ja) {
   --local-serif: "Noto Serif CJK JP", "Yu Mincho", "Hiragino Mincho ProN", serif;
 }
 html:is(:lang(zh-Hans), :lang(ja)) { font-family: ShareTech, var(--local-sans); }
-html:is(:lang(zh-Hans), :lang(ja)) :is(.intro h1, .portfolio-view h2, .project-title, .about-copy .large-copy) {
+html:is(:lang(zh-Hans), :lang(ja)) :is(.portfolio-view h2, .project-title, .about-copy .large-copy) {
   font-family: 'Instrument Serif', Georgia, var(--local-serif);
   letter-spacing: 0;
 }
-html:is(:lang(zh-Hans), :lang(ja)) :is(.intro h1, .portfolio-view h2) {
+/* The garden title stays in English in every language, so it keeps the default type. */
+html:is(:lang(zh-Hans), :lang(ja)) .portfolio-view h2 {
   font-size: clamp(52px, 6.2vw, 92px);
   line-height: 1.12;
 }
-html:is(:lang(zh-Hans), :lang(ja)) :is(h1, h2, .large-copy) em { font-style: normal; }
+html:is(:lang(zh-Hans), :lang(ja)) :is(h2, .large-copy) em { font-style: normal; }
 .about-view .view-heading { container-type: inline-size; }
 html:is(:lang(zh-Hans), :lang(ja)) #about-title { font-size: min(clamp(41px, 4.4vw, 76px), 16cqi); }
 .content-shade {
@@ -94,7 +103,7 @@ body:not([data-page="garden"]) .content-shade { opacity: 1; }
 body:not([data-page="garden"]) #scene { opacity: .6; filter: blur(4px); }
 body:not([data-page="garden"]) .flower-cursor { display: none; }
 .portfolio-view {
-  position: fixed; top: 151px; left: 5.8vw; right: 5.8vw; bottom: 106px;
+  position: fixed; top: 151px; left: 5.8vw; right: 5.8vw; bottom: 40px;
   overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding-right: 14px;
   scrollbar-width: thin; scrollbar-color: #7e658b55 transparent;
 }
@@ -102,7 +111,7 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
   display: grid; grid-template-columns: minmax(225px, .8fr) minmax(0, 1.35fr);
   gap: 7vw; align-items: start; padding-bottom: 10px;
 }
-.work-view { top: 137px; bottom: 96px; }
+.work-view { top: 137px; }
 .work-view .view-grid { padding-bottom: 4px; }
 .view-heading { position: sticky; top: 0; }
 .portfolio-view .eyebrow { margin-bottom: 25px; line-height: 1.6; }
@@ -115,7 +124,6 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
 .portfolio-view [tabindex="-1"]:focus { outline: none; }
 .portfolio-view h2 em { color: var(--lilac); font-weight: normal; }
 .view-intro { max-width: 285px; margin: 27px 0 0; font-size: 13px; line-height: 1.9; color: var(--muted); }
-.about-aliases:empty, html:lang(ja) .about-aliases { display: none; }
 .project-list { border-top: 1px solid var(--line); }
 .project { border-bottom: 1px solid var(--line); }
 .project summary { display: flex; align-items: center; gap: 17px; padding: 11px 0; list-style: none; cursor: pointer; }
@@ -134,7 +142,7 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
 .project-description { margin: -2px 24px 17px 39px; }
 .project-description p { font-size: 13px; line-height: 1.85; color: #c0b4c8; margin: 0 0 14px; }
 .project-links { display: flex; flex-wrap: wrap; gap: 14px 25px; }
-.project-links a { font-size: 12px; color: #dbd4e1; }
+.project-links a { position: relative; font-size: 12px; color: #dbd4e1; }
 .project-links a > [aria-hidden="true"] { color: var(--lilac); margin-left: 8px; }
 .project-links a:hover > [aria-hidden="true"] { color: inherit; }
 .project-links a:hover { color: var(--acid); }
@@ -149,13 +157,6 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
 .project-preview-link:hover { border-color: #d2fb8373; }
 .project-preview-link:focus-visible { outline-offset: 4px; }
 .project-preview img { display: block; width: 100%; height: 100%; object-fit: contain; }
-.project-preview figcaption {
-  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: baseline;
-  gap: 10px; padding-top: 13px; font-size: 11px; line-height: 1.6; letter-spacing: .025em;
-}
-.preview-number { color: var(--lilac); }
-.preview-title { color: #c8bbd0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.preview-note { font-size: 11px; letter-spacing: .07em; color: #8e7d9b; }
 @media (min-width: 901px) {
   .work-view { inset-inline: 3.2vw; }
   .work-view .view-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(24px, 4vw, 72px); }
@@ -163,7 +164,7 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
   .work-view .view-intro { margin-top: 20px; max-width: 300px; }
   .work-view.has-work-preview .work-preview { display: block; margin-top: 27px; }
   .work-preview .project-preview { margin-bottom: 0; }
-  .work-preview .project-preview-link { width: 100%; max-height: max(175px, calc(100dvh - 360px)); }
+  .work-preview .project-preview-link { width: 100%; max-height: max(175px, calc(100dvh - 304px)); }
   .work-view.has-work-preview .project-description > .project-preview { display: none; }
   .work-view .project summary { padding: 13px 0; }
   .work-view .project-description { margin-bottom: 23px; }
@@ -174,9 +175,21 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
   .work-view .view-intro { margin-top: 15px; font-size: 12px; line-height: 1.7; }
   .work-view.has-work-preview .work-preview { margin-top: 20px; }
 }
-@media (max-width: 900px) {
-  .project-preview figcaption { gap: 7px; }
-  .preview-note { display: none; }
+/* The portrait takes the height the view has left under the heading (the view
+   is 100vh - 191px with a 5vh foot; above it sit the eyebrow, two title lines,
+   and the gaps), so heading and photo fit without scrolling on short windows. */
+.about-portrait {
+  --title-size: clamp(64px, 7.4vw, 116px);
+  --room: calc(95vh - 286px - 1.84 * var(--title-size));
+  width: clamp(160px, calc(4 / 3 * var(--room)), 420px); max-width: 100%; margin: 30px 0 0;
+  border: 1px solid #c6b2db4d; background: #120e19;
+  box-shadow: 0 30px 70px -36px #000, 0 44px 90px -52px #c6b2db80;
+}
+.about-portrait img { display: block; width: 100%; height: auto; }
+/* Short desktop windows trade some title size for a larger portrait, as Work does. */
+@media (min-width: 901px) and (max-height: 850px) {
+  .about-view h2 { font-size: clamp(64px, 5.7vw, 84px); }
+  .about-portrait { --title-size: clamp(64px, 5.7vw, 84px); margin-top: 26px; }
 }
 .about-copy { max-width: 610px; }
 .about-copy .large-copy {
@@ -185,16 +198,13 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
 }
 .large-copy em { color: var(--lilac); font-weight: normal; }
 .about-copy p:not(.large-copy) { font-size: 13px; line-height: 1.95; color: #b8aabd; margin: 0 0 16px; }
-.about-interests { display: flex; flex-wrap: wrap; gap: 12px 23px; margin: 28px 0; font-size: 11px; letter-spacing: .09em; color: #a08bad; }
 .resume-link { display: flex; justify-content: space-between; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 19px 0; margin-top: 29px; font-size: 13px; }
 .resume-link span:last-child { color: var(--lilac); }
 .resume-link:hover span:last-child { color: inherit; }
-.resume-link:hover, .quiet-link:hover, .contact-links a:hover { color: var(--acid); }
-.quiet-link { display: inline-block; font-size: 12px; color: var(--muted); padding: 21px 0 8px; }
-.quiet-link > [aria-hidden="true"] { margin-left: 8px; }
+.resume-link:hover, .contact-links a:hover { color: var(--acid); }
 /* Sit About and Contact in the middle of the view rather than against its top edge. */
 .about-view, .contact-view { display: flex; flex-direction: column; padding-bottom: 5vh; }
-.about-view > .view-grid { width: 100%; margin-block: clamp(0px, 30vh - 174px, 100px) 0; }
+.about-view > .view-grid { width: 100%; margin-block: auto; }
 .contact-view { align-items: flex-start; }
 .contact-view > :first-child { margin-top: auto; }
 .contact-view > :last-child { margin-bottom: auto; }
@@ -208,16 +218,11 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
 .email-link:hover span { color: inherit; }
 .email-link:hover { color: var(--acid); }
 .contact-links { display: flex; gap: 32px; margin-top: 34px; font-size: 12px; color: #b9a9c2; }
+.contact-links a { position: relative; }
 .contact-links [aria-hidden="true"] { margin-left: 7px; color: var(--lilac); }
 .contact-links a:hover [aria-hidden="true"] { color: inherit; }
-.return-to-garden { display: none; font-size: 12px; color: #c0b1cd; padding: 12px 0; }
-.return-to-garden > [aria-hidden="true"] { color: var(--lilac); margin-left: 13px; }
-.return-to-garden:hover > [aria-hidden="true"] { color: inherit; }
-.return-to-garden:hover { color: var(--acid); }
-body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
 
 @media (max-width: 1180px) {
-  .site-header .edition { display: none; }
   .view-grid { gap: 5vw; grid-template-columns: minmax(210px, .8fr) minmax(0, 1.35fr); }
   .project-title { font-size: 27px; }
 }
@@ -245,25 +250,21 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   body[data-page="garden"] .vignette {
     --specimen-corner: radial-gradient(ellipse 90% clamp(315px, 45vh, 440px) at left top, #09070db8, #09070d66 58%, transparent);
   }
-  /* Two equal buttons keep their width when a label changes, with replant as
-     an icon beside them; the copyright sits on its own quiet line underneath. */
-  body[data-page="garden"] { --footer-h: 92px; }
+  /* A slim row of seasons sits over two equal buttons, which keep their width
+     when a label changes, with replant as an icon beside them. */
+  body[data-page="garden"] { --footer-h: 100px; }
   body[data-page="garden"] .garden-footer {
     grid-template-columns: minmax(0, 1fr);
     min-height: var(--footer-h);
-    row-gap: 7px;
+    row-gap: 4px;
     padding: 10px 0 max(9px, env(safe-area-inset-bottom));
   }
   body[data-page="garden"] .controls {
-    grid-area: 1 / 1;
+    grid-area: 2 / 1;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr)) 44px;
     gap: 8px;
     justify-self: stretch;
-  }
-  body[data-page="garden"] .footer-caption {
-    grid-area: 2 / 1; justify-self: center; gap: 6px;
-    font-size: 10px; color: #8f8499; white-space: nowrap;
   }
   .sound-toggle {
     position: static; min-width: 0; max-width: 100%; padding: 6px 7px; gap: 5px;
@@ -284,7 +285,9 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
     position: absolute; width: 1px; height: 1px; overflow: hidden;
     clip-path: inset(50%); white-space: nowrap;
   }
-  .season-preview { display: none; }
+  .season-preview { grid-area: 1 / 1; }
+  .study-switch button { min-height: 30px; padding: 4px 0 6px; }
+  .now-flower { display: none; }
   body[data-season="winter"] .vignette { --winter-haze: linear-gradient(#09070d94, transparent 215px); }
   .identity { max-width: 58%; }
   .language-switch { gap: 14px; }
@@ -303,7 +306,7 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   }
   body[data-page="garden"] .vignette::before { content: none; }
   .specimen-card { top: 149px; left: 23px; right: auto; }
-  .portfolio-view { top: 155px; left: 23px; right: 18px; bottom: 100px; padding-right: 5px; }
+  .portfolio-view { top: 155px; left: 23px; right: 18px; bottom: max(22px, env(safe-area-inset-bottom)); padding-right: 5px; }
   .view-grid { display: block; }
   .about-view > .view-grid { margin-block: 0; }
   .view-heading { position: static; }
@@ -318,14 +321,11 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   .project-links a { padding: 5px 0; }
   .about-copy { padding-top: 3px; }
   #about-title { margin-bottom: 22px; }
+  .about-portrait { width: 100%; margin: 0 0 28px; }
   .about-copy .large-copy { font-size: 29px; margin-top: 0; }
-  .about-interests { gap: 15px; }
   .contact-view h2 { font-size: 78px; }
   .email-link { font-size: 33px; gap: 14px; margin-top: 24px; }
   .contact-links { margin-top: 28px; }
-  body:not([data-page="garden"]) .garden-footer { min-height: 78px; display: flex; flex-wrap: wrap; padding: 13px 0; gap: 8px; }
-  body:not([data-page="garden"]) .footer-caption { order: 0; }
-  .return-to-garden > [aria-hidden="true"] { margin-left: 8px; }
   html:is(:lang(zh-Hans), :lang(ja)) .portfolio-view h2 { font-size: 48px; }
   html:is(:lang(zh-Hans), :lang(ja)) #about-title { font-size: clamp(36px, 11vw, 48px); }
 }
@@ -339,7 +339,7 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
   .email-link { font-size: 29px; gap: 10px; }
 }
 @media (max-height: 600px) and (min-width: 601px) {
-  .portfolio-view { top: 110px; bottom: 85px; }
+  .portfolio-view { top: 110px; bottom: 28px; }
   .portfolio-view h2 { font-size: min(66px, 8vw); }
   .contact-view h2 { font-size: 98px; }
 }
@@ -348,7 +348,7 @@ body:not([data-page="garden"]) .return-to-garden { display: inline-flex; }
 }
 
 html:is(:lang(zh-Hans), :lang(ja)) :is(.view-intro, .about-copy p:not(.large-copy), .project-description p) { font-size: 14px; }
-html:is(:lang(zh-Hans), :lang(ja)) :is(.project-kind, .footer-caption) { font-size: 12px; }
+html:is(:lang(zh-Hans), :lang(ja)) .project-kind { font-size: 12px; }
 html:is(:lang(zh-Hans), :lang(ja)) .about-copy .large-copy { line-height: 1.4; }
 
 @media (max-width: 600px) and (max-height: 700px) {

@@ -8,13 +8,13 @@ const MASTER_GAIN = 2.20;
 const seasonalRecordings = {
   // CC0 excerpts from the credited recordings.
   // Spring birds loop by steaq (from hargissssound): https://freesound.org/people/steaq/sounds/548383/
-  poppy: { file: './spring-birds.wav', volume: -39 },
+  poppy: { file: './spring-birds.m4a', volume: -39 },
   // Soft Wind in the Trees by Borgory: https://freesound.org/people/Borgory/sounds/751473/
-  lily: { file: './summer-wind.wav', volume: -47 },
+  lily: { file: './summer-wind.m4a', volume: -47 },
   // Light Rain by soundrecorder7: https://freesound.org/people/soundrecorder7/sounds/167034/
-  chrysanthemum: { file: './light-rain.wav', volume: -43 },
+  chrysanthemum: { file: './light-rain.m4a', volume: -43 },
   // Quiet Winter Night with Light Snow & Wind by TSP-Talk: https://freesound.org/people/TSP-Talk/sounds/845502/
-  snowdrop: { file: './winter-snow.wav', volume: -43 },
+  snowdrop: { file: './winter-snow.m4a', volume: -43 },
 };
 const NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
 

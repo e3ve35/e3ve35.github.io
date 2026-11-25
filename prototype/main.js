@@ -1,9 +1,9 @@
-import './site.js?v=garden-controls-1';
+import './site.js?v=review-pass-1';
 import * as THREE from './vendor/three.module.min.js';
 import { AsciiPollen } from './pollen.js?v=seasonal-pollen-1';
 import { createLily, createPoppy, createChrysanthemum, makeChrysanthemumAssets, makeFlowerAssets, seededRandom, updateFlowerMotion } from './flowers.js?v=chrome-blooms-1';
 import { createSnowdrop, makeSnowdropAssets } from './snowdrops.js?v=chrome-blooms-1';
-import { GardenAudio, flowerNote, loadSoundLibrary } from './audio.js?v=idle-sound-1';
+import { GardenAudio, flowerNote, loadSoundLibrary } from './audio.js?v=compressed-ambience-1';
 import { bloomEnvelope, bloomProfile, flowerCharacter, gestureStrength, rippleEnvelope, stepSpring } from './expressions.js?v=four-seasons-1';
 import { gardenSelection } from './studies.js?v=spring-summer-2';
 import { SeasonalParticles } from './snowfall.js?v=lazy-assets-1';
@@ -381,7 +381,7 @@ class Garden {
     this.fillLight = lime;
     this.glowScale = 1;
     this.desktopStudyMode = savedStudyMode();
-    this.selection = gardenSelection(phoneLayout.matches ? 'lily' : this.desktopStudyMode);
+    this.selection = gardenSelection(this.desktopStudyMode);
     this.study = this.selection.study;
     this.nextCalendarCheck = 0;
 
@@ -565,7 +565,7 @@ class Garden {
 
   studyCaption() {
     const season = text(`season.${this.study.season}`, {}, this.study.season);
-    const heading = this.selection.automatic || phoneLayout.matches ? season : text('season.preview', { season });
+    const heading = this.selection.automatic ? season : text('season.preview', { season });
     return `${heading} · ${text(`species.${this.study.id}`, {}, this.study.name)}`;
   }
 
@@ -588,13 +588,15 @@ class Garden {
     document.body.dataset.season = this.selection.season.toLowerCase();
     document.body.dataset.gardenMonth = this.selection.month;
     $('#flower-genus').textContent = this.study.genus;
-    $('#garden-study-index').textContent = this.study.index.padStart(3, '0');
     const month = new Date(2020, this.selection.monthIndex, 1);
     const currentFlower = gardenSelection('calendar', month).study;
     const currentName = text(`species.${currentFlower.id}`, {}, currentFlower.name);
     const calendarButton = $('button[data-study-mode="calendar"]');
     const calendarLabel = `${text('season.now', {}, 'Now')} - ${currentName}`;
-    calendarButton.textContent = calendarLabel;
+    const nowFlower = document.createElement('span');
+    nowFlower.className = 'now-flower';
+    nowFlower.textContent = ` - ${currentName}`;
+    calendarButton.replaceChildren(text('season.now', {}, 'Now'), nowFlower);
     calendarButton.setAttribute('aria-label', `${calendarLabel} — ${text('season.nowLabel', {}, 'Follow the current season')}`);
     $('#garden-month').textContent = month.toLocaleDateString(currentLanguage(), { month: 'long' }).toUpperCase();
     $('#study-caption').textContent = this.studyCaption();
@@ -637,7 +639,6 @@ class Garden {
   }
 
   changeStudy(mode, remember = true) {
-    if (remember && phoneLayout.matches) return;
     const selection = gardenSelection(mode);
     if (selection.mode === this.selection.mode && selection.monthKey === this.selection.monthKey) return;
     this.selection = selection;
@@ -658,7 +659,7 @@ class Garden {
     setStatus(`status.${message}`, () => ({ caption: this.studyCaption() }));
   }
 
-  refreshCalendar() { this.changeStudy(phoneLayout.matches ? 'lily' : this.desktopStudyMode, false); }
+  refreshCalendar() { this.changeStudy(this.desktopStudyMode, false); }
 
   createGrass(placements) {
     if (!this.grass) {
@@ -784,7 +785,6 @@ class Garden {
       audio.setVisibility(!this.contentOpen && !document.hidden);
     });
     window.addEventListener('resize', () => this.resize());
-    phoneLayout.addEventListener('change', () => this.refreshCalendar());
     window.addEventListener('focus', () => this.refreshCalendar());
     garden.addEventListener('pointermove', (event) => {
       if (event.pointerType === 'touch') return;
