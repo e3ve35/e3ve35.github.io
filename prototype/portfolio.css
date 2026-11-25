@@ -47,12 +47,14 @@ body:is([data-page="garden"], [data-season="winter"]) .vignette::after {
 .skip-link:focus { top: 16px; }
 .identity { min-width: 0; max-width: 34vw; }
 .name-part { white-space: nowrap; }
-.header-right { flex-shrink: 0; }
+/* The name, the navigation and the language links share one centre line. */
+.site-header { align-items: center; }
+.header-right { flex-shrink: 0; padding-top: 0; }
 .page-nav {
-  position: absolute; left: 50%; top: 14px; transform: translateX(-50%);
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   display: flex; align-items: center; gap: 28px; pointer-events: auto;
 }
-.page-nav a { position: relative; padding: 2px 0 9px; font-size: 12px; color: #bcb1c7; transition: color .2s; }
+.page-nav a { position: relative; padding: 6px 0; font-size: 12px; color: #bcb1c7; transition: color .2s; }
 .page-nav a:hover, .page-nav a[aria-current="page"] { color: var(--acid); }
 /* Underlines hug the word, however large the tap target is. */
 .page-nav a[aria-current="page"], .language-switch a[aria-current="true"], .study-switch button[aria-pressed="true"] {
@@ -262,52 +264,67 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
   body[data-page="garden"] .vignette {
     --specimen-corner: radial-gradient(ellipse 90% clamp(315px, 45vh, 440px) at left top, #09070db8, #09070d66 58%, transparent);
   }
-  /* A slim row of seasons sits over two equal buttons, which keep their width
-     when a label changes, with replant as an icon beside them. */
-  body[data-page="garden"] { --footer-h: 100px; }
+  /* One quiet row of controls sits over a slim row of seasons: sound keeps its
+     label on the left, pause and replant are plain icons on the right. Nothing
+     is boxed, and each control keeps a 44 px touch target. */
+  body[data-page="garden"] { --footer-h: 88px; }
   body[data-page="garden"] .garden-footer {
     grid-template-columns: minmax(0, 1fr);
     min-height: var(--footer-h);
-    row-gap: 4px;
-    padding: 10px 0 max(9px, env(safe-area-inset-bottom));
+    row-gap: 0;
+    padding: 2px 0 max(8px, env(safe-area-inset-bottom));
   }
   body[data-page="garden"] .controls {
-    grid-area: 2 / 1;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) 44px;
-    gap: 8px;
+    grid-area: 1 / 1;
+    display: flex; align-items: center; gap: 2px;
     justify-self: stretch;
-  }
-  .sound-toggle {
-    position: static; min-width: 0; max-width: 100%; padding: 6px 7px; gap: 5px;
-    font-size: 11px; text-align: left; white-space: normal;
   }
   .sound-toggle svg { flex-shrink: 0; }
   body[data-page="garden"] .controls :is(.sound-toggle, .text-button) {
-    min-height: 44px; padding: 6px 10px; justify-content: center; gap: 7px;
-    border: 1px solid #8b839457; background: #12101680;
-    font-size: 12px; line-height: 1.2; text-align: center; white-space: normal;
+    position: static; min-width: 0; min-height: 44px; padding: 0;
+    border: 0; background: none; backdrop-filter: none;
+    font-size: 12px; line-height: 1.2;
   }
-  body[data-page="garden"] .sound-toggle { color: var(--paper); }
-  body[data-page="garden"] .sound-toggle[aria-pressed="true"] { border-color: #d2fb8366; color: var(--acid); }
-  body[data-page="garden"] #motion-toggle[aria-pressed="true"] { border-color: #b9adc48c; color: var(--paper); }
-  body[data-page="garden"] #reseed { order: 1; position: relative; padding: 0; font-size: 17px; }
+  body[data-page="garden"] .sound-toggle {
+    margin-right: auto; justify-content: flex-start; gap: 8px;
+    color: var(--paper); text-align: left; white-space: normal;
+  }
+  body[data-page="garden"] .sound-toggle[aria-pressed="true"] { color: var(--acid); }
+  /* The pause label stays for screen readers; sighted visitors get pause bars,
+     or a play triangle while the garden is held still. */
+  body[data-page="garden"] #motion-toggle {
+    order: 1; display: inline-flex; align-items: center; justify-content: center;
+    width: 44px; font-size: 0;
+  }
+  #motion-toggle::before {
+    content: ""; box-sizing: border-box; width: 9px; height: 11px;
+    border-inline: 2.5px solid currentColor;
+  }
+  #motion-toggle[aria-pressed="true"]::before {
+    width: 0; height: 0; border: 0;
+    border-block: 6px solid transparent; border-left: 10px solid currentColor;
+  }
+  body[data-page="garden"] #motion-toggle[aria-pressed="true"] { color: var(--paper); }
+  /* The replant glyph sits flush with the right edge; its touch target runs
+     into the page margin. */
+  body[data-page="garden"] #reseed {
+    order: 2; position: relative; display: grid; place-items: center;
+    width: 44px; margin-right: -17px; font-size: 17px;
+  }
   #reseed [aria-hidden="true"] { margin: 0; }
   #reseed [data-i18n] {
     position: absolute; width: 1px; height: 1px; overflow: hidden;
     clip-path: inset(50%); white-space: nowrap;
   }
-  .season-preview { grid-area: 1 / 1; }
+  .season-preview { grid-area: 2 / 1; }
   .study-switch button { min-height: 30px; padding: 4px 0 6px; }
   .now-flower { display: none; }
   body[data-season="winter"] .vignette { --winter-haze: linear-gradient(#09070d94, transparent 215px); }
   .identity { max-width: 58%; }
   .language-switch { gap: 14px; }
   body[data-study="chrysanthemum"] .specimen-name { font-size: 18px; }
-  .page-nav {
-    top: 72px; left: 0; right: 0; transform: none; justify-content: space-between;
-    border-top: 1px solid var(--line); padding-top: 6px;
-  }
+  .site-header { top: 18px; }
+  .page-nav { top: 46px; left: 0; right: 0; transform: none; justify-content: space-between; }
   .page-nav a { padding: 6px 0 9px; min-width: 44px; }
   .page-nav a:last-child { text-align: right; }
   /* Phones open straight onto the garden: the title stays for screen readers
@@ -317,8 +334,8 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
     clip-path: inset(50%); white-space: nowrap;
   }
   body[data-page="garden"] .vignette::before { content: none; }
-  .specimen-card { top: 149px; left: 23px; right: auto; }
-  .portfolio-view { top: 155px; left: 23px; right: 18px; bottom: max(22px, env(safe-area-inset-bottom)); padding-right: 5px; }
+  .specimen-card { top: 104px; left: 23px; right: auto; }
+  .portfolio-view { top: 120px; left: 23px; right: 18px; bottom: max(22px, env(safe-area-inset-bottom)); padding-right: 5px; }
   .view-grid { display: block; }
   .about-view > .view-grid { margin-block: 0; }
   .view-heading { position: static; }
@@ -342,8 +359,6 @@ body:not([data-page="garden"]) .flower-cursor { display: none; }
   html:is(:lang(zh-Hans), :lang(ja)) #about-title { font-size: clamp(36px, 11vw, 48px); }
 }
 @media (max-width: 360px) {
-  body[data-page="garden"] .controls { grid-template-columns: repeat(2, minmax(0, 1fr)) 40px; gap: 6px; }
-  body[data-page="garden"] .controls :is(.sound-toggle, #motion-toggle) { padding: 6px 4px; gap: 5px; font-size: 11px; }
   .name { font-size: 12px; letter-spacing: .02em; line-height: 1.15; }
   .portfolio-view h2 { font-size: 62px; }
   .project-title { font-size: 24px; }
@@ -365,7 +380,7 @@ html:is(:lang(zh-Hans), :lang(ja)) .about-copy p:not(.large-copy) { font-size: c
 html:is(:lang(zh-Hans), :lang(ja)) .about-copy .large-copy { line-height: 1.4; }
 
 @media (max-width: 600px) and (max-height: 700px) {
-  .page-nav { top: 58px; }
-  .specimen-card { top: 121px; }
-  .portfolio-view { top: 141px; }
+  .page-nav { top: 40px; }
+  .specimen-card { top: 96px; }
+  .portfolio-view { top: 112px; }
 }

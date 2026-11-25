@@ -95,10 +95,11 @@ All four species now share the lily's mirror finish. The shared `pearlFinish` (s
 
 ### Phone layout pass
 
-- Phones (600 px wide or less) keep the season switch as a slim row ("Now" without the flower name) above the footer's two equal 44 px buttons (sound, pause), with replant as an icon beside them; labels can change without moving the row. The footer appears on the garden page only.
+- Phones (600 px wide or less) keep the season switch as a slim row ("Now" without the flower name) at the very bottom, below one unboxed row of controls: sound with its label on the left, pause and replant as icons on the right, each with a 44 px touch target. The pause label stays in the page for screen readers. The footer appears on the garden page only and has no rule above it at any size.
+- The name, the navigation, and the language links share one centre line; on phones the navigation sits in its own row directly under the name, with no rule between them.
 - The opening title is not shown on phones; it stays in the page for screen readers.
 - On every layout the instructions above the footer fade once a flower has been clicked or tapped (`data-flower-picked` on `body`); hovering and keyboard play leave them up.
-- On phones 700 px tall or less the navigation row and the content below it sit 14 px higher.
+- On phones 700 px tall or less the navigation row and the content below it sit 6–8 px higher.
 
 The scene requires WebGL 2. Initialization failure presents a readable fallback; the HTML portfolio remains usable. No tracking, microphone access, or backend is involved.
 
